@@ -20,38 +20,77 @@ export default function Page() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [modalType, setModalType] = useState<'none' | 'forgot' | 'contact'>('none');
+  const [checkingSession, setCheckingSession] = useState(true);
+  const [authPending, setAuthPending] = useState(false);
+  const [authError, setAuthError] = useState('');
 
-  // Cek status login saat halaman dibuka
   useEffect(() => {
-    const authStatus = localStorage.getItem('isAuthenticated');
-    const savedRole = localStorage.getItem('userRole');
-
-    if (authStatus === 'true') {
-      setIsAuthenticated(true);
-      if (savedRole) {
-        setRole(savedRole as 'jobseeker' | 'company' | 'admin');
-      }
-    }
+    const controller = new AbortController();
+    fetch('/api/session', { signal: controller.signal })
+      .then(async (response) => {
+        if (!response.ok) throw new Error();
+        const session = await response.json();
+        if (session.role) {
+          setRole(session.role);
+          setIsAuthenticated(true);
+        }
+      })
+      .catch(() => {
+        if (!controller.signal.aborted) setAuthError('Sesi gagal diperiksa. Silakan coba masuk.');
+      })
+      .finally(() => {
+        if (!controller.signal.aborted) setCheckingSession(false);
+      });
+    return () => controller.abort();
   }, []);
 
-  // Fungsi Login
-  const handleLogin = (e: React.FormEvent) => {
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    localStorage.setItem('isAuthenticated', 'true');
-    localStorage.setItem('userRole', role);
-    setIsAuthenticated(true);
+    if (authPending) return;
+    setAuthPending(true);
+    setAuthError('');
+    try {
+      const response = await fetch('/api/session', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ identifier: email, password, role }),
+      });
+      const session = await response.json();
+      if (!response.ok) {
+        setAuthError(session.error ?? 'Gagal masuk. Silakan coba lagi.');
+        return;
+      }
+      setRole(session.role);
+      setPassword('');
+      setIsAuthenticated(true);
+    } catch {
+      setAuthError('Gagal masuk. Silakan coba lagi.');
+    } finally {
+      setAuthPending(false);
+    }
   };
 
-  // Fungsi Logout
-  const handleLogout = () => {
-    localStorage.removeItem('isAuthenticated');
-    localStorage.removeItem('userRole');
-    setIsAuthenticated(false);
-    setCurrentPage('home');
-    setEmail('');
-    setPassword('');
-    setRole('jobseeker');
+  const handleLogout = async () => {
+    if (authPending) return;
+    setAuthPending(true);
+    setAuthError('');
+    try {
+      const response = await fetch('/api/session', { method: 'DELETE' });
+      if (!response.ok) throw new Error();
+      setIsAuthenticated(false);
+      setCurrentPage('home');
+      setEmail('');
+      setRole('jobseeker');
+    } catch {
+      setAuthError('Gagal keluar. Silakan coba lagi.');
+    } finally {
+      setAuthPending(false);
+    }
   };
+
+  if (checkingSession) {
+    return <main className="p-6 text-center text-slate-700" role="status">Memeriksa sesi...</main>;
+  }
 
   // Tampilan Login
   if (!isAuthenticated) {
@@ -167,6 +206,7 @@ export default function Page() {
               </div>
 
               <form onSubmit={handleLogin} className="space-y-4">
+                {authError && <p role="alert" className="text-sm text-red-700">{authError}</p>}
 
                 {/* Email / Identifier */}
                 <div>
@@ -178,6 +218,7 @@ export default function Page() {
                     <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
                     <input
                       type="text"
+                      autoComplete="username"
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
                       required
@@ -207,6 +248,7 @@ export default function Page() {
                     <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
                     <input
                       type="password"
+                      autoComplete="current-password"
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
                       required
@@ -219,9 +261,10 @@ export default function Page() {
                 {/* Login Button */}
                 <button
                   type="submit"
+                  disabled={authPending}
                   className="w-full mt-3 rounded-2xl bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 py-4 text-white font-bold text-xs sm:text-sm shadow-lg shadow-indigo-600/25 transition transform active:scale-[0.98] flex items-center justify-center space-x-2 group cursor-pointer"
                 >
-                  <span>Sign In to Portal</span>
+                  <span>{authPending ? 'Sedang masuk...' : 'Sign In to Portal'}</span>
                   <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
                 </button>
 
@@ -339,6 +382,7 @@ export default function Page() {
         features={features}
         onLogout={handleLogout}
       />
+      {authError && <p role="alert" className="p-4 text-center text-sm text-red-700">{authError}</p>}
       {renderPage()}
     </div>
   );

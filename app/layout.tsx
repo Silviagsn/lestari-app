@@ -1,8 +1,6 @@
 import type { Metadata } from 'next'
-import { Inter } from 'next/font/google'
+import '@fontsource-variable/inter'
 import './globals.css'
-
-const inter = Inter({ subsets: ['latin'] })
 
 export const metadata: Metadata = {
   title: 'Lestari - Portal Inklusif',
@@ -88,7 +86,7 @@ export default function RootLayout({
           }}
         />
       </head>
-      <body className={`${inter.className} antialiased`}>
+      <body className="antialiased" style={{ fontFamily: '"Inter Variable", sans-serif' }}>
         {/* Skip to main content link for screen readers */}
         <a
           href="#main-content"

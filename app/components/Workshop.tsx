@@ -1,4 +1,5 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
+import { useCatalog } from '../utils/useCatalog';
 import { 
   Clock, 
   Users, 
@@ -91,523 +92,22 @@ interface EnrollmentStatus {
   workshopId: number;
   status: 'enrolled' | 'in-progress' | 'completed' | 'paused';
   progress: number;
-  enrolledDate: Date;
-  lastActivity: Date;
+  enrolledDate: string;
+  lastActivity: string;
 }
 
-const enhancedWorkshops: Workshop[] = [
-  // Technology & Programming
-  {
-    id: 1,
-    title: "Complete Web Development Bootcamp",
-    instructor: "Sarah Johnson",
-    duration: "12 weeks",
-    level: "Beginner",
-    description: "Master full-stack web development from scratch with comprehensive visual tutorials, ASL support, and hands-on projects. Build real-world applications and portfolio pieces while learning HTML, CSS, JavaScript, React, and Node.js.",
-    features: ["Visual learning", "Sign language support", "Hands-on projects", "Portfolio building", "Job placement assistance", "Lifetime access"],
-    nextSession: "Monday, March 18, 2024",
-    enrolled: 245,
-    rating: 4.9,
-    price: "Rp 2,500,000",
-    category: "Technology",
-    lessons: 48,
-    certificateIncluded: true,
-    language: ["English", "ASL", "Indonesian"],
-    prerequisites: ["Basic computer skills", "Internet access"],
-    learningOutcomes: ["Build responsive websites", "Create web applications", "Understand modern frameworks", "Deploy projects online"],
-    isAccessible: true,
-    maxStudents: 300,
-    deafFriendlyScore: 98,
-    instructorRating: 4.8,
-    completionRate: 87,
-    jobPlacementRate: 78,
-    skillTags: ["HTML", "CSS", "JavaScript", "React", "Node.js", "Full Stack"],
-    difficulty: 2
-  },
-  {
-    id: 2,
-    title: "Python Programming & AI Fundamentals",
-    instructor: "David Kim",
-    duration: "10 weeks",
-    level: "Beginner",
-    description: "Start your programming journey with Python and explore artificial intelligence. Build practical projects while learning programming fundamentals, data structures, and basic AI concepts with comprehensive visual support.",
-    features: ["Visual coding approach", "AI fundamentals", "Project-based learning", "Code review sessions", "Career guidance", "Industry connections"],
-    nextSession: "Thursday, March 21, 2024",
-    enrolled: 312,
-    rating: 4.8,
-    price: "Rp 1,800,000",
-    category: "Programming",
-    lessons: 40,
-    certificateIncluded: true,
-    language: ["English", "ASL", "Indonesian"],
-    prerequisites: ["Basic computer skills", "Logical thinking"],
-    learningOutcomes: ["Master Python programming", "Build AI applications", "Understand algorithms", "Create automation tools"],
-    isAccessible: true,
-    maxStudents: 400,
-    deafFriendlyScore: 97,
-    instructorRating: 4.8,
-    completionRate: 85,
-    jobPlacementRate: 89,
-    skillTags: ["Python", "AI", "Machine Learning", "Data Structures", "Algorithms"],
-    difficulty: 3
-  },
-  {
-    id: 3,
-    title: "Mobile App Development with Flutter",
-    instructor: "Ahmad Rizki",
-    duration: "8 weeks",
-    level: "Intermediate",
-    description: "Build cross-platform mobile apps using Flutter. Learn from Indonesian expert with full ASL support and hands-on projects for both Android and iOS platforms.",
-    features: ["Cross-platform development", "Real app projects", "Publishing guidance", "ASL interpretation", "Mentorship program"],
-    nextSession: "Saturday, March 23, 2024",
-    enrolled: 89,
-    rating: 4.7,
-    price: "Rp 1,500,000",
-    category: "Mobile Development",
-    lessons: 32,
-    certificateIncluded: true,
-    language: ["Indonesian", "ASL"],
-    prerequisites: ["Basic programming knowledge", "Mobile device for testing"],
-    learningOutcomes: ["Build mobile apps", "Understand app architecture", "Publish to app stores", "Optimize app performance"],
-    isAccessible: true,
-    maxStudents: 150,
-    deafFriendlyScore: 94,
-    instructorRating: 4.6,
-    completionRate: 88,
-    jobPlacementRate: 82,
-    skillTags: ["Flutter", "Dart", "Mobile Development", "App Store", "Android"],
-    difficulty: 3
-  },
-
-  // Design & Creative
-  {
-    id: 4,
-    title: "UX/UI Design for Accessibility",
-    instructor: "Alex Thompson",
-    duration: "6 weeks",
-    level: "Beginner",
-    description: "Learn to design inclusive, accessible user experiences that work for everyone. Master design thinking, prototyping, and user research with special focus on accessibility and deaf user needs.",
-    features: ["Design thinking workshops", "Accessibility focus", "Portfolio development", "User research", "Prototype building", "Industry feedback"],
-    nextSession: "Tuesday, March 19, 2024",
-    enrolled: 198,
-    rating: 4.7,
-    price: "Rp 1,200,000",
-    category: "Design",
-    lessons: 24,
-    certificateIncluded: true,
-    language: ["English", "ASL", "Indonesian"],
-    prerequisites: ["Basic design knowledge", "Creative mindset"],
-    learningOutcomes: ["Design accessible interfaces", "Conduct user research", "Create prototypes", "Build design systems"],
-    isAccessible: true,
-    maxStudents: 250,
-    deafFriendlyScore: 96,
-    instructorRating: 4.6,
-    completionRate: 88,
-    jobPlacementRate: 82,
-    skillTags: ["Figma", "User Research", "Prototyping", "Accessibility", "Design Systems"],
-    difficulty: 2
-  },
-  {
-    id: 5,
-    title: "Graphic Design Mastery",
-    instructor: "Nina Sari",
-    duration: "8 weeks",
-    level: "Beginner",
-    description: "Master the fundamentals of graphic design including logo design, branding, and print design. Learn industry-standard tools with full visual instruction and ASL support.",
-    features: ["Adobe Creative Suite", "Portfolio building", "Brand design projects", "Print design", "Digital design", "Client work simulation"],
-    nextSession: "Wednesday, March 20, 2024",
-    enrolled: 156,
-    rating: 4.6,
-    price: "Rp 950,000",
-    category: "Design",
-    lessons: 32,
-    certificateIncluded: true,
-    language: ["Indonesian", "ASL"],
-    prerequisites: ["Basic computer skills", "Creative interest"],
-    learningOutcomes: ["Master design principles", "Create professional logos", "Design marketing materials", "Build design portfolio"],
-    isAccessible: true,
-    maxStudents: 200,
-    deafFriendlyScore: 93,
-    instructorRating: 4.5,
-    completionRate: 91,
-    jobPlacementRate: 75,
-    skillTags: ["Adobe Illustrator", "Photoshop", "Logo Design", "Branding", "Typography"],
-    difficulty: 2
-  },
-  {
-    id: 6,
-    title: "Photography for Beginners",
-    instructor: "Rico Pratama",
-    duration: "4 weeks",
-    level: "Beginner",
-    description: "Learn the art of photography from composition to editing. Perfect for deaf individuals with visual storytelling approach and hands-on practice sessions.",
-    features: ["Camera techniques", "Photo editing", "Portfolio development", "Visual storytelling", "Field trips", "Equipment guidance"],
-    nextSession: "Friday, March 22, 2024",
-    enrolled: 124,
-    rating: 4.5,
-    price: "Rp 750,000",
-    category: "Photography",
-    lessons: 16,
-    certificateIncluded: true,
-    language: ["Indonesian", "ASL"],
-    prerequisites: ["Camera or smartphone", "Interest in visual arts"],
-    learningOutcomes: ["Master camera basics", "Understand composition", "Edit photos professionally", "Build photography portfolio"],
-    isAccessible: true,
-    maxStudents: 100,
-    deafFriendlyScore: 89,
-    instructorRating: 4.4,
-    completionRate: 92,
-    skillTags: ["Photography", "Lightroom", "Composition", "Portrait", "Landscape"],
-    difficulty: 1
-  },
-
-  // Business & Marketing
-  {
-    id: 7,
-    title: "Digital Marketing for Small Business",
-    instructor: "Michael Chen",
-    duration: "6 weeks",
-    level: "Intermediate",
-    description: "Transform your marketing skills with cutting-edge digital strategies. Learn social media marketing, SEO, content creation, and analytics with full ASL interpretation.",
-    features: ["Interactive lessons", "Real case studies", "ASL interpretation", "Industry mentorship", "Campaign planning tools", "Networking events"],
-    nextSession: "Wednesday, March 20, 2024",
-    enrolled: 156,
-    rating: 4.8,
-    price: "Rp 1,100,000",
-    category: "Marketing",
-    lessons: 24,
-    certificateIncluded: true,
-    language: ["English", "ASL", "Indonesian"],
-    prerequisites: ["Basic marketing knowledge", "Social media familiarity"],
-    learningOutcomes: ["Create marketing campaigns", "Analyze performance metrics", "Build brand strategies", "Master digital platforms"],
-    isAccessible: true,
-    maxStudents: 200,
-    deafFriendlyScore: 95,
-    instructorRating: 4.7,
-    completionRate: 92,
-    jobPlacementRate: 85,
-    skillTags: ["SEO", "Social Media", "Content Marketing", "Analytics", "PPC"],
-    difficulty: 3
-  },
-  {
-    id: 8,
-    title: "Social Media Strategy & Content Creation",
-    instructor: "Lisa Garcia",
-    duration: "4 weeks",
-    level: "Beginner",
-    description: "Master social media marketing with focus on visual content creation and accessibility. Learn platform-specific strategies, content planning, and community management.",
-    features: ["Platform expertise", "Visual content focus", "Analytics mastery", "Community building", "Brand development", "Accessibility integration"],
-    nextSession: "Saturday, March 23, 2024",
-    enrolled: 134,
-    rating: 4.6,
-    price: "Rp 650,000",
-    category: "Marketing",
-    lessons: 16,
-    certificateIncluded: true,
-    language: ["English", "ASL", "Indonesian"],
-    prerequisites: ["Social media experience", "Basic marketing knowledge"],
-    learningOutcomes: ["Create engaging content", "Build online communities", "Analyze social metrics", "Develop brand voice"],
-    isAccessible: true,
-    maxStudents: 180,
-    deafFriendlyScore: 93,
-    instructorRating: 4.5,
-    completionRate: 91,
-    jobPlacementRate: 76,
-    skillTags: ["Social Media", "Content Creation", "Community Management", "Analytics"],
-    difficulty: 2
-  },
-  {
-    id: 9,
-    title: "Starting Your Own Business",
-    instructor: "Budi Santoso",
-    duration: "5 weeks",
-    level: "Beginner",
-    description: "Learn entrepreneurship basics from Indonesian business expert. Cover business planning, financial management, and marketing specifically for deaf entrepreneurs.",
-    features: ["Business plan development", "Financial planning", "Legal guidance", "Marketing strategies", "Networking opportunities", "Mentorship program"],
-    nextSession: "Monday, March 25, 2024",
-    enrolled: 87,
-    rating: 4.7,
-    price: "Rp 800,000",
-    category: "Business",
-    lessons: 20,
-    certificateIncluded: true,
-    language: ["Indonesian", "ASL"],
-    prerequisites: ["Business idea or interest", "Basic math skills"],
-    learningOutcomes: ["Create business plan", "Understand finance basics", "Legal business setup", "Marketing your business"],
-    isAccessible: true,
-    maxStudents: 120,
-    deafFriendlyScore: 91,
-    instructorRating: 4.6,
-    completionRate: 86,
-    jobPlacementRate: 70,
-    skillTags: ["Entrepreneurship", "Business Plan", "Finance", "Marketing", "Legal"],
-    difficulty: 2
-  },
-
-  // Practical Skills
-  {
-    id: 10,
-    title: "Barista & Coffee Art Mastery",
-    instructor: "Cafe Maestro Team",
-    duration: "3 weeks",
-    level: "Beginner",
-    description: "Learn professional barista skills including coffee brewing, latte art, and customer service. Perfect for those interested in coffee industry with full visual instruction.",
-    features: ["Hands-on coffee making", "Latte art techniques", "Coffee knowledge", "Customer service", "Equipment training", "Industry connections"],
-    nextSession: "Tuesday, March 19, 2024",
-    enrolled: 165,
-    rating: 4.6,
-    price: "Rp 500,000",
-    category: "Hospitality",
-    lessons: 12,
-    certificateIncluded: true,
-    language: ["Indonesian", "ASL"],
-    prerequisites: ["Interest in coffee", "Physical ability to work"],
-    learningOutcomes: ["Master coffee brewing", "Create latte art", "Customer service skills", "Coffee shop operations"],
-    isAccessible: true,
-    maxStudents: 80,
-    deafFriendlyScore: 92,
-    instructorRating: 4.5,
-    completionRate: 94,
-    jobPlacementRate: 88,
-    skillTags: ["Barista", "Latte Art", "Coffee", "Customer Service", "Food Service"],
-    difficulty: 1
-  },
-  {
-    id: 11,
-    title: "Culinary Arts & Food Styling",
-    instructor: "Chef Marina",
-    duration: "6 weeks",
-    level: "Intermediate",
-    description: "Learn professional cooking techniques and food styling for social media. Visual learning approach perfect for deaf students with hands-on cooking sessions.",
-    features: ["Professional cooking techniques", "Food styling", "Recipe development", "Kitchen safety", "Food photography", "Menu planning"],
-    nextSession: "Thursday, March 21, 2024",
-    enrolled: 98,
-    rating: 4.8,
-    price: "Rp 1,300,000",
-    category: "Culinary",
-    lessons: 24,
-    certificateIncluded: true,
-    language: ["Indonesian", "ASL"],
-    prerequisites: ["Basic cooking knowledge", "Kitchen equipment access"],
-    learningOutcomes: ["Master cooking techniques", "Food styling skills", "Recipe creation", "Food photography"],
-    isAccessible: true,
-    maxStudents: 60,
-    deafFriendlyScore: 95,
-    instructorRating: 4.7,
-    completionRate: 89,
-    jobPlacementRate: 78,
-    skillTags: ["Cooking", "Food Styling", "Recipe Development", "Food Photography"],
-    difficulty: 3
-  },
-  {
-    id: 12,
-    title: "Fashion Design & Tailoring Basics",
-    instructor: "Sari Fashions",
-    duration: "8 weeks",
-    level: "Beginner",
-    description: "Learn fashion design fundamentals and basic tailoring skills. Create your own clothing pieces with pattern making, sewing, and design principles.",
-    features: ["Pattern making", "Sewing techniques", "Design principles", "Fabric knowledge", "Fashion sketching", "Portfolio building"],
-    nextSession: "Saturday, March 23, 2024",
-    enrolled: 76,
-    rating: 4.5,
-    price: "Rp 950,000",
-    category: "Fashion",
-    lessons: 32,
-    certificateIncluded: true,
-    language: ["Indonesian", "ASL"],
-    prerequisites: ["Interest in fashion", "Basic drawing skills"],
-    learningOutcomes: ["Design clothing", "Pattern making", "Sewing skills", "Fashion portfolio"],
-    isAccessible: true,
-    maxStudents: 40,
-    deafFriendlyScore: 87,
-    instructorRating: 4.4,
-    completionRate: 85,
-    skillTags: ["Fashion Design", "Tailoring", "Pattern Making", "Sewing", "Design"],
-    difficulty: 2
-  },
-
-  // Arts & Culture
-  {
-    id: 13,
-    title: "ASL Teaching & Cultural Competency",
-    instructor: "Maria Rodriguez",
-    duration: "12 weeks",
-    level: "Advanced",
-    description: "Become a certified ASL interpreter or teacher. Comprehensive program covering advanced ASL grammar, interpretation techniques, cultural competency, and teaching methodologies.",
-    features: ["Advanced ASL techniques", "Cultural immersion", "Teaching methods", "Certification prep", "Practicum opportunities", "Community connections"],
-    nextSession: "Wednesday, March 27, 2024",
-    enrolled: 65,
-    rating: 5.0,
-    price: "Rp 2,800,000",
-    category: "Communication",
-    lessons: 48,
-    certificateIncluded: true,
-    language: ["ASL", "Indonesian", "English"],
-    prerequisites: ["Intermediate ASL", "Cultural knowledge"],
-    learningOutcomes: ["Master advanced ASL", "Teach ASL effectively", "Provide interpretation", "Understand deaf culture"],
-    isAccessible: true,
-    maxStudents: 80,
-    deafFriendlyScore: 100,
-    instructorRating: 5.0,
-    completionRate: 95,
-    jobPlacementRate: 98,
-    skillTags: ["ASL", "Interpretation", "Teaching", "Deaf Culture", "Communication"],
-    difficulty: 5
-  },
-  {
-    id: 14,
-    title: "Music Production for the Deaf",
-    instructor: "Audio Visual Studio",
-    duration: "10 weeks",
-    level: "Intermediate",
-    description: "Learn music production through visual and tactile methods. Use vibrations, visual music software, and collaborative techniques to create amazing music.",
-    features: ["Visual music software", "Vibration techniques", "Collaborative production", "Beat making", "Audio editing", "Music theory visual"],
-    nextSession: "Friday, March 22, 2024",
-    enrolled: 54,
-    rating: 4.9,
-    price: "Rp 1,600,000",
-    category: "Music",
-    lessons: 40,
-    certificateIncluded: true,
-    language: ["Indonesian", "ASL"],
-    prerequisites: ["Interest in music", "Computer access"],
-    learningOutcomes: ["Create music tracks", "Use production software", "Understand music theory", "Collaborate with musicians"],
-    isAccessible: true,
-    maxStudents: 50,
-    deafFriendlyScore: 96,
-    instructorRating: 4.8,
-    completionRate: 87,
-    skillTags: ["Music Production", "Beat Making", "Audio Editing", "Music Software"],
-    difficulty: 3
-  },
-
-  // Health & Wellness
-  {
-    id: 15,
-    title: "Massage Therapy Certification",
-    instructor: "Wellness Center Team",
-    duration: "8 weeks",
-    level: "Beginner",
-    description: "Learn professional massage therapy techniques with full visual instruction. Perfect career path for deaf individuals with excellent hands-on skills.",
-    features: ["Professional techniques", "Anatomy knowledge", "Client communication", "Business setup", "Certification prep", "Practice sessions"],
-    nextSession: "Monday, March 18, 2024",
-    enrolled: 92,
-    rating: 4.7,
-    price: "Rp 1,400,000",
-    category: "Health & Wellness",
-    lessons: 32,
-    certificateIncluded: true,
-    language: ["Indonesian", "ASL"],
-    prerequisites: ["Physical fitness", "Interest in wellness"],
-    learningOutcomes: ["Master massage techniques", "Understand anatomy", "Client consultation", "Start massage business"],
-    isAccessible: true,
-    maxStudents: 60,
-    deafFriendlyScore: 91,
-    instructorRating: 4.6,
-    completionRate: 88,
-    jobPlacementRate: 85,
-    skillTags: ["Massage Therapy", "Anatomy", "Wellness", "Client Care", "Business"],
-    difficulty: 2
-  },
-
-  // Data & Analytics
-  {
-    id: 16,
-    title: "Data Science & Excel Mastery",
-    instructor: "Dr. Emily Rodriguez",
-    duration: "8 weeks",
-    level: "Intermediate",
-    description: "Learn data analysis using Excel and basic Python. Perfect introduction to data science with visual charts, graphs, and practical business applications.",
-    features: ["Excel advanced techniques", "Data visualization", "Python basics", "Business applications", "Real datasets", "Career guidance"],
-    nextSession: "Friday, March 22, 2024",
-    enrolled: 89,
-    rating: 4.8,
-    price: "Rp 1,300,000",
-    category: "Data Science",
-    lessons: 32,
-    certificateIncluded: true,
-    language: ["English", "ASL", "Indonesian"],
-    prerequisites: ["Basic Excel knowledge", "Math fundamentals"],
-    learningOutcomes: ["Master Excel advanced features", "Create data visualizations", "Basic Python programming", "Business data analysis"],
-    isAccessible: true,
-    maxStudents: 150,
-    deafFriendlyScore: 94,
-    instructorRating: 4.7,
-    completionRate: 84,
-    jobPlacementRate: 82,
-    skillTags: ["Excel", "Data Analysis", "Python", "Charts", "Business Intelligence"],
-    difficulty: 3
-  },
-
-  // Language & Communication
-  {
-    id: 17,
-    title: "English for Professional Communication",
-    instructor: "Language Institute",
-    duration: "10 weeks",
-    level: "Intermediate",
-    description: "Improve your professional English skills with focus on written communication, emails, and business vocabulary. Perfect for deaf professionals.",
-    features: ["Business English", "Email writing", "Professional vocabulary", "Grammar improvement", "Writing practice", "Career applications"],
-    nextSession: "Wednesday, March 20, 2024",
-    enrolled: 147,
-    rating: 4.6,
-    price: "Rp 850,000",
-    category: "Language",
-    lessons: 40,
-    certificateIncluded: true,
-    language: ["English", "Indonesian", "ASL"],
-    prerequisites: ["Basic English knowledge", "Writing ability"],
-    learningOutcomes: ["Improve business English", "Professional email writing", "Better grammar", "Workplace communication"],
-    isAccessible: true,
-    maxStudents: 200,
-    deafFriendlyScore: 92,
-    instructorRating: 4.5,
-    completionRate: 89,
-    skillTags: ["English", "Business Communication", "Writing", "Grammar", "Professional"],
-    difficulty: 2
-  },
-
-  // Creative Arts
-  {
-    id: 18,
-    title: "Video Editing & Content Creation",
-    instructor: "Creative Media Lab",
-    duration: "6 weeks",
-    level: "Beginner",
-    description: "Learn video editing for social media and YouTube. Create engaging content with focus on visual storytelling perfect for deaf creators.",
-    features: ["Video editing software", "Content planning", "Visual storytelling", "Social media optimization", "Equipment guidance", "Portfolio building"],
-    nextSession: "Saturday, March 23, 2024",
-    enrolled: 112,
-    rating: 4.7,
-    price: "Rp 900,000",
-    category: "Media Production",
-    lessons: 24,
-    certificateIncluded: true,
-    language: ["Indonesian", "ASL"],
-    prerequisites: ["Basic computer skills", "Creative interest"],
-    learningOutcomes: ["Master video editing", "Create social content", "Visual storytelling", "Content strategy"],
-    isAccessible: true,
-    maxStudents: 100,
-    deafFriendlyScore: 95,
-    instructorRating: 4.6,
-    completionRate: 91,
-    skillTags: ["Video Editing", "Content Creation", "Social Media", "Storytelling"],
-    difficulty: 2
-  }
-];
-
-const categories = [
-  { id: 'all', name: 'All Categories', icon: <BookOpen className="w-4 h-4" />, count: enhancedWorkshops.length },
-  { id: 'technology', name: 'Technology', icon: <Code className="w-4 h-4" />, count: enhancedWorkshops.filter(w => w.category === 'Technology').length },
-  { id: 'design', name: 'Design', icon: <Palette className="w-4 h-4" />, count: enhancedWorkshops.filter(w => w.category === 'Design').length },
-  { id: 'marketing', name: 'Marketing', icon: <Megaphone className="w-4 h-4" />, count: enhancedWorkshops.filter(w => w.category === 'Marketing').length },
-  { id: 'programming', name: 'Programming', icon: <Monitor className="w-4 h-4" />, count: enhancedWorkshops.filter(w => w.category === 'Programming').length },
-  { id: 'business', name: 'Business', icon: <BarChart className="w-4 h-4" />, count: enhancedWorkshops.filter(w => w.category === 'Business').length },
-  { id: 'hospitality', name: 'Hospitality', icon: <Coffee className="w-4 h-4" />, count: enhancedWorkshops.filter(w => w.category === 'Hospitality').length },
-  { id: 'culinary', name: 'Culinary', icon: <Utensils className="w-4 h-4" />, count: enhancedWorkshops.filter(w => w.category === 'Culinary').length },
-  { id: 'fashion', name: 'Fashion', icon: <Shirt className="w-4 h-4" />, count: enhancedWorkshops.filter(w => w.category === 'Fashion').length },
-  { id: 'communication', name: 'Communication', icon: <Hand className="w-4 h-4" />, count: enhancedWorkshops.filter(w => w.category === 'Communication').length },
-  { id: 'health & wellness', name: 'Health & Wellness', icon: <Heart className="w-4 h-4" />, count: enhancedWorkshops.filter(w => w.category === 'Health & Wellness').length }
+const getCategories = (workshops: Workshop[]) => [
+  { id: 'all', name: 'All Categories', icon: <BookOpen className="w-4 h-4" />, count: workshops.length },
+  { id: 'technology', name: 'Technology', icon: <Code className="w-4 h-4" />, count: workshops.filter(w => w.category === 'Technology').length },
+  { id: 'design', name: 'Design', icon: <Palette className="w-4 h-4" />, count: workshops.filter(w => w.category === 'Design').length },
+  { id: 'marketing', name: 'Marketing', icon: <Megaphone className="w-4 h-4" />, count: workshops.filter(w => w.category === 'Marketing').length },
+  { id: 'programming', name: 'Programming', icon: <Monitor className="w-4 h-4" />, count: workshops.filter(w => w.category === 'Programming').length },
+  { id: 'business', name: 'Business', icon: <BarChart className="w-4 h-4" />, count: workshops.filter(w => w.category === 'Business').length },
+  { id: 'hospitality', name: 'Hospitality', icon: <Coffee className="w-4 h-4" />, count: workshops.filter(w => w.category === 'Hospitality').length },
+  { id: 'culinary', name: 'Culinary', icon: <Utensils className="w-4 h-4" />, count: workshops.filter(w => w.category === 'Culinary').length },
+  { id: 'fashion', name: 'Fashion', icon: <Shirt className="w-4 h-4" />, count: workshops.filter(w => w.category === 'Fashion').length },
+  { id: 'communication', name: 'Communication', icon: <Hand className="w-4 h-4" />, count: workshops.filter(w => w.category === 'Communication').length },
+  { id: 'health & wellness', name: 'Health & Wellness', icon: <Heart className="w-4 h-4" />, count: workshops.filter(w => w.category === 'Health & Wellness').length }
 ];
 
 const levels = ['All', 'Beginner', 'Intermediate', 'Advanced'];
@@ -627,17 +127,20 @@ export default function WorkshopPage({ userAssessment }: WorkshopPageProps) {
   const [selectedCategory, setSelectedCategory] = useState('all');
   const [selectedLevel, setSelectedLevel] = useState('All');
   const [sortBy, setSortBy] = useState('recommended');
-  const [enrolledWorkshops, setEnrolledWorkshops] = useState<number[]>([]);
-  const [savedWorkshops, setSavedWorkshops] = useState<number[]>([]);
-  const [enrollmentStatuses, setEnrollmentStatuses] = useState<EnrollmentStatus[]>([]);
+  const { data, loading, pending, error, mutate } = useCatalog<Workshop, EnrollmentStatus>(
+    'workshops', (entry) => entry.workshopId,
+  );
+  const workshops = data?.items ?? [];
+  const savedWorkshops = data?.savedIds ?? [];
+  const enrollmentStatuses = data?.activity ?? [];
   const [showEnrollmentModal, setShowEnrollmentModal] = useState(false);
   const [currentEnrollmentWorkshop, setCurrentEnrollmentWorkshop] = useState<Workshop | null>(null);
 
   // Enhanced recommendation algorithm
   const getRecommendedWorkshops = () => {
-    if (!userAssessment) return enhancedWorkshops;
+    if (!userAssessment) return workshops;
     
-    return enhancedWorkshops.map(workshop => {
+    return workshops.map(workshop => {
       let score = 0;
       
       // Match based on interests from assessment
@@ -734,33 +237,27 @@ export default function WorkshopPage({ userAssessment }: WorkshopPageProps) {
     setShowEnrollmentModal(true);
   };
 
-  const confirmEnrollment = () => {
-    if (currentEnrollmentWorkshop) {
-      setEnrolledWorkshops(prev => [...prev, currentEnrollmentWorkshop.id]);
-      const newEnrollment: EnrollmentStatus = {
-        workshopId: currentEnrollmentWorkshop.id,
-        status: 'enrolled',
-        progress: 0,
-        enrolledDate: new Date(),
-        lastActivity: new Date()
-      };
-      setEnrollmentStatuses(prev => [...prev, newEnrollment]);
+  const confirmEnrollment = async () => {
+    if (currentEnrollmentWorkshop &&
+        await mutate({ action: 'enroll', id: currentEnrollmentWorkshop.id })) {
       setShowEnrollmentModal(false);
       setCurrentEnrollmentWorkshop(null);
     }
   };
 
   const toggleSaveWorkshop = (workshopId: number) => {
-    setSavedWorkshops(prev => 
-      prev.includes(workshopId) 
-        ? prev.filter(id => id !== workshopId)
-        : [...prev, workshopId]
-    );
+    void mutate({ action: 'save', id: workshopId, saved: !savedWorkshops.includes(workshopId) });
   };
 
   const getEnrollmentStatus = (workshopId: number) => {
     return enrollmentStatuses.find(status => status.workshopId === workshopId);
   };
+
+  if (!data) {
+    return <p className="p-8 text-center text-slate-700" role={error ? 'alert' : 'status'}>
+      {loading ? 'Memuat workshop...' : error}
+    </p>;
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-purple-50 to-pink-50 relative overflow-hidden">
@@ -773,6 +270,7 @@ export default function WorkshopPage({ userAssessment }: WorkshopPageProps) {
 
       <div className="py-6 px-4 sm:px-6 lg:px-8 relative z-10">
         <div className="max-w-7xl mx-auto">
+          {error && !showEnrollmentModal && <p role="alert" className="mb-4 text-center text-red-700">{error}</p>}
           {/* Enhanced Header */}
           <div className="mb-8">
             <div className="text-center mb-6">
@@ -799,7 +297,7 @@ export default function WorkshopPage({ userAssessment }: WorkshopPageProps) {
                 <div className="text-sm text-gray-600">Saved Workshops</div>
               </div>
               <div className="bg-white/80 backdrop-blur-lg rounded-2xl p-4 text-center shadow-xl border border-white/20 hover:shadow-2xl transition-all duration-300 transform hover:scale-105">
-                <div className="text-2xl font-bold text-blue-600">{enrolledWorkshops.length}</div>
+                <div className="text-2xl font-bold text-blue-600">{enrollmentStatuses.length}</div>
                 <div className="text-sm text-gray-600">Enrolled</div>
               </div>
             </div>
@@ -821,7 +319,7 @@ export default function WorkshopPage({ userAssessment }: WorkshopPageProps) {
           {/* Category Filters */}
           <div className="mb-6">
             <div className="flex overflow-x-auto pb-2 space-x-2 scrollbar-hide">
-              {categories.map((category) => (
+              {getCategories(workshops).map((category) => (
                 <button
                   key={category.id}
                   onClick={() => setSelectedCategory(category.id)}
@@ -923,6 +421,7 @@ export default function WorkshopPage({ userAssessment }: WorkshopPageProps) {
                     <div className="absolute top-4 right-4 flex space-x-2">
                       <button
                         onClick={() => toggleSaveWorkshop(workshop.id)}
+                        disabled={pending}
                         className={`p-2 rounded-full transition-all duration-300 transform hover:scale-110 ${
                           savedWorkshops.includes(workshop.id) 
                             ? 'bg-red-500 text-white shadow-lg' 
@@ -1116,7 +615,7 @@ export default function WorkshopPage({ userAssessment }: WorkshopPageProps) {
           {selectedWorkshop && (
             <WorkshopDetailModal
               workshop={selectedWorkshop}
-              isEnrolled={enrolledWorkshops.includes(selectedWorkshop.id)}
+              isEnrolled={Boolean(getEnrollmentStatus(selectedWorkshop.id))}
               enrollmentStatus={getEnrollmentStatus(selectedWorkshop.id)}
               onClose={() => setSelectedWorkshop(null)}
               onEnroll={() => handleEnroll(selectedWorkshop)}
@@ -1131,6 +630,8 @@ export default function WorkshopPage({ userAssessment }: WorkshopPageProps) {
               workshop={currentEnrollmentWorkshop}
               onClose={() => setShowEnrollmentModal(false)}
               onConfirm={confirmEnrollment}
+              pending={pending}
+              error={error}
             />
           )}
         </div>
@@ -1533,7 +1034,13 @@ function WorkshopDetailModal({
 }
 
 // Enrollment Modal Component
-function EnrollmentModal({ workshop, onClose, onConfirm }: { workshop: Workshop; onClose: () => void; onConfirm: () => void; }) {
+function EnrollmentModal({ workshop, onClose, onConfirm, pending, error }: {
+  workshop: Workshop;
+  onClose: () => void;
+  onConfirm: () => void;
+  pending: boolean;
+  error: string;
+}) {
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50 backdrop-blur-sm">
       <div className="bg-white rounded-3xl max-w-md w-full p-6 shadow-2xl border border-white/20">
@@ -1577,14 +1084,16 @@ function EnrollmentModal({ workshop, onClose, onConfirm }: { workshop: Workshop;
             </button>
             <button
               onClick={onConfirm}
+              disabled={pending}
               className="flex-1 bg-gradient-to-r from-green-600 to-blue-600 text-white py-3 rounded-xl font-semibold hover:from-green-700 hover:to-blue-700 transition-all duration-200 shadow-lg"
             >
-              Confirm Enrollment
+              {pending ? 'Menyimpan...' : 'Confirm Enrollment'}
             </button>
           </div>
+          {error && <p role="alert" className="mt-3 text-sm text-red-700">{error}</p>}
         </div>
       </div>
     </div>
   );
 }
-      
+
