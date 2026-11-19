@@ -41,6 +41,16 @@ export async function verifyPassword(password, storedHash) {
   return timingSafeEqual(actual, Buffer.from(hash, 'hex')) && storedHash != null;
 }
 
+export async function createUser(email, role, password, phone = null) {
+  const passwordHash = await hashPassword(password);
+  const { rowCount } = await getDatabase().query(`
+    INSERT INTO users (email, phone, role, password_hash)
+    VALUES ($1, $2, $3, $4)
+    ON CONFLICT DO NOTHING
+  `, [email, phone, role, passwordHash]);
+  return rowCount === 1;
+}
+
 const hashToken = (token) => createHash('sha256').update(token).digest('hex');
 const validToken = (token) => typeof token === 'string' && /^[a-f0-9]{64}$/.test(token);
 

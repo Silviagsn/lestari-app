@@ -1,5 +1,6 @@
-import { getDatabase, hashPassword, roles } from './store.mjs';
+import { createUser, getDatabase, roles } from './store.mjs';
 import { migrate } from './migrate.mjs';
+import { isAccountEmail, isAccountPassword, minimumPasswordLength, maximumPasswordLength } from '../app/utils/accountPolicy.mjs';
 
 let db;
 
@@ -20,21 +21,16 @@ async function main() {
   const phone = rawPhone?.replace(/[\s()-]/g, '') || null;
   const password = process.env.LESTARI_NEW_USER_PASSWORD;
   if (command !== 'create-user' || !roles.includes(role) ||
-      !email || email.length > 254 || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) ||
+      !isAccountEmail(email) ||
       (phone && (role !== 'company' || !/^\+?\d{7,20}$/.test(phone)))) {
     throw new Error('Penggunaan: npm run db:user -- <email> <jobseeker|company|admin> [telepon-perusahaan]');
   }
-  if (!password || password.length < 12 || password.length > 256) {
-    throw new Error('Atur LESTARI_NEW_USER_PASSWORD dengan kata sandi sepanjang 12–256 karakter.');
+  if (!isAccountPassword(password)) {
+    throw new Error(`Atur LESTARI_NEW_USER_PASSWORD dengan kata sandi sepanjang ${minimumPasswordLength}–${maximumPasswordLength} karakter.`);
   }
 
   db = getDatabase();
-  const { rowCount } = await db.query(`
-    INSERT INTO users (email, phone, role, password_hash)
-    VALUES ($1, $2, $3, $4)
-    ON CONFLICT DO NOTHING
-  `, [email, phone, role, await hashPassword(password)]);
-  if (!rowCount) {
+  if (!(await createUser(email, role, password, phone))) {
     throw new Error('Email atau nomor telepon sudah terdaftar.');
   }
   console.log(`Akun ${role} untuk ${email} berhasil dibuat.`);

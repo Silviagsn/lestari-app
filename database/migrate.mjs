@@ -2,7 +2,7 @@ import { readFile } from 'node:fs/promises';
 import { setTimeout as sleep } from 'node:timers/promises';
 import { getDatabase } from './store.mjs';
 
-const migrations = ['001_initial'];
+const migrations = ['001_initial', '002_signup_rate_limits'];
 const transientConnectionErrors = new Set([
   'ECONNREFUSED', 'ECONNRESET', 'ETIMEDOUT', 'EHOSTUNREACH', 'ENETUNREACH',
   'ENOTFOUND', 'EAI_AGAIN', '08001', '08006', '57P01', '57P03',

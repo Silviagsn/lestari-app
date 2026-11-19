@@ -1,12 +1,13 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import Header from './components/Header';
 import HomePage from './components/HomePage';
 import JobPortalPage from './components/JobPortal';
 import WorkshopPage from './components/Workshop';
 import MentalHealthPage from './components/MentalHealth';
 import SpeechToTextPage from './components/SpeechToText';
+import SignupForm, { type SignupRole } from './components/SignupForm';
 import { features } from './components/Features';
 import { ArrowRight, X, Lock, Mail, EarOff, CheckCircle2, ShieldCheck, Briefcase } from 'lucide-react';
 
@@ -19,10 +20,25 @@ export default function Page() {
   
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [modalType, setModalType] = useState<'none' | 'forgot' | 'contact'>('none');
+  const [signupRole, setSignupRole] = useState<SignupRole | null>(null);
+  const [showForgotPassword, setShowForgotPassword] = useState(false);
   const [checkingSession, setCheckingSession] = useState(true);
   const [authPending, setAuthPending] = useState(false);
   const [authError, setAuthError] = useState('');
+  const [authNotice, setAuthNotice] = useState('');
+  const loginHeading = useRef<HTMLHeadingElement>(null);
+  const loginNotice = useRef<HTMLParagraphElement>(null);
+
+  useEffect(() => {
+    if (!signupRole) (loginNotice.current ?? loginHeading.current)?.focus();
+  }, [signupRole]);
+
+  function handleRegistered(registeredEmail: string, registeredRole: SignupRole) {
+    setEmail(registeredEmail);
+    setRole(registeredRole);
+    setSignupRole(null);
+    setAuthNotice('Akun berhasil dibuat. Masuk dengan kata sandi yang kamu buat.');
+  }
 
   useEffect(() => {
     const controller = new AbortController();
@@ -49,6 +65,7 @@ export default function Page() {
     if (authPending) return;
     setAuthPending(true);
     setAuthError('');
+    setAuthNotice('');
     try {
       const response = await fetch('/api/session', {
         method: 'POST',
@@ -158,7 +175,6 @@ export default function Page() {
             <div className="w-full max-w-md bg-white/95 backdrop-blur-2xl border border-white/90 rounded-[2.5rem] p-6 sm:p-10 shadow-2xl shadow-indigo-500/10">
 
               {/* Header Mobile: Logo di Kiri, Judul Login di Tengah */}
-              <div className="mb-6">
                 <div className="lg:hidden flex items-center justify-start space-x-2.5 mb-5">
                   <div className="w-9 h-9 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-xl flex items-center justify-center shadow-md shadow-purple-500/20">
                     <EarOff className="w-5 h-5 text-white" />
@@ -167,24 +183,33 @@ export default function Page() {
                     Lestari
                   </span>
                 </div>
-                
-                <div className="text-center">
-                  <h2 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight">
-                    Login
+
+              {signupRole ? (
+                <SignupForm
+                  initialRole={signupRole}
+                  initialEmail={email}
+                  onBack={() => setSignupRole(null)}
+                  onRegistered={handleRegistered}
+                />
+              ) : (
+                <>
+                <div className="mb-6 text-center">
+                  <h2 ref={loginHeading} tabIndex={-1} className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight">
+                    Masuk ke Lestari
                   </h2>
                   <p className="text-xs sm:text-sm text-slate-500 mt-1">
                     {role === 'jobseeker' && 'Masuk untuk menjelajahi portal karir.'}
-                    {role === 'company' && 'Masuk untuk mempublikasikan lowongan kerja.'}
-                    {role === 'admin' && 'Masuk untuk meninjau & memoderasi loker perusahaan.'}
+                    {role === 'company' && 'Masuk dengan akun perusahaan.'}
+                    {role === 'admin' && 'Masuk dengan akun admin.'}
                   </p>
                 </div>
-              </div>
 
               {/* Role Selector Tabs (3 Kategori) */}
               <div className="grid grid-cols-3 bg-slate-100/80 p-1 rounded-2xl mb-6 text-[11px] sm:text-xs font-semibold border border-slate-200/50">
                 <button
                   type="button"
                   onClick={() => setRole('jobseeker')}
+                  aria-pressed={role === 'jobseeker'}
                   className={`py-2 px-1 text-center rounded-xl transition-all cursor-pointer truncate ${role === 'jobseeker' ? 'bg-white text-indigo-600 shadow-sm font-bold' : 'text-slate-600 hover:text-slate-900'}`}
                 >
                   Pencari Kerja
@@ -192,6 +217,7 @@ export default function Page() {
                 <button
                   type="button"
                   onClick={() => setRole('company')}
+                  aria-pressed={role === 'company'}
                   className={`py-2 px-1 text-center rounded-xl transition-all cursor-pointer truncate ${role === 'company' ? 'bg-white text-indigo-600 shadow-sm font-bold' : 'text-slate-600 hover:text-slate-900'}`}
                 >
                   Perusahaan
@@ -199,6 +225,7 @@ export default function Page() {
                 <button
                   type="button"
                   onClick={() => setRole('admin')}
+                  aria-pressed={role === 'admin'}
                   className={`py-2 px-1 text-center rounded-xl transition-all cursor-pointer truncate ${role === 'admin' ? 'bg-white text-indigo-600 shadow-sm font-bold' : 'text-slate-600 hover:text-slate-900'}`}
                 >
                   Admin
@@ -206,17 +233,19 @@ export default function Page() {
               </div>
 
               <form onSubmit={handleLogin} className="space-y-4">
+                {authNotice && <p ref={loginNotice} role="status" tabIndex={-1} className="rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-2.5 text-sm text-emerald-900">{authNotice}</p>}
                 {authError && <p role="alert" className="text-sm text-red-700">{authError}</p>}
 
                 {/* Email / Identifier */}
                 <div>
-                  <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1.5">
-                    {role === 'company' ? 'Email or Phone' : 'Email Address'}
+                  <label htmlFor="login-email" className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1.5">
+                    {role === 'company' ? 'Email atau nomor telepon' : 'Email'}
                   </label>
 
                   <div className="relative">
                     <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
                     <input
+                      id="login-email"
                       type="text"
                       autoComplete="username"
                       value={email}
@@ -231,22 +260,23 @@ export default function Page() {
                 {/* Password */}
                 <div>
                   <div className="flex items-center justify-between mb-1.5">
-                    <label className="block text-xs font-bold uppercase tracking-wider text-slate-700">
-                      Password
+                    <label htmlFor="login-password" className="block text-xs font-bold uppercase tracking-wider text-slate-700">
+                      Kata sandi
                     </label>
 
                     <button
                       type="button"
-                      onClick={() => setModalType('forgot')}
+                      onClick={() => setShowForgotPassword(true)}
                       className="text-xs font-semibold text-indigo-600 hover:underline bg-transparent border-none cursor-pointer p-0"
                     >
-                      Forgot password?
+                      Lupa kata sandi?
                     </button>
                   </div>
 
                   <div className="relative">
                     <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
                     <input
+                      id="login-password"
                       type="password"
                       autoComplete="current-password"
                       value={password}
@@ -264,7 +294,7 @@ export default function Page() {
                   disabled={authPending}
                   className="w-full mt-3 rounded-2xl bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 py-4 text-white font-bold text-xs sm:text-sm shadow-lg shadow-indigo-600/25 transition transform active:scale-[0.98] flex items-center justify-center space-x-2 group cursor-pointer"
                 >
-                  <span>{authPending ? 'Sedang masuk...' : 'Sign In to Portal'}</span>
+                  <span>{authPending ? 'Sedang masuk…' : 'Masuk'}</span>
                   <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
                 </button>
 
@@ -272,32 +302,29 @@ export default function Page() {
 
               {/* Footer Dynamic Text */}
               <div className="mt-6 text-center text-xs text-slate-500">
-                {role === 'company' ? (
-                  <>
-                    Do not have an account yet?{' '}
-                    <button
-                      type="button"
-                      onClick={() => setModalType('contact')}
-                      className="font-semibold text-indigo-600 hover:underline bg-transparent border-none cursor-pointer p-0"
-                    >
-                      Register your company
-                    </button>
-                  </>
-                ) : role === 'admin' ? (
-                  <span className="text-slate-400">Protected area. Authorized personnel only.</span>
+                {role === 'admin' ? (
+                  <span>Login khusus admin Lestari.</span>
                 ) : (
                   <>
-                    Don't have an account yet?{' '}
+                    Belum punya akun?{' '}
                     <button
                       type="button"
-                      onClick={() => setModalType('contact')}
-                      className="font-semibold text-indigo-600 hover:underline bg-transparent border-none cursor-pointer p-0"
+                      onClick={() => {
+                        setAuthError('');
+                        setAuthNotice('');
+                        setPassword('');
+                        setSignupRole(role);
+                      }}
+                      disabled={authPending}
+                      className="min-h-10 rounded-lg px-1 font-semibold text-indigo-700 hover:underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-indigo-600 disabled:opacity-50"
                     >
-                      Contact Administrator
+                      {role === 'company' ? 'Daftar perusahaan' : 'Daftar akun'}
                     </button>
                   </>
                 )}
               </div>
+                </>
+              )}
 
             </div>
           </div>
@@ -305,50 +332,30 @@ export default function Page() {
         </div>
 
         {/* Modal Bantuan */}
-        {modalType !== 'none' && (
+        {showForgotPassword && (
           <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center p-4 z-50">
-            <div className="bg-white text-slate-900 rounded-3xl p-6 sm:p-8 max-w-md w-full shadow-2xl relative animate-in fade-in zoom-in duration-200">
+            <div role="dialog" aria-modal="true" aria-labelledby="reset-password-title" className="bg-white text-slate-900 rounded-3xl p-6 sm:p-8 max-w-md w-full shadow-2xl relative animate-in fade-in zoom-in duration-200">
               <button
-                onClick={() => setModalType('none')}
+                onClick={() => setShowForgotPassword(false)}
+                aria-label="Tutup bantuan kata sandi"
                 className="absolute top-5 right-5 text-gray-400 hover:text-gray-600 bg-gray-100 p-2 rounded-full transition cursor-pointer"
               >
                 <X className="w-4 h-4" />
               </button>
 
-              {modalType === 'forgot' ? (
-                <div>
-                  <div className="w-12 h-12 bg-indigo-50 text-indigo-600 rounded-2xl flex items-center justify-center mb-4 font-bold text-xl">
-                    🔑
-                  </div>
-                  <h3 className="text-xl font-bold mb-2">Reset Password</h3>
-                  <p className="text-sm text-slate-600 mb-6">
-                    Please contact the system administrator or IT support team to reset your password and recover your Lestari account access.
-                  </p>
-                  <button
-                    onClick={() => setModalType('none')}
-                    className="w-full py-3 bg-indigo-600 text-white rounded-xl font-semibold shadow-md hover:bg-indigo-700 transition cursor-pointer"
-                  >
-                    Got It
-                  </button>
-                </div>
-              ) : (
-                <div>
-                  <div className="w-12 h-12 bg-purple-50 text-purple-600 rounded-2xl flex items-center justify-center mb-4 font-bold text-xl">
-                    💬
-                  </div>
-                  <h3 className="text-xl font-bold mb-2">Account Registration</h3>
-                  <p className="text-sm text-slate-600 mb-6">
-                    Registration for new accounts is currently managed by the Lestari platform administrator. Please reach out via email at{' '}
-                    <span className="font-semibold text-indigo-600">admin@lestari-app.com</span> to request access.
-                  </p>
-                  <button
-                    onClick={() => setModalType('none')}
-                    className="w-full py-3 bg-purple-600 text-white rounded-xl font-semibold shadow-md hover:bg-purple-700 transition cursor-pointer"
-                  >
-                    Close
-                  </button>
-                </div>
-              )}
+              <div aria-hidden="true" className="w-12 h-12 bg-indigo-50 text-indigo-600 rounded-2xl flex items-center justify-center mb-4">
+                <Lock className="h-5 w-5" />
+              </div>
+              <h3 id="reset-password-title" className="text-xl font-bold mb-2">Lupa kata sandi</h3>
+              <p className="text-sm text-slate-600 mb-6">
+                Hubungi administrator Lestari untuk memulihkan akses akunmu.
+              </p>
+              <button
+                onClick={() => setShowForgotPassword(false)}
+                className="w-full py-3 bg-indigo-600 text-white rounded-xl font-semibold shadow-md hover:bg-indigo-700 transition cursor-pointer"
+              >
+                Tutup
+              </button>
             </div>
           </div>
         )}

@@ -7,6 +7,7 @@ Browser mengakses antarmuka dan Route Handlers dari satu aplikasi Next.js. Hanya
 | Komponen | Implementasi |
 | --- | --- |
 | Akun dan sesi | `/api/session` memeriksa password dan peran pencari kerja, perusahaan, atau admin. Password dan token sesi disimpan sebagai hash. Browser menerima cookie sesi HttpOnly. |
+| Pendaftaran | `/api/signup` membuat akun pencari kerja atau perusahaan dari formulir **Daftar akun**. Setelah berhasil, pengguna kembali ke login dengan email dan peran sudah terisi. PostgreSQL membatasi percobaan pendaftaran per IP. Verifikasi kepemilikan email belum tersedia. |
 | Lowongan dan workshop | `/api/catalog/jobs` dan `/api/catalog/workshops` membaca katalog. PostgreSQL menyimpan detail katalog dalam JSONB serta relasi favorit, lamaran, dan pendaftaran dalam tabel dengan foreign key. |
 | Aktivitas pengguna | API mengambil ID akun dari sesi. Satu akun hanya dapat membaca aktivitasnya sendiri. Pasangan pengguna dan item unik untuk setiap favorit, lamaran, dan pendaftaran. |
 | Migrasi | `npm run db:migrate` menjalankan migrasi SQL dalam transaksi dan mencatat versinya. Migrasi pertama memasukkan 18 lowongan dan 18 workshop contoh. Perintah dapat diulang tanpa menambahkan data duplikat. |
@@ -29,14 +30,14 @@ try {
 }
 ```
 
-Peran yang diterima adalah `jobseeker`, `company`, dan `admin`. Untuk akun perusahaan, tambahkan nomor telepon sebagai argumen terakhir bila akun perlu mendukung login dengan telepon.
+Peran yang diterima adalah `jobseeker`, `company`, dan `admin`. Pembuatan akun admin dilakukan melalui perintah ini. Untuk akun perusahaan, tambahkan nomor telepon sebagai argumen terakhir bila akun perlu mendukung login dengan telepon.
 
 ## Hubungkan ke Railway
 
 1. Setelah perubahan tersedia di GitHub, tambahkan layanan aplikasi dari repositori Lestari dan layanan PostgreSQL dalam satu environment Railway. [Panduan PostgreSQL Railway](https://docs.railway.com/databases/postgresql)
 2. Di **Variables** layanan aplikasi, tambahkan `DATABASE_URL=${{Postgres.DATABASE_URL}}`. Ganti `Postgres` jika nama layanannya berbeda. Tambahkan `GEMINI_API_KEY` jika ingin mengaktifkan Lesbot. [Referensi variabel Railway](https://docs.railway.com/integrations/api/manage-variables#variable-references)
 3. Di pengaturan layanan aplikasi, isi **Pre-Deploy Command** dengan `npm run db:migrate`, **Start Command** dengan `npm start -- --hostname 0.0.0.0 --port $PORT`, dan **Healthcheck Path** dengan `/api/health`. Migrasi berjalan setelah build dengan akses ke jaringan privat. [Pre-deploy Railway](https://docs.railway.com/deployments/pre-deploy-command) · [Healthcheck Railway](https://docs.railway.com/deployments/healthchecks)
-4. Setelah deploy, jalankan `npm run db:user -- email@example.com jobseeker` dari terminal layanan aplikasi dengan `LESTARI_NEW_USER_PASSWORD` disetel untuk perintah tersebut. Gunakan akun itu untuk menguji login di domain aplikasi.
+4. Setelah deploy, gunakan **Daftar akun** untuk menguji pendaftaran pencari kerja atau perusahaan. Jalankan `npm run db:user -- email@example.com admin` dari terminal layanan aplikasi dengan `LESTARI_NEW_USER_PASSWORD` disetel untuk membuat akun admin.
 
 ## Kebutuhan backend yang masih terbuka
 
