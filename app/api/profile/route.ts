@@ -16,8 +16,10 @@ export async function GET(request: NextRequest) {
            coalesce(p.display_name, '') AS "displayName",
            coalesce(p.headline, '') AS headline, coalesce(p.location, '') AS location,
            coalesce(p.about, '') AS about, coalesce(p.communication, '') AS communication,
-           coalesce(p.details, '{}'::jsonb) AS details, coalesce(p.is_demo, false) AS "isDemo"
+           coalesce(p.details, '{}'::jsonb) AS details, coalesce(p.is_demo, false) AS "isDemo",
+           avatar.version AS "avatarVersion"
     FROM users LEFT JOIN user_profiles p ON p.user_id = users.id
+    LEFT JOIN profile_avatars avatar ON avatar.user_id = users.id
     WHERE users.id = $1
   `, [user.id]);
   if (!profile) return unauthorized();

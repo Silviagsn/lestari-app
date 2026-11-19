@@ -9,7 +9,7 @@ export type ProfileFields = {
   details: Record<string, string>;
 };
 
-export type Profile = ProfileFields & { email: string; role: ProfileRole; isDemo: boolean };
+export type Profile = ProfileFields & { email: string; role: ProfileRole; isDemo: boolean; avatarVersion: string | null };
 
 export const communicationOptions = [
   'Email',

@@ -1,7 +1,8 @@
 'use client';
 
 import { type FormEvent, useEffect, useState } from 'react';
-import { BadgeCheck, Briefcase, Building2, Mail, MapPin, MessageSquare, Pencil, User } from 'lucide-react';
+import { BadgeCheck, Briefcase, Building2, Camera, Mail, MapPin, MessageSquare, Pencil } from 'lucide-react';
+import { avatarUrl, ProfilePhoto, ProfilePhotoEditor } from './ProfilePhoto';
 import {
   communicationOptions, profileByRole, profileLimits, type Profile, type ProfileFields,
 } from '../utils/profile';
@@ -71,6 +72,7 @@ function Detail({ label, value, tags }: { label: string; value: string; tags?: b
 export default function ProfilePage() {
   const [profile, setProfile] = useState<Profile | null>(null);
   const [draft, setDraft] = useState<ProfileFields | null>(null);
+  const [editingPhoto, setEditingPhoto] = useState(false);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
@@ -122,7 +124,8 @@ export default function ProfilePage() {
         setError(result?.error ?? 'Profil gagal disimpan. Coba lagi.');
         return;
       }
-      setProfile({ ...profile, ...await response.json() });
+      const saved = await response.json();
+      setProfile(current => current && { ...current, ...saved });
       setDraft(null);
       setNotice('Perubahan profil tersimpan.');
     } catch {
@@ -169,9 +172,16 @@ export default function ProfilePage() {
       <section aria-label="Ringkasan profil" className="relative isolate overflow-hidden rounded-3xl bg-gradient-to-br from-indigo-950 via-indigo-800 to-violet-800 px-5 py-8 text-white sm:px-8 sm:py-10">
         <div aria-hidden="true" className="pointer-events-none absolute -right-16 -top-28 h-72 w-72 rounded-full bg-violet-400/30 blur-3xl" />
         <div className="relative flex flex-wrap items-center gap-5 sm:flex-nowrap">
-          <span aria-hidden="true" className="grid h-16 w-16 shrink-0 place-items-center rounded-2xl border border-white/35 bg-white/15 text-xl font-extrabold text-white sm:h-20 sm:w-20 sm:text-2xl">
-            {initials || <User className="h-7 w-7" />}
-          </span>
+          <button type="button" aria-label={profile.avatarVersion ? 'Ubah foto profil' : 'Unggah foto profil'}
+            aria-expanded={editingPhoto} aria-controls={editingPhoto ? 'profile-photo-editor' : undefined}
+            onClick={() => { setEditingPhoto(true); setNotice(''); }}
+            className="relative shrink-0 rounded-full focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-white">
+            <ProfilePhoto src={avatarUrl(profile.avatarVersion)} initials={initials} label=""
+              className="h-20 w-20 border-2 border-white/50 bg-white/15 text-white sm:h-24 sm:w-24" />
+            <span className="absolute -bottom-0.5 -right-0.5 grid h-8 w-8 place-items-center rounded-full border-2 border-indigo-800 bg-white text-indigo-800">
+              <Camera aria-hidden="true" className="h-4 w-4" />
+            </span>
+          </button>
           <div className="min-w-0 flex-1 [overflow-wrap:anywhere]">
             <div className="mb-2 flex flex-wrap items-center gap-2">
               <span className="inline-flex items-center gap-1.5 rounded-full bg-white/15 px-2.5 py-1 text-xs font-semibold text-white">
@@ -192,6 +202,15 @@ export default function ProfilePage() {
       </section>
 
       {notice && <p role="status" className="mt-4 rounded-xl bg-emerald-50 px-4 py-2.5 text-sm font-semibold text-emerald-900">{notice}</p>}
+      {editingPhoto && (
+        <ProfilePhotoEditor version={profile.avatarVersion} initials={initials}
+          onCancel={() => setEditingPhoto(false)}
+          onSaved={avatarVersion => {
+            setProfile(current => current && { ...current, avatarVersion });
+            setEditingPhoto(false);
+            setNotice(avatarVersion ? 'Foto profil tersimpan.' : 'Foto profil dihapus.');
+          }} />
+      )}
 
       {draft ? (
         <form onSubmit={save} className={`mt-5 ${panelStyle}`} aria-busy={saving}>
