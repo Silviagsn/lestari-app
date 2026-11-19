@@ -39,6 +39,8 @@ Peran yang diterima adalah `jobseeker`, `company`, dan `admin`. Pembuatan akun a
 2. Simpan `GOOGLE_CLIENT_ID` dan `GOOGLE_CLIENT_SECRET` di Variables layanan aplikasi Railway atau di `.env.local`. `LESTARI_AUTH_ORIGIN` hanya perlu disetel bila memakai domain berbeda dari domain publik Railway atau port lokal selain 3000.
 3. Setelah deploy, uji daftar lalu keluar dan masuk kembali sebagai pencari kerja atau perusahaan. OAuth meminta cakupan `openid email`. Akun Google yang terdaftar dikenali dari ID Google (`sub`). Akun kata sandi dengan email yang sama tetap harus masuk dengan kata sandinya. [Dokumentasi identitas Google](https://developers.google.com/identity/openid-connect/openid-connect)
 
+Status OAuth tersimpan di PostgreSQL selama maksimal 10 menit. Callback mencocokkan status dengan cookie browser dan menghabiskannya dalam satu operasi, sehingga callback yang sama tidak bisa dipakai ulang.
+
 ## Hubungkan ke Railway
 
 1. Setelah perubahan tersedia di GitHub, tambahkan layanan aplikasi dari repositori Lestari dan layanan PostgreSQL dalam satu environment Railway. [Panduan PostgreSQL Railway](https://docs.railway.com/databases/postgresql)

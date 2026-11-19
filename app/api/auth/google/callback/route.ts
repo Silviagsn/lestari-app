@@ -1,20 +1,20 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createSession, getDatabase, sessionCookie } from '../../../../../database/store.mjs';
 import {
-  getGoogleFlow, googleConfig, googleFlowCookie, googleIdentity,
+  consumeGoogleFlow, googleConfig, googleFlowCookie, googleIdentity, type GoogleFlow,
 } from '../../../../server/google';
 import { setSessionCookie } from '../../../../server/session';
 import { signupPath } from '../../../../utils/signup';
 
 export const runtime = 'nodejs';
+export const dynamic = 'force-dynamic';
 
 export async function GET(request: NextRequest) {
   const config = googleConfig();
-  const flow = config && getGoogleFlow(config, request.cookies.get(googleFlowCookie)?.value);
+  let flow: GoogleFlow | null = null;
   const redirect = (location: string) => {
     const response = NextResponse.redirect(new URL(location, config?.origin ?? request.url));
     response.headers.set('Cache-Control', 'no-store');
-    response.cookies.delete(googleFlowCookie);
     return response;
   };
   const failure = (reason: string) => {
@@ -22,12 +22,17 @@ export async function GET(request: NextRequest) {
     return redirect(`${destination}?google=${reason}&role=${flow?.role ?? 'jobseeker'}`);
   };
   if (!config) return failure('unavailable');
-  if (!flow || request.nextUrl.searchParams.get('state') !== flow.state) return failure('expired');
-  if (request.nextUrl.searchParams.has('error')) return failure('canceled');
-  const code = request.nextUrl.searchParams.get('code');
-  if (!code) return failure('expired');
-
   try {
+    const state = request.nextUrl.searchParams.get('state');
+    const browserToken = request.cookies.get(googleFlowCookie)?.value;
+    flow = await consumeGoogleFlow(state, browserToken);
+    if (!flow) {
+      console.warn('Sesi Google tidak cocok.', { hasState: Boolean(state), hasBrowserCookie: Boolean(browserToken) });
+      return failure('expired');
+    }
+    if (request.nextUrl.searchParams.has('error')) return failure('canceled');
+    const code = request.nextUrl.searchParams.get('code');
+    if (!code) return failure('expired');
     const identity = await googleIdentity(config, flow, code);
     if (!identity) return failure('unverified');
     const db = getDatabase();

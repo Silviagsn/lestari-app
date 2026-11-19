@@ -1,8 +1,9 @@
-import { createHmac, randomBytes, timingSafeEqual } from 'node:crypto';
+import { createHash, randomBytes } from 'node:crypto';
 import { OAuth2Client } from 'google-auth-library';
 import type { NextResponse } from 'next/server';
 import { isAccountEmail } from '../utils/accountPolicy.mjs';
-import { isSignupRole, type SignupRole } from '../utils/signup';
+import type { SignupRole } from '../utils/signup';
+import { getDatabase } from '../../database/store.mjs';
 
 export const googleFlowCookie = 'lestari_google_flow';
 const flowLifetime = 10 * 60;
@@ -11,7 +12,6 @@ const idTokenVerifier = new OAuth2Client();
 export type GoogleFlow = {
   role: SignupRole;
   intent: 'login' | 'signup';
-  state: string;
   verifier: string;
   nonce: string;
 };
@@ -34,38 +34,39 @@ export function googleConfig() {
 
 type Config = NonNullable<ReturnType<typeof googleConfig>>;
 
-function signature(secret: string, purpose: string, body: string) {
-  return createHmac('sha256', secret).update(`lestari:${purpose}:${body}`).digest();
-}
-
-function writeCookie(response: NextResponse, config: Config, name: string, data: GoogleFlow, maxAge: number) {
-  const body = Buffer.from(JSON.stringify({ ...data, expiresAt: Date.now() + maxAge * 1000 })).toString('base64url');
-  const signed = signature(config.clientSecret, name, body).toString('base64url');
-  response.cookies.set(name, `${body}.${signed}`, { httpOnly: true, sameSite: 'lax', secure: config.secure, path: '/', maxAge });
-}
-
-function readCookie(config: Config, name: string, value: string | undefined) {
-  if (!value || value.length > 2048 || !/^[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+$/.test(value)) return null;
-  const [body, proof] = value.split('.');
-  const actual = Buffer.from(proof, 'base64url');
-  const expected = signature(config.clientSecret, name, body);
-  if (actual.length !== expected.length || !timingSafeEqual(actual, expected)) return null;
-  try {
-    const data = JSON.parse(Buffer.from(body, 'base64url').toString('utf8'));
-    return data.expiresAt > Date.now() && isSignupRole(data.role) ? data : null;
-  } catch {
-    return null;
-  }
-}
-
 export const randomOAuthValue = () => randomBytes(32).toString('base64url');
+const hashOAuthValue = (value: string) => createHash('sha256').update(value).digest('hex');
+const validOAuthState = (value: string | null): value is string =>
+  typeof value === 'string' && /^[A-Za-z0-9_-]{43}$/.test(value);
+const validBrowserToken = (value: string | undefined): value is string =>
+  typeof value === 'string' && /^[a-f0-9]{64}$/.test(value);
 
-export function setGoogleFlow(response: NextResponse, config: Config, flow: GoogleFlow) {
-  writeCookie(response, config, googleFlowCookie, flow, flowLifetime);
+export async function createGoogleFlow(flow: GoogleFlow, previousToken: string | undefined) {
+  const browserToken = validBrowserToken(previousToken) ? previousToken : randomBytes(32).toString('hex');
+  const state = randomOAuthValue();
+  const db = getDatabase();
+  await db.query('DELETE FROM google_oauth_flows WHERE expires_at <= now()');
+  await db.query(`
+    INSERT INTO google_oauth_flows (state_hash, browser_hash, role, intent, verifier, nonce, expires_at)
+    VALUES ($1, $2, $3, $4, $5, $6, now() + $7 * interval '1 second')
+  `, [hashOAuthValue(state), hashOAuthValue(browserToken), flow.role, flow.intent, flow.verifier, flow.nonce, flowLifetime]);
+  return { state, browserToken };
 }
 
-export function getGoogleFlow(config: Config, value: string | undefined): GoogleFlow | null {
-  return readCookie(config, googleFlowCookie, value);
+export function setGoogleBrowserCookie(response: NextResponse, config: Config, browserToken: string) {
+  response.cookies.set(googleFlowCookie, browserToken, {
+    httpOnly: true, sameSite: 'lax', secure: config.secure, path: '/', maxAge: flowLifetime,
+  });
+}
+
+export async function consumeGoogleFlow(state: string | null, browserToken: string | undefined): Promise<GoogleFlow | null> {
+  if (!validOAuthState(state) || !validBrowserToken(browserToken)) return null;
+  const { rows } = await getDatabase().query(`
+    DELETE FROM google_oauth_flows
+    WHERE state_hash = $1 AND browser_hash = $2 AND expires_at > now()
+    RETURNING role, intent, verifier, nonce
+  `, [hashOAuthValue(state), hashOAuthValue(browserToken)]);
+  return rows[0] ?? null;
 }
 
 export async function googleIdentity(config: Config, flow: GoogleFlow, code: string): Promise<GoogleIdentity | null> {
