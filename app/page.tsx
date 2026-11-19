@@ -8,6 +8,7 @@ import WorkshopPage from './components/Workshop';
 import MentalHealthPage from './components/MentalHealth';
 import SpeechToTextPage from './components/SpeechToText';
 import SignupForm, { type SignupRole } from './components/SignupForm';
+import ProfilePage from './components/ProfilePage';
 import { features } from './components/Features';
 import { ArrowRight, X, Lock, Mail, EarOff, CheckCircle2, ShieldCheck, Briefcase } from 'lucide-react';
 
@@ -367,6 +368,8 @@ export default function Page() {
   // Navigasi Halaman
   const renderPage = () => {
     switch (currentPage) {
+      case 'profile':
+        return <ProfilePage />;
       case 'job-portal':
         return <JobPortalPage />;
       case 'workshop':

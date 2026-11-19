@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { ArrowLeft, Menu, X, EarOff } from 'lucide-react';
+import { ArrowLeft, Menu, X, EarOff, User } from 'lucide-react';
 
 interface HeaderProps {
   currentPage: string;
@@ -46,8 +46,8 @@ export default function Header({
           </div>
 
           {/* Desktop Navigation & Logout */}
-          <div className="hidden md:flex items-center gap-8">
-            <nav className="flex items-center space-x-8">
+          <div className="hidden lg:flex items-center gap-5">
+            <nav className="flex items-center gap-5 xl:gap-8">
               <button
                 onClick={() => setCurrentPage('home')}
                 className={`transition-colors font-medium text-sm cursor-pointer ${
@@ -74,19 +74,31 @@ export default function Header({
               ))}
             </nav>
 
-            {/* Logout Button */}
-            <button
-              onClick={onLogout}
-              className="bg-red-50 text-red-500 border border-red-200 hover:bg-red-100 px-4 py-2 rounded-lg text-sm font-medium transition-colors cursor-pointer whitespace-nowrap"
-            >
-              Logout Account
-            </button>
+            <div className="flex shrink-0 items-center gap-2">
+              <button
+                type="button"
+                aria-current={currentPage === 'profile' ? 'page' : undefined}
+                onClick={() => setCurrentPage('profile')}
+                className={`inline-flex items-center gap-1.5 rounded-lg border border-indigo-200 px-3 py-2 text-sm font-semibold text-indigo-800 transition hover:bg-indigo-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-indigo-600 ${currentPage === 'profile' ? 'bg-indigo-100' : 'bg-white'}`}
+              >
+                <User aria-hidden="true" className="h-4 w-4" />
+                Profil
+              </button>
+              <button
+                onClick={onLogout}
+                className="bg-red-50 text-red-500 border border-red-200 hover:bg-red-100 px-4 py-2 rounded-lg text-sm font-medium transition-colors cursor-pointer whitespace-nowrap"
+              >
+                Logout Account
+              </button>
+            </div>
           </div>
 
           {/* Mobile Menu Button */}
-          <div className="md:hidden">
+          <div className="lg:hidden">
             <button
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+              aria-label={mobileMenuOpen ? 'Tutup menu' : 'Buka menu'}
+              aria-expanded={mobileMenuOpen}
               className="text-gray-700 hover:text-indigo-600 transition-colors p-2 cursor-pointer"
             >
               {mobileMenuOpen ? (
@@ -100,7 +112,7 @@ export default function Header({
 
         {/* Mobile Navigation */}
         {mobileMenuOpen && (
-          <div className="md:hidden border-t border-gray-100 py-4 bg-white/95 backdrop-blur-lg px-2 rounded-2xl shadow-xl mt-2 mb-4">
+          <div className="lg:hidden border-t border-gray-100 py-4 bg-white/95 backdrop-blur-lg px-2 rounded-2xl shadow-xl mt-2 mb-4">
             <div className="flex flex-col space-y-3">
 
               <button
@@ -133,6 +145,19 @@ export default function Header({
                   {feature.title}
                 </button>
               ))}
+
+              <button
+                type="button"
+                aria-current={currentPage === 'profile' ? 'page' : undefined}
+                onClick={() => {
+                  setCurrentPage('profile');
+                  setMobileMenuOpen(false);
+                }}
+                className={`flex items-center gap-2 rounded-xl px-4 py-2 text-left font-medium text-indigo-800 hover:bg-indigo-50 ${currentPage === 'profile' ? 'bg-indigo-100' : ''}`}
+              >
+                <User aria-hidden="true" className="h-4 w-4" />
+                Profil
+              </button>
 
               {currentPage !== 'home' && (
                 <button
