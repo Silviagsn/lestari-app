@@ -7,7 +7,7 @@ export const runtime = 'nodejs';
 export async function GET() {
   try {
     const result = await getDatabase().query(
-      'SELECT 1 FROM schema_migrations WHERE version = $1', ['003_user_profiles'],
+      'SELECT 1 FROM schema_migrations WHERE version = $1', ['004_google_accounts'],
     );
     if (result.rowCount) return NextResponse.json({ status: 'ready' });
   } catch {

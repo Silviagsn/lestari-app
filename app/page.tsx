@@ -1,14 +1,16 @@
 'use client';
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
+import Link from 'next/link';
 import Header from './components/Header';
 import HomePage from './components/HomePage';
 import JobPortalPage from './components/JobPortal';
 import WorkshopPage from './components/Workshop';
 import MentalHealthPage from './components/MentalHealth';
 import SpeechToTextPage from './components/SpeechToText';
-import SignupForm, { type SignupRole } from './components/SignupForm';
+import GoogleButton from './components/GoogleButton';
 import ProfilePage from './components/ProfilePage';
+import { googleErrors, isSignupRole, signupPath } from './utils/signup';
 import { features } from './components/Features';
 import { ArrowRight, X, Lock, Mail, EarOff, CheckCircle2, ShieldCheck, Briefcase } from 'lucide-react';
 
@@ -21,32 +23,34 @@ export default function Page() {
   
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [signupRole, setSignupRole] = useState<SignupRole | null>(null);
   const [showForgotPassword, setShowForgotPassword] = useState(false);
   const [checkingSession, setCheckingSession] = useState(true);
   const [authPending, setAuthPending] = useState(false);
   const [authError, setAuthError] = useState('');
   const [authNotice, setAuthNotice] = useState('');
-  const loginHeading = useRef<HTMLHeadingElement>(null);
-  const loginNotice = useRef<HTMLParagraphElement>(null);
+  const [googleAvailable, setGoogleAvailable] = useState(false);
 
   useEffect(() => {
-    if (!signupRole) (loginNotice.current ?? loginHeading.current)?.focus();
-  }, [signupRole]);
+    const params = new URLSearchParams(window.location.search);
+    const signupRole = params.get('role');
+    const googleError = params.get('google');
+    if (isSignupRole(signupRole)) setRole(signupRole);
+    if (googleError && Object.hasOwn(googleErrors, googleError)) setAuthError(googleErrors[googleError]);
+    if (params.get('registered') === '1') {
+      try {
+        setEmail(sessionStorage.getItem('lestari.registeredEmail') ?? '');
+        sessionStorage.removeItem('lestari.registeredEmail');
+      } catch {}
+      setAuthNotice('Akun berhasil dibuat. Masuk dengan kata sandi yang kamu buat.');
+    }
+    if (googleError || params.has('registered')) window.history.replaceState(null, '', '/');
 
-  function handleRegistered(registeredEmail: string, registeredRole: SignupRole) {
-    setEmail(registeredEmail);
-    setRole(registeredRole);
-    setSignupRole(null);
-    setAuthNotice('Akun berhasil dibuat. Masuk dengan kata sandi yang kamu buat.');
-  }
-
-  useEffect(() => {
     const controller = new AbortController();
     fetch('/api/session', { signal: controller.signal })
       .then(async (response) => {
         if (!response.ok) throw new Error();
         const session = await response.json();
+        setGoogleAvailable(session.googleAvailable === true);
         if (session.role) {
           setRole(session.role);
           setIsAuthenticated(true);
@@ -185,17 +189,8 @@ export default function Page() {
                   </span>
                 </div>
 
-              {signupRole ? (
-                <SignupForm
-                  initialRole={signupRole}
-                  initialEmail={email}
-                  onBack={() => setSignupRole(null)}
-                  onRegistered={handleRegistered}
-                />
-              ) : (
-                <>
                 <div className="mb-6 text-center">
-                  <h2 ref={loginHeading} tabIndex={-1} className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight">
+                  <h2 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight">
                     Masuk ke Lestari
                   </h2>
                   <p className="text-xs sm:text-sm text-slate-500 mt-1">
@@ -234,7 +229,7 @@ export default function Page() {
               </div>
 
               <form onSubmit={handleLogin} className="space-y-4">
-                {authNotice && <p ref={loginNotice} role="status" tabIndex={-1} className="rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-2.5 text-sm text-emerald-900">{authNotice}</p>}
+                {authNotice && <p role="status" className="rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-2.5 text-sm text-emerald-900">{authNotice}</p>}
                 {authError && <p role="alert" className="text-sm text-red-700">{authError}</p>}
 
                 {/* Email / Identifier */}
@@ -301,31 +296,22 @@ export default function Page() {
 
               </form>
 
-              {/* Footer Dynamic Text */}
-              <div className="mt-6 text-center text-xs text-slate-500">
+              {role !== 'admin' && googleAvailable && (
+                <div className="mt-3"><GoogleButton role={role} intent="login" /></div>
+              )}
+              <div className="mt-5 text-center text-sm text-slate-600">
                 {role === 'admin' ? (
                   <span>Login khusus admin Lestari.</span>
                 ) : (
                   <>
-                    Belum punya akun?{' '}
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setAuthError('');
-                        setAuthNotice('');
-                        setPassword('');
-                        setSignupRole(role);
-                      }}
-                      disabled={authPending}
-                      className="min-h-10 rounded-lg px-1 font-semibold text-indigo-700 hover:underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-indigo-600 disabled:opacity-50"
-                    >
-                      {role === 'company' ? 'Daftar perusahaan' : 'Daftar akun'}
-                    </button>
+                    <p>Belum punya akun?</p>
+                    <div className="mt-2 flex flex-wrap justify-center gap-x-4">
+                      <Link href={signupPath.jobseeker} className="inline-flex min-h-9 items-center rounded-md text-xs font-semibold text-indigo-700 hover:underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-indigo-700">Daftar Pencari Kerja</Link>
+                      <Link href={signupPath.company} className="inline-flex min-h-9 items-center rounded-md text-xs font-semibold text-indigo-700 hover:underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-indigo-700">Daftar Perusahaan</Link>
+                    </div>
                   </>
                 )}
               </div>
-                </>
-              )}
 
             </div>
           </div>

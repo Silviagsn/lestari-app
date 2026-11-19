@@ -7,7 +7,7 @@ Browser mengakses antarmuka dan Route Handlers dari satu aplikasi Next.js. Hanya
 | Komponen | Implementasi |
 | --- | --- |
 | Akun dan sesi | `/api/session` memeriksa password dan peran pencari kerja, perusahaan, atau admin. Password dan token sesi disimpan sebagai hash. Browser menerima cookie sesi HttpOnly. |
-| Pendaftaran | `/api/signup` membuat akun pencari kerja atau perusahaan dari formulir **Daftar akun**. Setelah berhasil, pengguna kembali ke login dengan email dan peran sudah terisi. PostgreSQL membatasi percobaan pendaftaran per IP. Verifikasi kepemilikan email belum tersedia. |
+| Pendaftaran | `/daftar/pencari-kerja` dan `/daftar/perusahaan` memakai formulir berbeda. `/api/signup` membuat akun dan profil dalam satu operasi PostgreSQL. Pendaftar email kembali ke login. Pendaftar Google mengisi profil setelah autentikasi Google dan langsung masuk. PostgreSQL membatasi percobaan pendaftaran per IP. |
 | Profil | `/api/profile` membaca dan menyimpan profil pemilik sesi. Kolom yang dapat diubah mengikuti peran akun. Migrasi profil mengisi contoh untuk tiga akun uji `@lestari.example` yang sudah ada. |
 | Lowongan dan workshop | `/api/catalog/jobs` dan `/api/catalog/workshops` membaca katalog. PostgreSQL menyimpan detail katalog dalam JSONB serta relasi favorit, lamaran, dan pendaftaran dalam tabel dengan foreign key. |
 | Aktivitas pengguna | API mengambil ID akun dari sesi. Satu akun hanya dapat membaca aktivitasnya sendiri. Pasangan pengguna dan item unik untuk setiap favorit, lamaran, dan pendaftaran. |
@@ -33,12 +33,18 @@ try {
 
 Peran yang diterima adalah `jobseeker`, `company`, dan `admin`. Pembuatan akun admin dilakukan melalui perintah ini. Untuk akun perusahaan, tambahkan nomor telepon sebagai argumen terakhir bila akun perlu mendukung login dengan telepon.
 
+## Google OAuth untuk pendaftaran dan login
+
+1. Buat OAuth client bertipe **Web application** di Google Cloud. Daftarkan URI callback lengkap `https://lestari-app-production.up.railway.app/api/auth/google/callback` untuk Railway atau `http://localhost:3000/api/auth/google/callback` untuk lokal. [Panduan OAuth Google](https://developers.google.com/identity/protocols/oauth2/web-server)
+2. Simpan `GOOGLE_CLIENT_ID` dan `GOOGLE_CLIENT_SECRET` di Variables layanan aplikasi Railway atau di `.env.local`. `LESTARI_AUTH_ORIGIN` hanya perlu disetel bila memakai domain berbeda dari domain publik Railway atau port lokal selain 3000.
+3. Setelah deploy, uji daftar lalu keluar dan masuk kembali sebagai pencari kerja atau perusahaan. OAuth meminta cakupan `openid email`. Akun Google yang terdaftar dikenali dari ID Google (`sub`). Akun kata sandi dengan email yang sama tetap harus masuk dengan kata sandinya. [Dokumentasi identitas Google](https://developers.google.com/identity/openid-connect/openid-connect)
+
 ## Hubungkan ke Railway
 
 1. Setelah perubahan tersedia di GitHub, tambahkan layanan aplikasi dari repositori Lestari dan layanan PostgreSQL dalam satu environment Railway. [Panduan PostgreSQL Railway](https://docs.railway.com/databases/postgresql)
 2. Di **Variables** layanan aplikasi, tambahkan `DATABASE_URL=${{Postgres.DATABASE_URL}}`. Ganti `Postgres` jika nama layanannya berbeda. Tambahkan `GEMINI_API_KEY` jika ingin mengaktifkan Lesbot. [Referensi variabel Railway](https://docs.railway.com/integrations/api/manage-variables#variable-references)
 3. Di pengaturan layanan aplikasi, isi **Pre-Deploy Command** dengan `npm run db:migrate`, **Start Command** dengan `npm start -- --hostname 0.0.0.0 --port $PORT`, dan **Healthcheck Path** dengan `/api/health`. Migrasi berjalan setelah build dengan akses ke jaringan privat. [Pre-deploy Railway](https://docs.railway.com/deployments/pre-deploy-command) · [Healthcheck Railway](https://docs.railway.com/deployments/healthchecks)
-4. Setelah deploy, gunakan **Daftar akun** untuk menguji pendaftaran pencari kerja atau perusahaan. Jalankan `npm run db:user -- email@example.com admin` dari terminal layanan aplikasi dengan `LESTARI_NEW_USER_PASSWORD` disetel untuk membuat akun admin.
+4. Setelah deploy, gunakan **Daftar Pencari Kerja** atau **Daftar Perusahaan** untuk menguji pendaftaran. Jalankan `npm run db:user -- email@example.com admin` dari terminal layanan aplikasi dengan `LESTARI_NEW_USER_PASSWORD` disetel untuk membuat akun admin.
 
 ## Kebutuhan backend yang masih terbuka
 

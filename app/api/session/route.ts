@@ -1,15 +1,17 @@
 import { NextRequest, NextResponse } from 'next/server';
 import {
   createSession, deleteSession, getDatabase, getSessionUser, roles,
-  sessionCookie, sessionLifetime, verifyPassword,
+  sessionCookie, verifyPassword,
 } from '../../../database/store.mjs';
+import { googleConfig } from '../../server/google';
+import { setSessionCookie } from '../../server/session';
 
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
 
 export async function GET(request: NextRequest) {
   const user = await getSessionUser(request.cookies.get(sessionCookie)?.value);
-  return NextResponse.json({ role: user?.role ?? null }, {
+  return NextResponse.json({ role: user?.role ?? null, googleAvailable: Boolean(googleConfig()) }, {
     headers: { 'Cache-Control': 'private, no-store' },
   });
 }
@@ -33,14 +35,8 @@ export async function POST(request: NextRequest) {
 
   const token = await createSession(user.id, request.cookies.get(sessionCookie)?.value);
   const response = NextResponse.json({ role: user.role });
-  response.cookies.set(sessionCookie, token, {
-    httpOnly: true,
-    sameSite: 'lax',
-    secure: request.nextUrl.protocol === 'https:' ||
-      request.headers.get('x-forwarded-proto') === 'https',
-    path: '/',
-    maxAge: sessionLifetime,
-  });
+  setSessionCookie(response, token, request.nextUrl.protocol === 'https:' ||
+    request.headers.get('x-forwarded-proto') === 'https');
   return response;
 }
 
