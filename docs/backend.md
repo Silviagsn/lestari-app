@@ -53,8 +53,8 @@ Status OAuth tersimpan di PostgreSQL selama maksimal 10 menit. Callback mencocok
 
 | Fitur di antarmuka | Kebutuhan backend |
 | --- | --- |
-| Perusahaan dan admin | Model profil perusahaan, pemilik lowongan, status publikasi, serta endpoint dan UI untuk meninjau lowongan dan lamaran. Saat ini peran tersedia untuk login, dan katalog berasal dari data contoh. |
-| Lamaran dan CV | Formulir menyimpan lamaran ke akun pencari kerja. Alur perekrut membutuhkan akses berdasarkan kepemilikan lowongan, perubahan status, dan penyimpanan objek privat untuk berkas CV. Kontak email saat ini terpisah. |
+| Perusahaan dan admin | Portal perusahaan mendukung draf, publikasi langsung, penutupan lowongan, dan pengelolaan lamaran berdasarkan kepemilikan lowongan. Verifikasi perusahaan dan moderasi oleh admin masih perlu ditambahkan. |
+| Lamaran dan CV | Perekrut dapat meninjau isian lamaran dan mengubah status yang terlihat oleh pencari kerja. Unggah CV memerlukan penyimpanan objek privat dan aturan akses berkas. |
 | Workshop | Pendaftaran sudah tersimpan. Untuk workshop nyata, tentukan bagaimana jadwal, kapasitas, biaya, dan progres peserta dikelola. |
 | Assessment dan transkripsi | Assessment saat ini hanya mengarahkan pengguna. Transkripsi memakai penyimpanan browser. Sinkronisasi antarperangkat membutuhkan model profil atau riwayat per akun serta pengaturan retensi dan penghapusan. |
 | Operasional publik | Tingkatkan Next.js 14 ke versi LTS yang masih didukung. Tambahkan pembatasan percobaan login, pemulihan akun, autentikasi dan kuota Lesbot, serta jadwal backup dan uji pemulihan PostgreSQL sebelum membuka layanan untuk pengguna umum. [Kebijakan dukungan Next.js](https://nextjs.org/support-policy) |

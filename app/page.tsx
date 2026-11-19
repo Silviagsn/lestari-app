@@ -10,6 +10,7 @@ import MentalHealthPage from './components/MentalHealth';
 import SpeechToTextPage from './components/SpeechToText';
 import GoogleButton from './components/GoogleButton';
 import ProfilePage from './components/ProfilePage';
+import CompanyPortal from './components/CompanyPortal';
 import { googleErrors, isSignupRole, signupPath } from './utils/signup';
 import { features } from './components/Features';
 import { ArrowRight, X, Lock, Mail, EarOff, CheckCircle2, ShieldCheck, Briefcase } from 'lucide-react';
@@ -349,6 +350,10 @@ export default function Page() {
 
       </main>
     );
+  }
+
+  if (role === 'company') {
+    return <CompanyPortal logout={handleLogout} authError={authError} />;
   }
 
   // Navigasi Halaman

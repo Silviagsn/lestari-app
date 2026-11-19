@@ -160,7 +160,7 @@ export default function ProfilePage() {
   return (
     <main className="mx-auto max-w-6xl px-4 pb-12 pt-7 sm:px-6 sm:pt-10">
       <div className="mb-5 flex flex-wrap items-center justify-between gap-4 sm:mb-6">
-        <h1 className="text-3xl font-extrabold tracking-tight text-slate-950 sm:text-4xl">Profil saya</h1>
+        <h1 className="text-3xl font-extrabold tracking-tight text-slate-950 sm:text-4xl">{profile.role === 'company' ? 'Profil Perusahaan' : 'Profil saya'}</h1>
         {!draft && (
           <button type="button" onClick={startEditing} className={primaryButton}>
             <Pencil aria-hidden="true" className="h-4 w-4" />

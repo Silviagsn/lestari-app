@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useCatalog } from '../utils/useCatalog';
+import { applicantStatuses, type ApplicantStatus } from '../utils/recruitment';
 import { 
   Search, 
   Filter, 
@@ -69,6 +70,7 @@ interface Job {
   category: string;
   experienceLevel: string;
   isRemote: boolean;
+  arrangement?: string;
   urgency: 'low' | 'medium' | 'high';
   companyEmail: string;
   applicationDeadline: string;
@@ -76,11 +78,13 @@ interface Job {
   isAccessibilityVerified: boolean;
   deafFriendlyScore: number;
   recommendationScore?: number;
+  companyListing?: boolean;
 }
 
 interface ApplicationStatus {
   jobId: number;
-  status: 'applied' | 'reviewing' | 'interview' | 'offer' | 'rejected';
+  title: string;
+  status: ApplicantStatus;
   appliedDate: string;
   lastUpdate: string;
   notes?: string;
@@ -212,8 +216,8 @@ export default function JobPortalPage({ userAssessment }: JobPortalProps) {
     return matchesSearch && matchesCategory && matchesType;
   }).sort((a, b) => {
     if (sortBy === 'salary') {
-      const aSalary = parseInt(a.salary.replace(/[^0-9]/g, ''));
-      const bSalary = parseInt(b.salary.replace(/[^0-9]/g, ''));
+      const aSalary = parseInt(a.salary.replace(/[^0-9]/g, '')) || 0;
+      const bSalary = parseInt(b.salary.replace(/[^0-9]/g, '')) || 0;
       return bSalary - aSalary;
     }
     if (sortBy === 'rating') {
@@ -324,7 +328,7 @@ Application Date: ${new Date().toLocaleDateString()}`;
                 <div className="text-sm text-gray-600">Available Jobs</div>
               </div>
               <div className="bg-white/80 backdrop-blur-lg rounded-2xl p-4 text-center shadow-xl border border-white/20 hover:shadow-2xl transition-all duration-300 transform hover:scale-105">
-                <div className="text-2xl font-bold text-green-600">100%</div>
+                <div className="text-2xl font-bold text-green-600">{jobs.filter(job => job.isAccessibilityVerified).length}</div>
                 <div className="text-sm text-gray-600">Accessibility Verified</div>
               </div>
               <div className="bg-white/80 backdrop-blur-lg rounded-2xl p-4 text-center shadow-xl border border-white/20 hover:shadow-2xl transition-all duration-300 transform hover:scale-105">
@@ -337,6 +341,18 @@ Application Date: ${new Date().toLocaleDateString()}`;
               </div>
             </div>
           </div>
+
+          {applications.length > 0 && (
+            <details className="mb-6 rounded-2xl border border-indigo-100 bg-white p-4 shadow-sm">
+              <summary className="cursor-pointer font-bold text-indigo-900">Riwayat lamaran ({applications.length})</summary>
+              <ul className="mt-3 divide-y divide-indigo-100">
+                {applications.map(application => <li key={application.jobId} className="flex flex-wrap items-center justify-between gap-2 py-2 text-sm">
+                  <span className="break-words font-semibold text-slate-800 [overflow-wrap:anywhere]">{application.title}</span>
+                  <span className="rounded-full bg-indigo-50 px-3 py-1 font-semibold text-indigo-900">{application.status === 'applied' ? 'Terkirim' : applicantStatuses[application.status]}</span>
+                </li>)}
+              </ul>
+            </details>
+          )}
 
           {/* Recommendation Banner */}
           {userAssessment && (
@@ -529,9 +545,9 @@ Application Date: ${new Date().toLocaleDateString()}`;
                           {job.type}
                         </span>
                         
-                        {job.isRemote && (
+                        {(job.arrangement || job.isRemote) && (
                           <span className="bg-indigo-100 text-indigo-800 px-4 py-2 rounded-2xl text-sm font-medium shadow-md">
-                            🏠 Remote
+                            {job.arrangement || 'Remote'}
                           </span>
                         )}
                         
@@ -541,7 +557,7 @@ Application Date: ${new Date().toLocaleDateString()}`;
                       </div>
                       
                       <div className="text-xl font-bold text-green-600 bg-green-50 px-4 py-2 rounded-2xl shadow-md">
-                        {job.salary}
+                        {job.salary || 'Gaji tidak dicantumkan'}
                       </div>
                     </div>
 
@@ -551,7 +567,7 @@ Application Date: ${new Date().toLocaleDateString()}`;
                     </p>
 
                     {/* Accessibility Score */}
-                    <div className="mb-4 bg-gradient-to-r from-green-50 to-emerald-50 border-2 border-green-200 rounded-2xl p-4 shadow-lg">
+                    {!job.companyListing && <div className="mb-4 bg-gradient-to-r from-green-50 to-emerald-50 border-2 border-green-200 rounded-2xl p-4 shadow-lg">
                       <div className="flex items-center justify-between">
                         <div className="flex items-center space-x-2">
                           <Accessibility className="w-5 h-5 text-green-600" />
@@ -570,7 +586,7 @@ Application Date: ${new Date().toLocaleDateString()}`;
                           ))}
                         </div>
                       </div>
-                    </div>
+                    </div>}
 
                     {/* Tags */}
                     <div className="flex flex-wrap gap-2 mb-4">
@@ -593,7 +609,7 @@ Application Date: ${new Date().toLocaleDateString()}`;
                           <div className="flex items-center space-x-2">
                             <CheckCircle className="w-5 h-5 text-green-600" />
                             <span className="text-green-800 font-medium">
-                              Applied - {applicationStatus.status.charAt(0).toUpperCase() + applicationStatus.status.slice(1)}
+                              {applicationStatus.status === 'applied' ? 'Lamaran terkirim' : applicantStatuses[applicationStatus.status]}
                             </span>
                           </div>
                           <span className="text-xs text-green-600">
@@ -695,11 +711,11 @@ Application Date: ${new Date().toLocaleDateString()}`;
                     </div>
                     <div className="flex items-center text-green-600 font-semibold bg-green-50 p-3 rounded-xl">
                       <DollarSign className="w-5 h-5 mr-3" />
-                      <span className="text-lg">{selectedJob.salary}</span>
+                      <span className="text-lg">{selectedJob.salary || 'Gaji tidak dicantumkan'}</span>
                     </div>
                     <div className="flex items-center text-gray-600 bg-gray-50 p-3 rounded-xl">
                       <Calendar className="w-5 h-5 mr-3 text-gray-400" />
-                      <span>Deadline: {selectedJob.applicationDeadline}</span>
+                      <span>Deadline: {selectedJob.applicationDeadline || 'Tidak ditentukan'}</span>
                     </div>
                   </div>
 
@@ -743,7 +759,7 @@ Application Date: ${new Date().toLocaleDateString()}`;
                       Accessibility Support
                     </h3>
                     <p className="text-green-700 text-sm leading-relaxed mb-3">{selectedJob.accessibility}</p>
-                    <div className="flex items-center justify-between">
+                    {!selectedJob.companyListing && <div className="flex items-center justify-between">
                       <span className="text-sm font-medium text-green-800">
                         Deaf-Friendly Score
                       </span>
@@ -758,7 +774,7 @@ Application Date: ${new Date().toLocaleDateString()}`;
                           {selectedJob.deafFriendlyScore}%
                         </span>
                       </div>
-                    </div>
+                    </div>}
                   </div>
 
                   {/* Application Status or Actions */}
@@ -1049,7 +1065,9 @@ function ApplicationModal({ job, onClose, onSubmit, pending, error }: {
                   <span className="font-medium text-green-800">Application Ready</span>
                 </div>
                 <p className="text-green-700 text-sm mt-2">
-                  Lamaran dan preferensi komunikasimu akan disimpan di akun Lestari. Gunakan tombol kontak perusahaan untuk mengirimkannya melalui email.
+                  {job.companyListing
+                    ? 'Lamaran dan preferensi komunikasimu akan tersedia untuk perusahaan di portal Lestari.'
+                    : 'Lamaran dan preferensi komunikasimu akan disimpan di akun Lestari. Gunakan tombol kontak perusahaan untuk mengirimkannya melalui email.'}
                 </p>
               </div>
             </div>
