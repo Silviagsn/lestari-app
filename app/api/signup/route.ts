@@ -1,8 +1,6 @@
 import { isIP } from 'node:net';
 import { NextRequest, NextResponse } from 'next/server';
-import { createSession, getDatabase, hashPassword, sessionCookie } from '../../../database/store.mjs';
-import { getGoogleSignup, googleSignupCookie } from '../../server/google';
-import { setSessionCookie } from '../../server/session';
+import { getDatabase, hashPassword } from '../../../database/store.mjs';
 import { isSignupRole, signupProfile } from '../../utils/signup';
 import {
   isAccountEmail, isAccountPassword, maximumPasswordLength, minimumPasswordLength,
@@ -37,19 +35,14 @@ export async function POST(request: NextRequest) {
   if (!isSignupRole(role)) {
     return NextResponse.json({ error: 'Pilih Pencari Kerja atau Perusahaan.' }, { status: 400 });
   }
-  if (data.method !== 'password' && data.method !== 'google') {
-    return NextResponse.json({ error: 'Pilih cara mendaftar.' }, { status: 400 });
+  if (data.method !== 'password') {
+    return NextResponse.json({ error: 'Gunakan formulir daftar dengan email.' }, { status: 400 });
   }
-  const usingGoogle = data.method === 'google';
-  const google = usingGoogle ? getGoogleSignup(request.cookies.get(googleSignupCookie)?.value) : null;
-  if (usingGoogle && google?.role !== role) {
-    return NextResponse.json({ error: 'Sesi Google berakhir. Mulai lagi dari tombol Google.' }, { status: 401 });
-  }
-  const email = google?.email ?? (typeof data.email === 'string' ? data.email.trim().toLowerCase() : '');
+  const email = typeof data.email === 'string' ? data.email.trim().toLowerCase() : '';
   if (!isAccountEmail(email)) {
     return NextResponse.json({ error: 'Masukkan alamat email yang valid.' }, { status: 400 });
   }
-  if (!usingGoogle && !isAccountPassword(data.password)) {
+  if (!isAccountPassword(data.password)) {
     return NextResponse.json({
       error: `Gunakan kata sandi ${minimumPasswordLength}–${maximumPasswordLength} karakter.`,
     }, { status: 400 });
@@ -64,19 +57,19 @@ export async function POST(request: NextRequest) {
         headers: { 'Retry-After': String(signupWindowSeconds) },
       });
     }
-    const passwordHash = usingGoogle ? null : await hashPassword(data.password);
+    const passwordHash = await hashPassword(data.password);
     const { rows: [created] } = await getDatabase().query(`
       WITH new_account AS (
-        INSERT INTO users (email, role, password_hash, google_sub)
-        VALUES ($1, $2, $3, $4)
+        INSERT INTO users (email, role, password_hash)
+        VALUES ($1, $2, $3)
         ON CONFLICT DO NOTHING
         RETURNING id
       )
       INSERT INTO user_profiles (user_id, display_name, headline, location, about, communication, details)
-      SELECT id, $5, $6, $7, $8, $9, $10 FROM new_account
+      SELECT id, $4, $5, $6, $7, $8, $9 FROM new_account
       RETURNING user_id
     `, [
-      email, role, passwordHash, google?.sub ?? null, profile.displayName, profile.headline, profile.location,
+      email, role, passwordHash, profile.displayName, profile.headline, profile.location,
       profile.about, profile.communication, JSON.stringify(profile.details),
     ]);
     if (!created) {
@@ -84,14 +77,7 @@ export async function POST(request: NextRequest) {
         status: 409,
       });
     }
-    const response = NextResponse.json({ email, role }, { status: 201 });
-    if (usingGoogle) {
-      const token = await createSession(created.user_id, request.cookies.get(sessionCookie)?.value);
-      setSessionCookie(response, token, request.nextUrl.protocol === 'https:' ||
-        request.headers.get('x-forwarded-proto') === 'https');
-      response.cookies.delete(googleSignupCookie);
-    }
-    return response;
+    return NextResponse.json({ email, role }, { status: 201 });
   } catch (error) {
     console.error('Pendaftaran Lestari gagal.', error instanceof Error ? error.name : 'UnknownError');
     return NextResponse.json({ error: 'Pendaftaran sedang tidak tersedia. Coba lagi sebentar.' }, { status: 503 });

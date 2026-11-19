@@ -7,7 +7,7 @@ Browser mengakses antarmuka dan Route Handlers dari satu aplikasi Next.js. Hanya
 | Komponen | Implementasi |
 | --- | --- |
 | Akun dan sesi | `/api/session` memeriksa password dan peran pencari kerja, perusahaan, atau admin. Password dan token sesi disimpan sebagai hash. Browser menerima cookie sesi HttpOnly. |
-| Pendaftaran | `/daftar/pencari-kerja` dan `/daftar/perusahaan` memakai formulir berbeda. `/api/signup` membuat akun dan profil dalam satu operasi PostgreSQL. Pendaftar email kembali ke login. Pendaftar Google mengisi profil setelah autentikasi Google dan langsung masuk. PostgreSQL membatasi percobaan pendaftaran per IP. |
+| Pendaftaran | `/daftar/pencari-kerja` dan `/daftar/perusahaan` memakai formulir berbeda. `/api/signup` membuat akun email dan profil dalam satu operasi PostgreSQL serta membatasi percobaan per IP. Pendaftar Google langsung masuk setelah autentikasi dan dapat melengkapi data dari menu **Profil**. |
 | Profil | `/api/profile` membaca dan menyimpan profil pemilik sesi. Kolom yang dapat diubah mengikuti peran akun. Migrasi profil mengisi contoh untuk tiga akun uji `@lestari.example` yang sudah ada. |
 | Lowongan dan workshop | `/api/catalog/jobs` dan `/api/catalog/workshops` membaca katalog. PostgreSQL menyimpan detail katalog dalam JSONB serta relasi favorit, lamaran, dan pendaftaran dalam tabel dengan foreign key. |
 | Aktivitas pengguna | API mengambil ID akun dari sesi. Satu akun hanya dapat membaca aktivitasnya sendiri. Pasangan pengguna dan item unik untuk setiap favorit, lamaran, dan pendaftaran. |

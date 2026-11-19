@@ -26,5 +26,6 @@ export const googleErrors: Record<string, string> = {
   unverified: 'Google belum mengonfirmasi email tersebut. Pilih akun Google lain.',
   usePassword: 'Email ini sudah terdaftar dengan kata sandi. Gunakan formulir masuk dengan email.',
   wrongRole: 'Akun Google ini terdaftar dengan peran lain. Pilih peran yang sesuai saat masuk.',
+  notRegistered: 'Akun Google ini belum terdaftar. Gunakan tombol Daftar dengan Google untuk membuat akun.',
   failed: 'Koneksi ke Google gagal. Silakan coba lagi.',
 };

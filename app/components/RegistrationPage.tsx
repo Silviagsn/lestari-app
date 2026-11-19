@@ -1,7 +1,6 @@
 import Link from 'next/link';
-import { cookies } from 'next/headers';
 import { ArrowLeft, ArrowRight, Briefcase, Building2, EarOff, GraduationCap, Hand, Users } from 'lucide-react';
-import { getGoogleSignup, googleConfig, googleSignupCookie } from '../server/google';
+import { googleConfig } from '../server/google';
 import { googleErrors, signupPath, type SignupRole } from '../utils/signup';
 import SignupForm from './SignupForm';
 
@@ -37,8 +36,6 @@ const pages = {
 export default function RegistrationPage({ role, googleError }: { role: SignupRole; googleError?: string }) {
   const page = pages[role];
   const Icon = page.icon;
-  const pending = getGoogleSignup(cookies().get(googleSignupCookie)?.value);
-  const googleEmail = pending?.role === role ? pending.email : undefined;
   const alternate = signupPath[role === 'jobseeker' ? 'company' : 'jobseeker'];
 
   return (
@@ -77,7 +74,7 @@ export default function RegistrationPage({ role, googleError }: { role: SignupRo
               {page.alternate} <ArrowRight aria-hidden="true" className="h-4 w-4" />
             </Link>
           </section>
-          <SignupForm role={role} googleAvailable={Boolean(googleConfig())} googleEmail={googleEmail}
+          <SignupForm role={role} googleAvailable={Boolean(googleConfig())}
             googleError={googleError && Object.hasOwn(googleErrors, googleError) ? googleErrors[googleError] : undefined} />
         </div>
       </div>

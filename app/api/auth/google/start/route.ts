@@ -1,6 +1,6 @@
 import { createHash } from 'node:crypto';
 import { NextRequest, NextResponse } from 'next/server';
-import { googleConfig, googleSignupCookie, randomOAuthValue, setGoogleFlow, type GoogleFlow } from '../../../../server/google';
+import { googleConfig, randomOAuthValue, setGoogleFlow, type GoogleFlow } from '../../../../server/google';
 import { isSignupRole, signupPath } from '../../../../utils/signup';
 
 export const runtime = 'nodejs';
@@ -31,7 +31,6 @@ export function GET(request: NextRequest) {
   }).toString();
   const response = NextResponse.redirect(authorization);
   response.headers.set('Cache-Control', 'no-store');
-  response.cookies.delete(googleSignupCookie);
   setGoogleFlow(response, config, flow);
   return response;
 }

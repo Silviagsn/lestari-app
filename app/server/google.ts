@@ -5,9 +5,7 @@ import { isAccountEmail } from '../utils/accountPolicy.mjs';
 import { isSignupRole, type SignupRole } from '../utils/signup';
 
 export const googleFlowCookie = 'lestari_google_flow';
-export const googleSignupCookie = 'lestari_google_signup';
 const flowLifetime = 10 * 60;
-const signupLifetime = 20 * 60;
 const idTokenVerifier = new OAuth2Client();
 
 export type GoogleFlow = {
@@ -17,7 +15,7 @@ export type GoogleFlow = {
   verifier: string;
   nonce: string;
 };
-type GoogleSignup = { role: SignupRole; sub: string; email: string };
+type GoogleIdentity = { sub: string; email: string };
 
 export function googleConfig() {
   const clientId = process.env.GOOGLE_CLIENT_ID?.trim();
@@ -40,7 +38,7 @@ function signature(secret: string, purpose: string, body: string) {
   return createHmac('sha256', secret).update(`lestari:${purpose}:${body}`).digest();
 }
 
-function writeCookie(response: NextResponse, config: Config, name: string, data: GoogleFlow | GoogleSignup, maxAge: number) {
+function writeCookie(response: NextResponse, config: Config, name: string, data: GoogleFlow, maxAge: number) {
   const body = Buffer.from(JSON.stringify({ ...data, expiresAt: Date.now() + maxAge * 1000 })).toString('base64url');
   const signed = signature(config.clientSecret, name, body).toString('base64url');
   response.cookies.set(name, `${body}.${signed}`, { httpOnly: true, sameSite: 'lax', secure: config.secure, path: '/', maxAge });
@@ -70,16 +68,7 @@ export function getGoogleFlow(config: Config, value: string | undefined): Google
   return readCookie(config, googleFlowCookie, value);
 }
 
-export function setGoogleSignup(response: NextResponse, config: Config, signup: GoogleSignup) {
-  writeCookie(response, config, googleSignupCookie, signup, signupLifetime);
-}
-
-export function getGoogleSignup(value: string | undefined): GoogleSignup | null {
-  const config = googleConfig();
-  return config ? readCookie(config, googleSignupCookie, value) : null;
-}
-
-export async function googleIdentity(config: Config, flow: GoogleFlow, code: string): Promise<GoogleSignup | null> {
+export async function googleIdentity(config: Config, flow: GoogleFlow, code: string): Promise<GoogleIdentity | null> {
   const exchange = await fetch('https://oauth2.googleapis.com/token', {
     method: 'POST',
     headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
@@ -103,5 +92,5 @@ export async function googleIdentity(config: Config, flow: GoogleFlow, code: str
   const email = identity.email?.trim().toLowerCase();
   if (identity.email_verified !== true || !isAccountEmail(email) || !email ||
       typeof identity.sub !== 'string' || !identity.sub || identity.sub.length > 255) return null;
-  return { role: flow.role, sub: identity.sub, email };
+  return { sub: identity.sub, email };
 }

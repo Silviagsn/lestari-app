@@ -1,7 +1,7 @@
 'use client';
 
 import { type FormEvent, useState } from 'react';
-import { ArrowRight, CheckCircle2, Eye, EyeOff } from 'lucide-react';
+import { ArrowRight, Eye, EyeOff } from 'lucide-react';
 import {
   maximumEmailLength, maximumPasswordLength, minimumPasswordLength,
 } from '../utils/accountPolicy.mjs';
@@ -61,10 +61,9 @@ function CompanyFields() {
   );
 }
 
-export default function SignupForm({ role, googleAvailable, googleEmail, googleError }: {
+export default function SignupForm({ role, googleAvailable, googleError }: {
   role: SignupRole;
   googleAvailable: boolean;
-  googleEmail?: string;
   googleError?: string;
 }) {
   const [pending, setPending] = useState(false);
@@ -80,7 +79,7 @@ export default function SignupForm({ role, googleAvailable, googleEmail, googleE
     const fields = new FormData(form);
     const read = (name: string) => String(fields.get(name) ?? '');
     const password = read('password');
-    if (!googleEmail && password !== read('confirmation')) {
+    if (password !== read('confirmation')) {
       setError('Kedua kata sandi harus sama.');
       form.querySelector<HTMLInputElement>('#signup-confirmation')?.focus();
       return;
@@ -101,17 +100,13 @@ export default function SignupForm({ role, googleAvailable, googleEmail, googleE
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          method: googleEmail ? 'google' : 'password', role,
+          method: 'password', role,
           email: read('email'), password, profile,
         }),
       });
       const result = await response.json();
       if (!response.ok) {
         setError(result.error ?? 'Pendaftaran gagal. Silakan coba lagi.');
-        return;
-      }
-      if (googleEmail) {
-        window.location.assign('/');
         return;
       }
       try { sessionStorage.setItem('lestari.registeredEmail', result.email); } catch {}
@@ -125,31 +120,18 @@ export default function SignupForm({ role, googleAvailable, googleEmail, googleE
 
   return (
     <section className="min-w-0 rounded-[1.75rem] border border-slate-200 bg-white p-5 shadow-sm sm:p-8">
-      {googleEmail ? (
-        <div className="flex items-start gap-2.5 rounded-xl bg-emerald-50 px-3.5 py-3 text-sm text-emerald-950">
-          <CheckCircle2 aria-hidden="true" className="mt-0.5 h-4 w-4 shrink-0" />
-          <div className="min-w-0 [overflow-wrap:anywhere]">
-            <p className="font-semibold">Email Google terkonfirmasi</p>
-            <p>{googleEmail}</p>
-            <a href={`/api/auth/google/start?role=${role}&intent=signup`}
-              className="mt-1 inline-flex min-h-9 items-center rounded-md font-semibold underline underline-offset-4 focus-visible:outline focus-visible:outline-2 focus-visible:outline-emerald-700">
-              Pilih akun Google lain
-            </a>
-          </div>
-        </div>
-      ) : (
-        <>
-          <h2 className="text-xl font-extrabold tracking-tight">Cara mendaftar</h2>
-          <div className="mt-3"><GoogleButton role={role} intent="signup" available={googleAvailable} /></div>
-          {!googleAvailable && <p className="mt-2 text-sm text-slate-600">Google belum tersedia. Daftar dengan email di bawah.</p>}
-        </>
-      )}
+      <h2 className="text-xl font-extrabold tracking-tight">Cara mendaftar</h2>
+      <div className="mt-3"><GoogleButton role={role} intent="signup" available={googleAvailable} /></div>
+      <p className="mt-2 text-sm text-slate-600">
+        {googleAvailable
+          ? 'Daftar dengan Google untuk langsung masuk. Kamu bisa melengkapi profil nanti.'
+          : 'Google belum tersedia. Daftar dengan email di bawah.'}
+      </p>
 
-      {googleError && !googleEmail && (
+      {googleError && (
         <p role="alert" className="mt-4 rounded-xl border border-red-200 bg-red-50 px-3.5 py-3 text-sm text-red-800">{googleError}</p>
       )}
       <form onSubmit={handleSubmit} className="mt-5" aria-busy={pending}>
-        {!googleEmail && (
           <fieldset disabled={pending} className="space-y-4 border-t border-slate-200 pb-5 pt-5">
             <h3 className="text-base font-bold">Daftar dengan email</h3>
             <div>
@@ -179,7 +161,6 @@ export default function SignupForm({ role, googleAvailable, googleEmail, googleE
               </div>
             </div>
           </fieldset>
-        )}
 
         <fieldset disabled={pending} className="space-y-4 border-t border-slate-200 pt-5">
           <div>
