@@ -1,10 +1,32 @@
 import { readFile } from 'node:fs/promises';
+import { setTimeout as sleep } from 'node:timers/promises';
 import { getDatabase } from './store.mjs';
 
 const migrations = ['001_initial'];
+const transientConnectionErrors = new Set([
+  'ECONNREFUSED', 'ECONNRESET', 'ETIMEDOUT', 'EHOSTUNREACH', 'ENETUNREACH',
+  'ENOTFOUND', 'EAI_AGAIN', '08001', '08006', '57P01', '57P03',
+]);
+
+async function connectForMigration() {
+  const db = getDatabase();
+  const attempts = 8;
+  for (let attempt = 1; ; attempt++) {
+    try {
+      return await db.connect();
+    } catch (error) {
+      const retryable = transientConnectionErrors.has(error.code) ||
+        error.message === 'Connection terminated due to connection timeout' ||
+        error.message === 'Connection terminated unexpectedly';
+      if (!retryable || attempt >= attempts) throw error;
+      console.warn(`PostgreSQL belum siap. Mencoba lagi (${attempt}/${attempts - 1}).`);
+      await sleep(2000);
+    }
+  }
+}
 
 export async function migrate() {
-  const client = await getDatabase().connect();
+  const client = await connectForMigration();
   try {
     await client.query('BEGIN');
     // All deploys sharing this database serialize their schema changes.
