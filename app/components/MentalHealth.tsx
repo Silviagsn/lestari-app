@@ -139,12 +139,12 @@ const callGeminiAPI = async (messagesHistory: Message[], adultConsent: boolean, 
   return data.text;
 };
 
-export default function MentalHealthChatbot() {
+export default function MentalHealthChatbot({ active }: { active: boolean }) {
   const [messages, setMessages] = useState<Message[]>([
     {
       id: 1,
       type: 'bot',
-      message: "Hello! I'm your AI wellness companion, powered by Gemini AI to provide personalized mental health support. I'm here to listen, support, and guide you on your wellness journey. How are you feeling today?",
+      message: 'Hai, aku Lesbot. Aku bisa menemani kamu ngobrol. Apa yang ingin kamu ceritakan hari ini?',
       timestamp: new Date()
     }
   ]);
@@ -168,8 +168,8 @@ export default function MentalHealthChatbot() {
 
   useEffect(() => {
     const list = messagesEndRef.current?.parentElement;
-    if (list) list.scrollTop = list.scrollHeight;
-  }, [messages, isTyping]);
+    if (active && list) list.scrollTop = list.scrollHeight;
+  }, [active, messages, isTyping]);
 
   const canSend = configured === true && adultConsent && !isTyping;
 
@@ -229,51 +229,24 @@ export default function MentalHealthChatbot() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-purple-50 via-blue-50 to-indigo-100">
-      {/* Header */}
-      <div className="bg-white/80 backdrop-blur-sm shadow-sm sticky top-0 z-10">
-        <div className="max-w-4xl mx-auto px-4 py-4">
-          <div className="flex items-center justify-between">
-            <div>
-              <h1 className="text-xl md:text-2xl font-bold text-gray-900">Mental Health Support</h1>
-              <p className="text-sm text-gray-600">AI-powered wellness companion</p>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <div className="max-w-4xl mx-auto px-4 py-6 space-y-6">
-        {/* Chat Interface */}
-        <div className="bg-white/90 backdrop-blur-sm rounded-2xl shadow-xl overflow-hidden">
-          {/* Chat Header */}
-          <div className="bg-gradient-to-r from-purple-600 via-purple-700 to-indigo-700 p-4 md:p-6">
-            <div className="flex items-center space-x-3">
-              <div className="w-10 h-10 md:w-12 md:h-12 bg-white/20 rounded-full flex items-center justify-center">
-                <Bot className="w-5 h-5 md:w-6 md:h-6 text-white" />
-              </div>
-              <div className="flex-1">
-                <h2 className="text-white font-semibold text-base md:text-lg">AI Wellness Companion</h2>
-                <p className="text-purple-100 text-xs md:text-sm">Powered by Gemini Flash • Here to support you</p>
-              </div>
-              <div className="flex items-center space-x-2">
-                <span aria-live="polite" className="text-white text-xs md:text-sm">{configured === null ? 'Memeriksa…' : configured ? 'Gemini terkonfigurasi' : 'Chat belum tersedia'}</span>
-              </div>
-            </div>
-          </div>
-
+    <div>
+        <div className="border-b border-indigo-100">
+          {configured !== true && <p role="status" className="border-b border-indigo-100 bg-indigo-50 px-3 py-2 text-xs text-indigo-900">
+            {configured === null ? 'Menghubungkan ke Lesbot…' : 'Chat belum tersedia. Coba buka lagi nanti.'}
+          </p>}
           {/* Mood Selector */}
           {showMoodSelector && (
-            <div className="p-4 md:p-6 bg-gradient-to-r from-blue-50 to-purple-50 border-b">
-              <h3 className="text-base md:text-lg font-semibold text-gray-900 mb-3">How are you feeling today?</h3>
-              <div className="flex flex-wrap gap-2 md:gap-3">
+            <div className="border-b bg-indigo-50/50 p-3">
+              <h3 className="mb-2 text-sm font-semibold text-gray-900">Bagaimana perasaanmu?</h3>
+              <div className="flex flex-wrap gap-1.5">
                 {moodOptions.map((mood) => (
                   <button
                     key={mood.value}
                     disabled={isTyping}
                     onClick={() => handleMoodSelection(mood.value)}
-                    className={`px-3 py-2 md:px-4 md:py-2 rounded-full transition-all duration-200 hover:scale-105 ${mood.color} border hover:shadow-md text-sm md:text-base`}
+                    className={`rounded-full px-2 py-1 text-xs ${mood.color} border hover:shadow-sm`}
                   >
-                    <span className="text-base md:text-lg mr-1 md:mr-2">{mood.emoji}</span>
+                    <span className="mr-1" aria-hidden="true">{mood.emoji}</span>
                     {mood.label}
                   </button>
                 ))}
@@ -282,7 +255,7 @@ export default function MentalHealthChatbot() {
           )}
 
           {/* Chat Messages */}
-          <div className="h-48 md:h-64 overflow-y-auto p-4 md:p-6 space-y-4">
+          <div role="log" aria-label="Percakapan Lesbot" className="max-h-36 min-h-24 space-y-3 overflow-y-auto overscroll-contain p-3">
             {messages.map((message) => (
               <div
                 key={message.id}
@@ -307,7 +280,7 @@ export default function MentalHealthChatbot() {
                       ? 'bg-gradient-to-r from-indigo-600 to-purple-600 text-white'
                       : 'bg-gray-100 text-gray-900 border'
                   }`}>
-                    <p className="text-sm md:text-base leading-relaxed">{message.message}</p>
+                    <p className="whitespace-pre-wrap text-sm leading-relaxed [overflow-wrap:anywhere]">{message.message}</p>
                     <p className="text-xs opacity-70 mt-1">
                       {message.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                     </p>
@@ -336,26 +309,27 @@ export default function MentalHealthChatbot() {
           </div>
 
           {/* Quick Responses */}
-          <div className="px-4 md:px-6 py-3 bg-gray-50 border-t">
-            <div className="flex flex-wrap gap-2">
+          <details className="border-t bg-gray-50 px-3 py-2">
+            <summary className="cursor-pointer text-xs font-semibold text-indigo-800">Ide pesan cepat</summary>
+            <div className="mt-2 flex flex-wrap gap-1.5">
               {quickResponses.map((response, index) => (
                 <button
                   key={index}
                   onClick={() => handleQuickResponse(response)}
-                  className="px-3 py-1 bg-white border border-gray-300 rounded-full text-xs md:text-sm text-gray-600 hover:bg-purple-50 hover:border-purple-300 transition-all duration-200"
+                  className="rounded-full border border-gray-300 bg-white px-2 py-1 text-xs text-gray-700 hover:bg-purple-50"
                 >
                   {response}
                 </button>
               ))}
             </div>
-          </div>
+          </details>
 
           {/* Chat Input */}
-          <div className="border-t border-white p-4 md:p-4">
+          <div className="border-t border-indigo-100 p-3">
             {configured === true && (
-              <label className="mb-3 flex items-start gap-2 text-sm text-gray-700">
+              <label className="mb-2 flex items-start gap-2 text-xs text-gray-700">
                 <input type="checkbox" checked={adultConsent} disabled={isTyping} onChange={event => setAdultConsent(event.target.checked)} className="mt-1 shrink-0 accent-indigo-700" />
-                <span>Saya berusia 18 tahun atau lebih dan setuju pesan saya dikirim ke Google Gemini untuk dijawab. Hindari mencantumkan data pribadi.</span>
+                <span>Saya berusia 18 tahun atau lebih dan setuju pesan dikirim ke Google Gemini. Hindari mencantumkan data pribadi.</span>
               </label>
             )}
             {chatError && <p role="alert" className="mb-3 text-sm text-red-800">{chatError}</p>}
@@ -368,8 +342,8 @@ export default function MentalHealthChatbot() {
                 aria-label="Pesan untuk Lesbot"
                 onChange={(e) => setNewMessage(e.target.value)}
                 onKeyDown={(e) => e.key === 'Enter' && handleSendMessage()}
-                placeholder="Type your message here..."
-                className="flex-1 p-3 border bg-white border-white rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent text-gray-600 text-sm md:text-base"
+                placeholder="Tulis pesan…"
+                className="min-w-0 flex-1 rounded-xl border border-indigo-200 bg-white p-2.5 text-sm text-gray-800 focus:ring-2 focus:ring-purple-500"
               />
               <button
                 onClick={handleSendMessage}
@@ -383,8 +357,9 @@ export default function MentalHealthChatbot() {
           </div>
         </div>
 
-        {/* Resources Section */}
-        <div className="space-y-6">
+        <details className="p-3">
+          <summary className="cursor-pointer text-sm font-semibold text-indigo-800">Panduan dan bantuan</summary>
+          <div className="mt-3 space-y-3">
           {/* Self-Care Tips */}
           <div className="bg-white/90 backdrop-blur-sm rounded-2xl shadow-lg p-4 md:p-6">
             <div className="flex items-center mb-4">
@@ -499,13 +474,8 @@ export default function MentalHealthChatbot() {
             </div>
           </div>
         </div>
-
-        {/* Footer */}
-        <div className="text-center text-xs md:text-sm text-gray-500 py-4">
-          <p>This AI assistant provides supportive guidance but is not a replacement for professional mental health care.</p>
-          <p className="mt-1">If you're experiencing a mental health emergency, please contact emergency services immediately.</p>
-        </div>
-      </div>
+          <p className="px-3 pb-2 text-xs text-slate-600">Lesbot memberikan dukungan umum. Untuk perawatan kesehatan mental, hubungi tenaga profesional.</p>
+        </details>
     </div>
   );
 }

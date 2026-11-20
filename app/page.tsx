@@ -6,8 +6,7 @@ import Header from './components/Header';
 import HomePage from './components/HomePage';
 import JobPortalPage from './components/JobPortal';
 import WorkshopPage from './components/Workshop';
-import MentalHealthPage from './components/MentalHealth';
-import SpeechToTextPage from './components/SpeechToText';
+import FloatingTools, { type FloatingTool } from './components/FloatingTools';
 import GoogleButton from './components/GoogleButton';
 import ProfilePage from './components/ProfilePage';
 import CompanyPortal from './components/CompanyPortal';
@@ -17,6 +16,7 @@ import { ArrowRight, X, Lock, Mail, EarOff, CheckCircle2, ShieldCheck, Briefcase
 
 export default function Page() {
   const [currentPage, setCurrentPage] = useState('home');
+  const [activeTool, setActiveTool] = useState<FloatingTool | null>(null);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   
   // 3 Kategori Role: 'jobseeker' | 'company' | 'admin'
@@ -102,6 +102,7 @@ export default function Page() {
       if (!response.ok) throw new Error();
       setIsAuthenticated(false);
       setCurrentPage('home');
+      setActiveTool(null);
       setEmail('');
       setRole('jobseeker');
     } catch {
@@ -353,7 +354,12 @@ export default function Page() {
   }
 
   if (role === 'company') {
-    return <CompanyPortal logout={handleLogout} authError={authError} />;
+    return (
+      <div className="pb-16">
+        <CompanyPortal logout={handleLogout} authError={authError} />
+        <FloatingTools active={activeTool} onChange={setActiveTool} />
+      </div>
+    );
   }
 
   // Navigasi Halaman
@@ -365,26 +371,26 @@ export default function Page() {
         return <JobPortalPage />;
       case 'workshop':
         return <WorkshopPage />;
-      case 'mental-health':
-        return <MentalHealthPage />;
-      case 'speech-to-text':
-        return <SpeechToTextPage />;
       default:
-        return <HomePage setCurrentPage={setCurrentPage} />;
+        return <HomePage setCurrentPage={page => {
+          if (page === 'mental-health' || page === 'speech-to-text') setActiveTool(page);
+          else setCurrentPage(page);
+        }} />;
     }
   };
 
   // Tampilan Utama Setelah Login
   return (
-    <div className="min-h-screen bg-[#EEF2FF]">
+    <div className="min-h-screen bg-[#EEF2FF] pb-16">
       <Header
         currentPage={currentPage}
         setCurrentPage={setCurrentPage}
-        features={features}
+        features={features.filter(feature => feature.page !== 'mental-health' && feature.page !== 'speech-to-text')}
         onLogout={handleLogout}
       />
       {authError && <p role="alert" className="p-4 text-center text-sm text-red-700">{authError}</p>}
       {renderPage()}
+      <FloatingTools active={activeTool} onChange={setActiveTool} />
     </div>
   );
 }

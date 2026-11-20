@@ -20,7 +20,7 @@ export const features = [
   {
     id: 'mental-health',
     icon: MessageCircle,
-    title: "Mental Health Chat",
+    title: "Chat Lesbot",
     description: "AI-powered mental health support with visual assistance",
     color: "from-purple-500 to-purple-600",
     page: 'mental-health'
@@ -28,8 +28,8 @@ export const features = [
   {
     id: 'speech-to-text',
     icon: Mic,
-    title: "Speech to Text",
-    description: "Convert speech to text for better communication",
+    title: 'Bantu Komunikasi',
+    description: 'Baca ucapan sebagai teks saat berbicara.',
     color: "from-red-500 to-red-600",
     page: 'speech-to-text'
   }
