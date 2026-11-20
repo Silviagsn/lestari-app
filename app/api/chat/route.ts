@@ -1,4 +1,5 @@
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
+import { getSessionUser, sessionCookie } from '../../../database/store.mjs';
 
 // Lite dicoba dulu (lebih cepat), model utama jadi cadangan.
 const MODELS = ['gemini-3.5-flash-lite', 'gemini-3.8-flash'];
@@ -27,110 +28,85 @@ SAFETY RULES:
 - Never judge, lecture, or minimize their feelings.
 - For serious or ongoing problems, gently suggest talking to a psychologist or psychiatrist.`;
 
-const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
-export async function POST(req: Request) {
+const unavailable = () => NextResponse.json({ error: 'Chat AI sedang tidak tersedia. Coba lagi nanti.' }, { status: 503 });
+const apiKey = () => process.env.GEMINI_API_KEY?.trim();
+const moods = new Set(['great', 'good', 'okay', 'not-good', 'terrible']);
+type ChatMessage = { type: 'user' | 'bot'; message: string };
+
+function isChatMessage(value: unknown): value is ChatMessage {
+  if (!value || typeof value !== 'object') return false;
+  const { type, message } = value as Partial<ChatMessage>;
+  return (type === 'user' || type === 'bot') && typeof message === 'string' &&
+    message.length <= 4000 && message.trim().length > 0;
+}
+
+export const dynamic = 'force-dynamic';
+
+export function GET() {
+  return NextResponse.json({ configured: Boolean(apiKey()) }, { headers: { 'Cache-Control': 'no-store' } });
+}
+
+export async function POST(req: NextRequest) {
   try {
-    const raw = await req.json();
-
-    const messagesHistory = raw.messagesHistory ?? raw.messages ?? raw.history;
-    const mood = raw.mood;
-
-    if (!Array.isArray(messagesHistory)) {
-      return NextResponse.json(
-        { error: 'messagesHistory harus berupa array' },
-        { status: 400 }
-      );
+    const key = apiKey();
+    if (!key) return unavailable();
+    if (!await getSessionUser(req.cookies.get(sessionCookie)?.value)) {
+      return NextResponse.json({ error: 'Masuk kembali untuk menggunakan chat AI.' }, { status: 401 });
     }
 
-    const API_KEY = process.env.GEMINI_API_KEY;
-    if (!API_KEY) {
-      return NextResponse.json(
-        { error: 'GEMINI_API_KEY belum disetel di .env.local' },
-        { status: 500 }
-      );
+    const raw = await req.json().catch(() => null);
+    if (raw?.adultConsent !== true) {
+      return NextResponse.json({ error: 'Konfirmasi usia dan pengiriman pesan terlebih dahulu.' }, { status: 400 });
     }
-
-    // Ambil 16 pesan terakhir, lalu pastikan riwayat dimulai dari pesan user.
-    let cleanHistory = messagesHistory.slice(-16);
-    const firstUser = cleanHistory.findIndex((m: any) => m.type === 'user');
-    cleanHistory = firstUser === -1 ? [] : cleanHistory.slice(firstUser);
-
-    if (cleanHistory.length === 0) {
-      return NextResponse.json({ error: 'Tidak ada pesan user.' }, { status: 400 });
+    const history = raw.messagesHistory ?? raw.messages ?? raw.history;
+    const recent: unknown[] = Array.isArray(history) ? history.slice(-16) : [];
+    if (!recent.every(isChatMessage) || recent.at(-1)?.type !== 'user') {
+      return NextResponse.json({ error: 'Kirim pesan antara 1 dan 4.000 karakter.' }, { status: 400 });
     }
+    const cleanHistory = recent.slice(recent.findIndex(message => message.type === 'user'));
+    const mood = typeof raw.mood === 'string' && moods.has(raw.mood) ? raw.mood : '';
 
     const body = {
       systemInstruction: {
-        parts: [
-          {
-            text:
-              systemInstructionText +
-              (mood ? `\n\nUser's reported mood: ${mood}` : '')
-          }
-        ]
+        parts: [{ text: systemInstructionText + (mood ? "\n\nUser's reported mood: " + mood : '') }],
       },
-      contents: cleanHistory.map((m: any) => ({
-        role: m.type === 'user' ? 'user' : 'model',
-        parts: [{ text: m.message }]
+      contents: cleanHistory.map(message => ({
+        role: message.type === 'user' ? 'user' : 'model',
+        parts: [{ text: message.message }],
       })),
-      generationConfig: {
-        maxOutputTokens: 1000,
-        temperature: 0.8
-      }
+      generationConfig: { maxOutputTokens: 1000, temperature: 0.8 },
     };
 
-    let response: Response | null = null;
-    let data: any = null;
-
     for (const model of MODELS) {
-      const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${API_KEY}`;
-
+      const url = 'https://generativelanguage.googleapis.com/v1beta/models/' + model + ':generateContent';
       try {
-        response = await fetch(url, {
+        const response = await fetch(url, {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: { 'Content-Type': 'application/json', 'x-goog-api-key': key },
           body: JSON.stringify(body),
-          signal: AbortSignal.timeout(20000)
+          signal: AbortSignal.timeout(12000),
         });
-        data = await response.json();
-      } catch (e) {
-        // timeout / jaringan: langsung coba model berikutnya
-        response = null;
-        data = { error: { message: 'Koneksi ke AI timeout atau gagal.' } };
-        continue;
+        if (!response.ok) {
+          console.warn('Gemini request failed', model, response.status);
+          if ([400, 401, 403].includes(response.status)) return unavailable();
+          continue;
+        }
+        const result = await response.json();
+        const candidate = result.candidates?.[0];
+        if (result.promptFeedback?.blockReason || candidate?.finishReason === 'SAFETY') {
+          return NextResponse.json({ error: 'Chat AI tidak dapat membalas pesan ini.' }, { status: 422 });
+        }
+        const parts: { text?: string; thought?: boolean }[] = candidate?.content?.parts ?? [];
+        const answer = parts.filter(part => !part.thought && typeof part.text === 'string').map(part => part.text).join('').trim();
+        if (answer) return NextResponse.json({ text: answer });
+      } catch {
+        console.warn('Gemini connection failed', model);
       }
-
-      if (response.ok) break; // berhasil
-
-      // 503 (overload) / 429 (kuota): jeda singkat lalu model berikutnya
-      if (response.status === 503 || response.status === 429) {
-        await sleep(500);
-      }
     }
-
-    if (!response || !response.ok) {
-      console.error('GEMINI GAGAL:', response?.status, data?.error?.message);
-      return NextResponse.json(
-        { error: data?.error?.message || 'Gemini error' },
-        { status: response?.status || 502 }
-      );
-    }
-
-    const text = data.candidates?.[0]?.content?.parts?.[0]?.text;
-    if (!text) {
-      return NextResponse.json(
-        { error: 'Respons dari Gemini kosong.' },
-        { status: 502 }
-      );
-    }
-
-    return NextResponse.json({ text });
-  } catch (err: any) {
-    console.error('ROUTE ERROR:', err?.message);
-    return NextResponse.json(
-      { error: err?.message || 'Terjadi kesalahan server' },
-      { status: 500 }
-    );
+    return unavailable();
+  } catch {
+    console.warn('Lesbot request could not be completed');
+    return unavailable();
   }
 }

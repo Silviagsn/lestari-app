@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useRef } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import {
   Send,
   Bot,
@@ -9,8 +9,6 @@ import {
   Users,
   BookOpen,
   Phone,
-  Shield,
-  Clock,
   ChevronDown,
   ChevronUp,
   ExternalLink
@@ -129,15 +127,15 @@ const resources = [
 ];
 
 // Memanggil server (/api/chat), bukan Gemini langsung
-const callGeminiAPI = async (messagesHistory: Message[], mood?: string): Promise<string> => {
+const callGeminiAPI = async (messagesHistory: Message[], adultConsent: boolean, mood?: string): Promise<string> => {
   const res = await fetch('/api/chat', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ messagesHistory, mood })
+    body: JSON.stringify({ messagesHistory: messagesHistory.slice(-16).map(({ type, message }) => ({ type, message })), adultConsent, mood })
   });
 
-  const data = await res.json();
-  if (!res.ok) throw new Error(data.error || 'Gagal memanggil AI');
+  const data = await res.json().catch(() => null);
+  if (!res.ok || typeof data?.text !== 'string') throw new Error(data?.error || 'Chat AI sedang tidak tersedia.');
   return data.text;
 };
 
@@ -152,10 +150,28 @@ export default function MentalHealthChatbot() {
   ]);
   const [newMessage, setNewMessage] = useState('');
   const [isTyping, setIsTyping] = useState(false);
+  const [configured, setConfigured] = useState<boolean | null>(null);
+  const [adultConsent, setAdultConsent] = useState(false);
+  const [chatError, setChatError] = useState('');
   const [currentMood, setCurrentMood] = useState<string>('');
   const [showMoodSelector, setShowMoodSelector] = useState(true);
   const [expandedTip, setExpandedTip] = useState<number | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const controller = new AbortController();
+    fetch('/api/chat', { signal: controller.signal })
+      .then(async response => setConfigured(response.ok && (await response.json()).configured === true))
+      .catch(() => { if (!controller.signal.aborted) setConfigured(false); });
+    return () => controller.abort();
+  }, []);
+
+  useEffect(() => {
+    const list = messagesEndRef.current?.parentElement;
+    if (list) list.scrollTop = list.scrollHeight;
+  }, [messages, isTyping]);
+
+  const canSend = configured === true && adultConsent && !isTyping;
 
   const addBotMessage = (text: string) => {
     setMessages(prev => [
@@ -164,73 +180,48 @@ export default function MentalHealthChatbot() {
     ]);
   };
 
-  const handleSendMessage = async () => {
-    if (!newMessage.trim() || isTyping) return;
+  const sendMessage = async (text: string, mood: string) => {
+    if (!text.trim() || !canSend) return;
 
     const userMessage: Message = {
       id: Date.now(),
       type: 'user',
-      message: newMessage,
+      message: text.trim(),
       timestamp: new Date(),
-      mood: currentMood
+      mood
     };
 
     setMessages(prev => [...prev, userMessage]);
     setNewMessage('');
+    setChatError('');
     setIsTyping(true);
 
     try {
-      const response = await callGeminiAPI([...messages, userMessage], currentMood);
+      const response = await callGeminiAPI([...messages, userMessage], adultConsent, mood);
       addBotMessage(response);
     } catch (error) {
-      console.error('CHAT ERROR:', error);
-      // Sementara menampilkan error asli untuk debugging.
-      // Kalau sudah jalan, ganti dengan pesan ramah.
-      addBotMessage(`ERROR: ${error instanceof Error ? error.message : String(error)}`);
+      setMessages(previous => previous.filter(message => message.id !== userMessage.id));
+      setNewMessage(text);
+      setChatError(error instanceof Error ? error.message : 'Chat AI sedang tidak tersedia.');
     } finally {
       setIsTyping(false);
       setShowMoodSelector(false);
     }
   };
 
+  const handleSendMessage = () => void sendMessage(newMessage, currentMood);
+
   const handleQuickResponse = (response: string) => {
     setNewMessage(response);
   };
 
-  const handleMoodSelection = async (mood: string) => {
-    setCurrentMood(mood);
-    setShowMoodSelector(false);
-
+  const handleMoodSelection = (mood: string) => {
     const selectedMoodOption = moodOptions.find(option => option.value === mood);
-    const moodMessage = `I'm feeling ${selectedMoodOption?.label.toLowerCase()} today ${selectedMoodOption?.emoji}`;
-
-    const userMessage: Message = {
-      id: Date.now(),
-      type: 'user',
-      message: moodMessage,
-      timestamp: new Date(),
-      mood: mood
-    };
-
-    setMessages(prev => [...prev, userMessage]);
-    setIsTyping(true);
-
-    try {
-      const response = await callGeminiAPI([...messages, userMessage], mood);
-      addBotMessage(response);
-    } catch (error) {
-      console.error('CHAT ERROR:', error);
-      addBotMessage(`ERROR: ${error instanceof Error ? error.message : String(error)}`);
-    } finally {
-      setIsTyping(false);
-    }
-  };
-
-  const handleEmergencyContact = () => {
-    const message = "Hi, I need mental health crisis support. Please help me.";
-    const phoneNumber = "6281234567890"; // Ganti dengan nomor crisis support yang asli
-    const whatsappURL = `https://wa.me/${phoneNumber}?text=${encodeURIComponent(message)}`;
-    window.open(whatsappURL, '_blank');
+    if (!selectedMoodOption) return;
+    setCurrentMood(mood);
+    const text = `I'm feeling ${selectedMoodOption.label.toLowerCase()} today ${selectedMoodOption.emoji}`;
+    if (canSend) void sendMessage(text, mood);
+    else setNewMessage(text);
   };
 
   const handleResourceClick = (link: string) => {
@@ -246,18 +237,6 @@ export default function MentalHealthChatbot() {
             <div>
               <h1 className="text-xl md:text-2xl font-bold text-gray-900">Mental Health Support</h1>
               <p className="text-sm text-gray-600">AI-powered wellness companion</p>
-            </div>
-            <div className="flex items-center space-x-4">
-              <div className="hidden md:flex items-center space-x-6 text-xs text-gray-600">
-                <span className="flex items-center">
-                  <Shield className="w-3 h-3 mr-1" />
-                  Confidential
-                </span>
-                <span className="flex items-center">
-                  <Clock className="w-3 h-3 mr-1" />
-                  24/7 Available
-                </span>
-              </div>
             </div>
           </div>
         </div>
@@ -277,8 +256,7 @@ export default function MentalHealthChatbot() {
                 <p className="text-purple-100 text-xs md:text-sm">Powered by Gemini Flash • Here to support you</p>
               </div>
               <div className="flex items-center space-x-2">
-                <div className="w-2 h-2 md:w-3 md:h-3 bg-green-400 rounded-full animate-pulse"></div>
-                <span className="text-white text-xs md:text-sm">Online</span>
+                <span aria-live="polite" className="text-white text-xs md:text-sm">{configured === null ? 'Memeriksa…' : configured ? 'Gemini terkonfigurasi' : 'Chat belum tersedia'}</span>
               </div>
             </div>
           </div>
@@ -291,6 +269,7 @@ export default function MentalHealthChatbot() {
                 {moodOptions.map((mood) => (
                   <button
                     key={mood.value}
+                    disabled={isTyping}
                     onClick={() => handleMoodSelection(mood.value)}
                     className={`px-3 py-2 md:px-4 md:py-2 rounded-full transition-all duration-200 hover:scale-105 ${mood.color} border hover:shadow-md text-sm md:text-base`}
                   >
@@ -373,10 +352,20 @@ export default function MentalHealthChatbot() {
 
           {/* Chat Input */}
           <div className="border-t border-white p-4 md:p-4">
+            {configured === true && (
+              <label className="mb-3 flex items-start gap-2 text-sm text-gray-700">
+                <input type="checkbox" checked={adultConsent} disabled={isTyping} onChange={event => setAdultConsent(event.target.checked)} className="mt-1 shrink-0 accent-indigo-700" />
+                <span>Saya berusia 18 tahun atau lebih dan setuju pesan saya dikirim ke Google Gemini untuk dijawab. Hindari mencantumkan data pribadi.</span>
+              </label>
+            )}
+            {chatError && <p role="alert" className="mb-3 text-sm text-red-800">{chatError}</p>}
             <div className="flex space-x-3">
               <input
                 type="text"
                 value={newMessage}
+                maxLength={4000}
+                disabled={isTyping || configured === false}
+                aria-label="Pesan untuk Lesbot"
                 onChange={(e) => setNewMessage(e.target.value)}
                 onKeyDown={(e) => e.key === 'Enter' && handleSendMessage()}
                 placeholder="Type your message here..."
@@ -384,7 +373,8 @@ export default function MentalHealthChatbot() {
               />
               <button
                 onClick={handleSendMessage}
-                disabled={!newMessage.trim() || isTyping}
+                disabled={!newMessage.trim() || !canSend}
+                aria-label="Kirim pesan"
                 className="bg-gradient-to-r from-purple-600 to-indigo-600 text-white p-3 rounded-xl hover:from-purple-700 hover:to-indigo-700 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 <Send className="w-4 h-4 md:w-5 md:h-5" />
@@ -499,27 +489,13 @@ export default function MentalHealthChatbot() {
               If you're in crisis or having thoughts of self-harm, please reach out immediately. You're not alone.
             </p>
             <div className="space-y-3">
-              <button
-                onClick={handleEmergencyContact}
+              <a
+                href="https://www.healing119.id/" target="_blank" rel="noopener noreferrer"
                 className="w-full bg-red-600 text-white py-3 rounded-xl hover:bg-red-700 transition-colors text-sm md:text-base font-medium flex items-center justify-center"
               >
                 <Phone className="w-4 h-4 mr-2" />
-                WhatsApp Crisis Support
-              </button>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                <button
-                  onClick={() => window.open('tel:119', '_self')}
-                  className="border-2 border-red-600 text-red-600 py-2 rounded-xl hover:bg-red-50 transition-colors text-sm font-medium"
-                >
-                  Crisis Hotline: 119
-                </button>
-                <button
-                  onClick={() => handleResourceClick('https://www.into-the-light.id/')}
-                  className="border-2 border-red-600 text-red-600 py-2 rounded-xl hover:bg-red-50 transition-colors text-sm font-medium"
-                >
-                  Emergency Chat
-                </button>
-              </div>
+                Bantuan krisis Kemenkes · Healing119.id
+              </a>
             </div>
           </div>
         </div>
@@ -528,9 +504,6 @@ export default function MentalHealthChatbot() {
         <div className="text-center text-xs md:text-sm text-gray-500 py-4">
           <p>This AI assistant provides supportive guidance but is not a replacement for professional mental health care.</p>
           <p className="mt-1">If you're experiencing a mental health emergency, please contact emergency services immediately.</p>
-          <p className="mt-2 text-xs">
-            🔒 Your conversations are private and confidential • 🤖 Powered by Gemini AI
-          </p>
         </div>
       </div>
     </div>

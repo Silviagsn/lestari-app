@@ -14,7 +14,7 @@ Browser mengakses antarmuka dan Route Handlers dari satu aplikasi Next.js. Hanya
 | Aktivitas pengguna | API mengambil ID akun dari sesi. Satu akun hanya dapat membaca aktivitasnya sendiri. Pasangan pengguna dan item unik untuk setiap favorit, lamaran, dan pendaftaran. |
 | Migrasi | `npm run db:migrate` menjalankan migrasi SQL dalam transaksi dan mencatat versinya. Migrasi pertama memasukkan 18 lowongan dan 18 workshop contoh. Perintah dapat diulang tanpa menambahkan data duplikat. |
 | Kesiapan aplikasi | `GET /api/health` mengembalikan 200 jika PostgreSQL dapat dihubungi dan migrasi awal tercatat, atau 503 jika belum siap. |
-| Lesbot | Route `/api/chat` yang sudah ada menghubungi Gemini menggunakan `GEMINI_API_KEY`. Percakapan tidak disimpan di PostgreSQL. |
+| Lesbot | Route `/api/chat` memerlukan sesi Lestari dan konfirmasi usia 18 tahun serta persetujuan pengiriman pesan. Backend mengirim hingga 16 pesan terakhir ke Gemini. Lestari tidak menyimpan isi percakapan di PostgreSQL. |
 
 Skema awal ada di [database/migrations/001_initial.sql](../database/migrations/001_initial.sql). Buat migrasi bernomor berikutnya untuk perubahan setelah skema awal diterapkan.
 
@@ -45,7 +45,7 @@ Status OAuth tersimpan di PostgreSQL selama maksimal 10 menit. Callback mencocok
 ## Hubungkan ke Railway
 
 1. Setelah perubahan tersedia di GitHub, tambahkan layanan aplikasi dari repositori Lestari dan layanan PostgreSQL dalam satu environment Railway. [Panduan PostgreSQL Railway](https://docs.railway.com/databases/postgresql)
-2. Di **Variables** layanan aplikasi, tambahkan `DATABASE_URL=${{Postgres.DATABASE_URL}}`. Ganti `Postgres` jika nama layanannya berbeda. Tambahkan `GEMINI_API_KEY` jika ingin mengaktifkan Lesbot. [Referensi variabel Railway](https://docs.railway.com/integrations/api/manage-variables#variable-references)
+2. Di **Variables** layanan aplikasi, tambahkan `DATABASE_URL=${{Postgres.DATABASE_URL}}`. Ganti `Postgres` jika nama layanannya berbeda. Untuk Lesbot, simpan `GEMINI_API_KEY` sebagai rahasia di Railway. Gunakan kunci dari proyek Google Cloud dengan billing aktif karena chat dapat memuat informasi sensitif. [Ketentuan Gemini API](https://ai.google.dev/gemini-api/terms) · [Referensi variabel Railway](https://docs.railway.com/integrations/api/manage-variables#variable-references)
 3. Di pengaturan layanan aplikasi, isi **Pre-Deploy Command** dengan `npm run db:migrate`, **Start Command** dengan `npm start -- --hostname 0.0.0.0 --port $PORT`, dan **Healthcheck Path** dengan `/api/health`. Migrasi berjalan setelah build dengan akses ke jaringan privat. [Pre-deploy Railway](https://docs.railway.com/deployments/pre-deploy-command) · [Healthcheck Railway](https://docs.railway.com/deployments/healthchecks)
 4. Setelah deploy, gunakan **Daftar Pencari Kerja** atau **Daftar Perusahaan** untuk menguji pendaftaran. Jalankan `npm run db:user -- email@example.com admin` dari terminal layanan aplikasi dengan `LESTARI_NEW_USER_PASSWORD` disetel untuk membuat akun admin.
 
