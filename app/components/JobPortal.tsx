@@ -1,9 +1,8 @@
-import React, { useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { useCatalog } from '../utils/useCatalog';
 import { applicantStatuses, type ApplicantStatus } from '../utils/recruitment';
 import { 
   Search, 
-  Filter, 
   MapPin, 
   Clock, 
   Briefcase, 
@@ -14,7 +13,6 @@ import {
   Users,
   Eye,
   Heart,
-  Share2,
   Send,
   Phone,
   Mail,
@@ -34,7 +32,6 @@ import {
   Megaphone,
   ChevronDown,
   X,
-  ExternalLink,
   Download,
   ArrowRight,
   Target,
@@ -125,6 +122,15 @@ export default function JobPortalPage({ userAssessment }: JobPortalProps) {
   const [showApplicationModal, setShowApplicationModal] = useState(false);
   const [showContactModal, setShowContactModal] = useState(false);
   const [currentApplicationJob, setCurrentApplicationJob] = useState<Job | null>(null);
+  const detailsDialog = useRef<HTMLDialogElement>(null);
+  const showJobDetails = selectedJob !== null && !showApplicationModal && !showContactModal;
+
+  useEffect(() => {
+    const dialog = detailsDialog.current;
+    if (!dialog) return;
+    if (showJobDetails && !dialog.open) dialog.showModal();
+    if (!showJobDetails && dialog.open) dialog.close();
+  }, [showJobDetails]);
 
   // Enhanced recommendation algorithm
   const getRecommendedJobs = () => {
@@ -308,34 +314,34 @@ Application Date: ${new Date().toLocaleDateString()}`;
       </div>
 
       <div className="py-6 px-4 sm:px-6 lg:px-8 relative z-10">
-        <div className="max-w-7xl mx-auto">
+        <div className="mx-auto max-w-6xl">
           {error && !showApplicationModal && <p role="alert" className="mb-4 text-center text-red-700">{error}</p>}
           {/* Enhanced Header */}
-          <div className="mb-8">
-            <div className="text-center mb-6">
-              <h1 className="text-4xl md:text-5xl font-bold bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600 bg-clip-text text-transparent mb-4">
+          <div className="mb-5 sm:mb-8">
+            <div className="mb-4 text-center sm:mb-6">
+              <h1 className="mb-2 bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600 bg-clip-text text-3xl font-bold text-transparent sm:mb-4 sm:text-4xl md:text-5xl">
                 Find Your Perfect Job
               </h1>
-              <p className="text-xl text-gray-600 max-w-3xl mx-auto">
+              <p className="mx-auto max-w-3xl text-sm text-slate-600 sm:text-lg md:text-xl">
                 Discover deaf-friendly opportunities tailored to your skills and preferences across Indonesia
               </p>
             </div>
             
             {/* Stats */}
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
-              <div className="bg-white/80 backdrop-blur-lg rounded-2xl p-4 text-center shadow-xl border border-white/20 hover:shadow-2xl transition-all duration-300 transform hover:scale-105">
+            <div className="grid grid-cols-2 gap-2 sm:gap-4 md:grid-cols-4">
+              <div className="rounded-2xl border border-white/60 bg-white/80 p-2.5 text-center shadow-sm sm:p-4">
                 <div className="text-2xl font-bold text-indigo-600">{filteredJobs.length}</div>
                 <div className="text-sm text-gray-600">Available Jobs</div>
               </div>
-              <div className="bg-white/80 backdrop-blur-lg rounded-2xl p-4 text-center shadow-xl border border-white/20 hover:shadow-2xl transition-all duration-300 transform hover:scale-105">
+              <div className="rounded-2xl border border-white/60 bg-white/80 p-2.5 text-center shadow-sm sm:p-4">
                 <div className="text-2xl font-bold text-green-600">{jobs.filter(job => job.isAccessibilityVerified).length}</div>
                 <div className="text-sm text-gray-600">Accessibility Verified</div>
               </div>
-              <div className="bg-white/80 backdrop-blur-lg rounded-2xl p-4 text-center shadow-xl border border-white/20 hover:shadow-2xl transition-all duration-300 transform hover:scale-105">
+              <div className="rounded-2xl border border-white/60 bg-white/80 p-2.5 text-center shadow-sm sm:p-4">
                 <div className="text-2xl font-bold text-purple-600">{savedJobs.length}</div>
                 <div className="text-sm text-gray-600">Saved Jobs</div>
               </div>
-              <div className="bg-white/80 backdrop-blur-lg rounded-2xl p-4 text-center shadow-xl border border-white/20 hover:shadow-2xl transition-all duration-300 transform hover:scale-105">
+              <div className="rounded-2xl border border-white/60 bg-white/80 p-2.5 text-center shadow-sm sm:p-4">
                 <div className="text-2xl font-bold text-blue-600">{applications.length}</div>
                 <div className="text-sm text-gray-600">Applications</div>
               </div>
@@ -370,15 +376,16 @@ Application Date: ${new Date().toLocaleDateString()}`;
 
           {/* Category Filters */}
           <div className="mb-6">
-            <div className="flex overflow-x-auto pb-2 space-x-2 scrollbar-hide">
+            <div className="flex flex-wrap gap-2">
               {getCategories(jobs).map((category) => (
                 <button
                   key={category.id}
                   onClick={() => setSelectedCategory(category.id)}
-                  className={`flex items-center space-x-2 px-4 py-3 rounded-2xl whitespace-nowrap transition-all duration-300 transform hover:scale-105 ${
+                  aria-pressed={selectedCategory === category.id}
+                  className={`inline-flex min-h-10 max-w-full items-center gap-2 rounded-full border px-3 py-2 text-sm transition-colors ${
                     selectedCategory === category.id
-                      ? 'bg-gradient-to-r from-indigo-600 to-purple-600 text-white shadow-xl'
-                      : 'bg-white/80 backdrop-blur-lg text-gray-700 hover:bg-indigo-50 hover:text-indigo-600 shadow-lg'
+                      ? 'border-indigo-700 bg-indigo-700 text-white'
+                      : 'border-indigo-100 bg-white text-slate-700 hover:bg-indigo-50 hover:text-indigo-800'
                   }`}
                 >
                   {category.icon}
@@ -394,24 +401,26 @@ Application Date: ${new Date().toLocaleDateString()}`;
           </div>
 
           {/* Search and Filters */}
-          <div className="mb-8 bg-gray-100 backdrop-blur-lg rounded-3xl p-6 shadow-2xl border border-gray-200">
-            <div className="grid grid-cols-1 md:grid-cols-12 gap-4">
-              <div className="md:col-span-6 relative">
+          <div className="mb-6 rounded-3xl border border-indigo-100 bg-white p-4 shadow-sm sm:p-5">
+            <div className="grid grid-cols-2 gap-2 sm:gap-3 lg:grid-cols-[minmax(0,2fr)_minmax(0,1fr)_minmax(0,1fr)]">
+              <div className="relative col-span-2 min-w-0 lg:col-span-1">
                 <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
                 <input
                   type="text"
+                  aria-label="Search jobs"
                   placeholder="Search jobs, companies, or skills..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  className="w-full pl-12 pr-4 py-4 border border-gray-300 rounded-2xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all shadow-lg bg-white/90 text-gray-600 backdrop-blur-sm"
+                  className="min-h-11 w-full rounded-xl border border-slate-300 bg-white py-2.5 pl-12 pr-4 text-slate-900 focus:border-indigo-600 focus:outline-none focus:ring-2 focus:ring-indigo-200"
                 />
               </div>
               
-              <div className="md:col-span-2">
+              <div className="min-w-0">
                 <select
+                  aria-label="Job type"
                   value={filterType}
                   onChange={(e) => setFilterType(e.target.value)}
-                  className="w-full px-4 py-4 border  text-gray-600 border-gray-300 rounded-2xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent shadow-lg bg-white/90 backdrop-blur-sm"
+                  className="min-h-11 w-full rounded-xl border border-slate-300 bg-white px-2 py-2.5 text-sm text-slate-900 focus:border-indigo-600 focus:outline-none focus:ring-2 focus:ring-indigo-200 sm:px-4 sm:text-base"
                 >
                   <option value="all">All Types</option>
                   <option value="full-time">Full-time</option>
@@ -422,11 +431,12 @@ Application Date: ${new Date().toLocaleDateString()}`;
                 </select>
               </div>
               
-              <div className="md:col-span-2">
+              <div className="min-w-0">
                 <select
+                  aria-label="Sort jobs"
                   value={sortBy}
                   onChange={(e) => setSortBy(e.target.value)}
-                  className="w-full px-4 py-4 border  text-gray-600 border-gray-300 rounded-2xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent shadow-lg bg-white/90 backdrop-blur-sm"
+                  className="min-h-11 w-full rounded-xl border border-slate-300 bg-white px-2 py-2.5 text-sm text-slate-900 focus:border-indigo-600 focus:outline-none focus:ring-2 focus:ring-indigo-200 sm:px-4 sm:text-base"
                 >
                   <option value="recommended">Recommended</option>
                   <option value="newest">Newest First</option>
@@ -435,66 +445,55 @@ Application Date: ${new Date().toLocaleDateString()}`;
                   <option value="accessibility">Most Accessible</option>
                 </select>
               </div>
-              
-              <div className="md:col-span-2">
-                <button className="w-full flex items-center justify-center space-x-2 px-4 py-4 bg-gradient-to-r from-indigo-600 to-purple-600 text-white rounded-2xl hover:from-indigo-700 hover:to-purple-700 transition-all duration-300 shadow-xl hover:shadow-2xl transform hover:scale-105">
-                  <Filter className="w-4 h-4" />
-                  <span>More Filters</span>
-                </button>
-              </div>
             </div>
           </div>
 
-          <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
-            {/* Job List */}
-            <div className="lg:col-span-3 space-y-6">
+          <section aria-label="Job listings" className="grid gap-5 md:grid-cols-2 sm:gap-6">
               {filteredJobs.map((job) => {
                 const applicationStatus = getApplicationStatus(job.id);
                 return (
-                  <div
+                  <article
                     key={job.id}
-                    className={`bg-white/90 backdrop-blur-lg rounded-3xl p-6 shadow-xl cursor-pointer transition-all duration-500 hover:shadow-2xl border border-white/20 group transform hover:scale-[1.02] ${
-                      selectedJob?.id === job.id 
-                        ? 'ring-4 ring-indigo-300 scale-[1.02] shadow-2xl' 
-                        : 'hover:ring-2 hover:ring-indigo-200'
-                    }`}
+                    className="group flex min-w-0 cursor-pointer flex-col overflow-hidden rounded-3xl border border-indigo-100 bg-white shadow-sm transition-shadow hover:shadow-lg [overflow-wrap:anywhere]"
                     onClick={() => setSelectedJob(job)}
                   >
                     {/* Job Header */}
-                    <div className="flex flex-col md:flex-row md:items-start justify-between mb-4">
-                      <div className="flex-1">
-                        <div className="flex items-start justify-between mb-3">
-                          <div className="flex-1">
-                            <div className="flex items-center space-x-3 mb-2">
-                              <h3 className="text-xl font-bold text-gray-900 group-hover:text-indigo-600 transition-colors">
-                                {job.title}
-                              </h3>
+                    <div className="bg-gradient-to-br from-indigo-500 to-purple-600 text-white">
+                        <div className="flex items-start justify-between gap-3 bg-black/20 p-5 sm:p-6">
+                          <div className="min-w-0">
+                            <div className="mb-2 flex flex-wrap items-center gap-2">
+                              <span className="rounded-full bg-white/15 px-2.5 py-1 text-xs font-semibold text-white">{job.category}</span>
                               {job.urgency === 'high' && (
-                                <span className="bg-red-100 text-red-600 px-3 py-1 rounded-full text-xs font-medium animate-pulse">
+                                <span className="rounded-full bg-red-100 px-2.5 py-1 text-xs font-semibold text-red-800">
                                   🔥 Urgent
                                 </span>
                               )}
                               {userAssessment && job.recommendationScore && job.recommendationScore > 70 && (
-                                <span className="bg-green-100 text-green-600 px-3 py-1 rounded-full text-xs font-medium flex items-center animate-bounce">
+                                <span className="inline-flex items-center rounded-full bg-green-100 px-2.5 py-1 text-xs font-semibold text-green-800">
                                   <Target className="w-3 h-3 mr-1" />
                                   Recommended
                                 </span>
                               )}
                             </div>
+                            <h3 className="text-xl font-extrabold leading-tight">
+                              <button type="button" aria-haspopup="dialog" className="rounded-md text-left hover:underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white">
+                                {job.title}
+                              </button>
+                            </h3>
                             
-                            <div className="flex flex-wrap items-center gap-4 text-gray-600 mb-2">
-                              <div className="flex items-center">
-                                <Building className="w-4 h-4 mr-2 text-indigo-500" />
-                                <span className="font-medium text-indigo-600">{job.company}</span>
+                            <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-2 text-sm text-indigo-50">
+                              <div className="flex min-w-0 items-start gap-1.5">
+                                <Building className="mt-0.5 h-4 w-4 shrink-0" />
+                                <span className="font-semibold text-white">{job.company}</span>
                               </div>
                               
-                              <div className="flex items-center">
-                                <MapPin className="w-4 h-4 mr-1" />
+                              <div className="flex min-w-0 items-start gap-1.5">
+                                <MapPin className="mt-0.5 h-4 w-4 shrink-0" />
                                 <span>{job.location}</span>
                               </div>
                               
-                              <div className="flex items-center">
-                                <Clock className="w-4 h-4 mr-1" />
+                              <div className="flex min-w-0 items-start gap-1.5">
+                                <Clock className="mt-0.5 h-4 w-4 shrink-0" />
                                 <span>{job.posted}</span>
                               </div>
                               
@@ -507,36 +506,28 @@ Application Date: ${new Date().toLocaleDateString()}`;
                             </div>
                           </div>
                           
-                          <div className="flex items-center space-x-2 ml-4">
                             <button
                               onClick={(e) => {
                                 e.stopPropagation();
                                 toggleSaveJob(job.id);
                               }}
                               disabled={pending}
-                              className={`p-3 rounded-full transition-all duration-300 transform hover:scale-110 ${
-                                savedJobs.includes(job.id) 
-                                  ? 'text-red-500 bg-red-50 hover:bg-red-100 scale-110 shadow-lg' 
-                                  : 'text-gray-400 hover:text-red-500 hover:bg-red-50 hover:shadow-lg'
+                              aria-label={`Save ${job.title}`}
+                              aria-pressed={savedJobs.includes(job.id)}
+                              className={`grid h-11 w-11 shrink-0 place-items-center rounded-full transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white ${
+                                savedJobs.includes(job.id) ? 'bg-rose-50 text-rose-700 hover:bg-rose-100' : 'bg-white/20 text-white hover:bg-white/30'
                               }`}
                             >
                               <Heart className={`w-5 h-5 ${savedJobs.includes(job.id) ? 'fill-current' : ''}`} />
                             </button>
-                            <button
-                              onClick={(e) => e.stopPropagation()}
-                              className="p-3 rounded-full text-gray-400 hover:text-gray-600 hover:bg-gray-50 transition-all duration-300 hover:shadow-lg transform hover:scale-110"
-                            >
-                              <Share2 className="w-5 h-5" />
-                            </button>
-                          </div>
                         </div>
-                      </div>
                     </div>
 
+                    <div className="flex flex-1 flex-col p-5 sm:p-6">
                     {/* Job Type and Salary */}
-                    <div className="flex flex-wrap items-center justify-between mb-4">
-                      <div className="flex items-center space-x-3">
-                        <span className={`px-4 py-2 rounded-2xl text-sm font-medium shadow-md ${
+                    <div className="mb-3 flex flex-wrap items-center gap-x-3 gap-y-2">
+                      <div className="flex flex-wrap items-center gap-2">
+                        <span className={`rounded-full px-2.5 py-1 text-xs font-semibold ${
                           job.type === 'Full-time' ? 'bg-green-100 text-green-800' :
                           job.type === 'Part-time' ? 'bg-blue-100 text-blue-800' :
                           job.type === 'Freelance' ? 'bg-purple-100 text-purple-800' :
@@ -546,41 +537,38 @@ Application Date: ${new Date().toLocaleDateString()}`;
                         </span>
                         
                         {(job.arrangement || job.isRemote) && (
-                          <span className="bg-indigo-100 text-indigo-800 px-4 py-2 rounded-2xl text-sm font-medium shadow-md">
+                          <span className="rounded-full bg-indigo-50 px-2.5 py-1 text-xs font-semibold text-indigo-800">
                             {job.arrangement || 'Remote'}
                           </span>
                         )}
                         
-                        <span className="bg-gray-100 text-gray-700 px-4 py-2 rounded-2xl text-sm shadow-md">
-                          {job.category}
-                        </span>
                       </div>
                       
-                      <div className="text-xl font-bold text-green-600 bg-green-50 px-4 py-2 rounded-2xl shadow-md">
+                      <div className="text-sm font-bold text-emerald-800">
                         {job.salary || 'Gaji tidak dicantumkan'}
                       </div>
                     </div>
 
                     {/* Description */}
-                    <p className="text-gray-600 mb-4 leading-relaxed">
+                    <p className="mb-4 line-clamp-2 text-sm leading-relaxed text-slate-600">
                       {job.description.length > 150 ? `${job.description.substring(0, 150)}...` : job.description}
                     </p>
 
                     {/* Accessibility Score */}
-                    {!job.companyListing && <div className="mb-4 bg-gradient-to-r from-green-50 to-emerald-50 border-2 border-green-200 rounded-2xl p-4 shadow-lg">
-                      <div className="flex items-center justify-between">
+                    {!job.companyListing && <div className="mb-4 rounded-xl border border-emerald-100 bg-emerald-50 px-3 py-2.5">
+                      <div className="flex flex-wrap items-center justify-between gap-2">
                         <div className="flex items-center space-x-2">
                           <Accessibility className="w-5 h-5 text-green-600" />
                           <span className="text-sm font-medium text-green-800">
                             Deaf-Friendly Score: {job.deafFriendlyScore}%
                           </span>
                         </div>
-                        <div className="flex items-center space-x-1">
+                        <div aria-hidden="true" className="flex items-center gap-1">
                           {[...Array(5)].map((_, i) => (
                             <div
                               key={i}
-                              className={`w-3 h-3 rounded-full transition-all duration-300 ${
-                                i < Math.floor(job.deafFriendlyScore / 20) ? 'bg-green-500 shadow-md' : 'bg-gray-300'
+                              className={`h-2 w-2 rounded-full ${
+                                i < Math.floor(job.deafFriendlyScore / 20) ? 'bg-emerald-600' : 'bg-emerald-200'
                               }`}
                             />
                           ))}
@@ -591,21 +579,21 @@ Application Date: ${new Date().toLocaleDateString()}`;
                     {/* Tags */}
                     <div className="flex flex-wrap gap-2 mb-4">
                       {job.tags.slice(0, 4).map((tag, index) => (
-                        <span key={index} className="bg-indigo-100 text-indigo-800 px-3 py-1 rounded-full text-xs font-medium shadow-md hover:shadow-lg transition-all duration-300 transform hover:scale-105">
+                        <span key={index} className="rounded-full bg-slate-100 px-2.5 py-1 text-xs font-medium text-slate-700">
                           {tag}
                         </span>
                       ))}
                       {job.tags.length > 4 && (
-                        <span className="bg-gray-100 text-gray-600 px-3 py-1 rounded-full text-xs shadow-md">
+                        <span className="rounded-full bg-indigo-50 px-2.5 py-1 text-xs text-indigo-800">
                           +{job.tags.length - 4} more
                         </span>
                       )}
                     </div>
 
                     {/* Action Buttons */}
-                    <div className="flex flex-col sm:flex-row gap-3">
+                    <div className="mt-auto flex flex-col gap-2 border-t border-slate-100 pt-4 sm:flex-row">
                       {applicationStatus ? (
-                        <div className="flex-1 bg-green-50 border-2 border-green-200 rounded-2xl p-4 flex items-center justify-between shadow-lg">
+                        <div className="flex flex-1 flex-wrap items-center justify-between gap-2 rounded-xl border border-emerald-100 bg-emerald-50 px-3 py-2.5 text-sm">
                           <div className="flex items-center space-x-2">
                             <CheckCircle className="w-5 h-5 text-green-600" />
                             <span className="text-green-800 font-medium">
@@ -623,7 +611,7 @@ Application Date: ${new Date().toLocaleDateString()}`;
                               e.stopPropagation();
                               handleApplyNow(job);
                             }}
-                            className="flex-1 bg-gradient-to-r from-indigo-600 to-purple-600 text-white py-4 rounded-2xl font-semibold hover:from-indigo-700 hover:to-purple-700 transition-all duration-300 shadow-xl hover:shadow-2xl flex items-center justify-center space-x-2 transform hover:scale-105"
+                            className="flex min-h-11 flex-1 items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-indigo-700 to-violet-700 px-3 py-2 text-sm font-semibold text-white hover:from-indigo-800 hover:to-violet-800"
                           >
                             <Send className="w-4 h-4" />
                             <span>Apply Now</span>
@@ -634,7 +622,7 @@ Application Date: ${new Date().toLocaleDateString()}`;
                               e.stopPropagation();
                               handleContactEmployer(job);
                             }}
-                            className="flex-1 border-2 border-indigo-600 text-indigo-600 py-4 rounded-2xl font-semibold hover:bg-indigo-50 transition-all duration-300 shadow-lg hover:shadow-xl flex items-center justify-center space-x-2 transform hover:scale-105"
+                            className="flex min-h-11 flex-1 items-center justify-center gap-2 rounded-xl border border-indigo-200 px-3 py-2 text-sm font-semibold text-indigo-800 hover:bg-indigo-50"
                           >
                             <Mail className="w-4 h-4" />
                             <span>Contact</span>
@@ -642,12 +630,13 @@ Application Date: ${new Date().toLocaleDateString()}`;
                         </>
                       )}
                     </div>
-                  </div>
+                    </div>
+                  </article>
                 );
               })}
 
               {filteredJobs.length === 0 && (
-                <div className="text-center py-16 bg-white/90 backdrop-blur-lg rounded-3xl shadow-2xl border border-white/20">
+                <div className="col-span-full rounded-3xl border border-indigo-100 bg-white px-5 py-12 text-center shadow-sm">
                   <Briefcase className="w-20 h-20 text-gray-400 mx-auto mb-6" />
                   <h3 className="text-2xl font-semibold text-gray-900 mb-3">No jobs found</h3>
                   <p className="text-gray-600 mb-6">Try adjusting your search criteria or browse different categories</p>
@@ -663,31 +652,46 @@ Application Date: ${new Date().toLocaleDateString()}`;
                   </button>
                 </div>
               )}
-            </div>
+          </section>
+        </div>
+      </div>
 
-            {/* Job Details Sidebar */}
-            <div className="lg:col-span-1">
-              {selectedJob ? (
-                <div className="bg-white/90 backdrop-blur-lg rounded-3xl p-6 shadow-2xl sticky top-6 border border-white/20">
-                  <div className="mb-6">
-                    <div className="flex items-start justify-between mb-4">
-                      <h2 className="text-2xl font-bold text-gray-900 leading-tight">
+      <dialog
+        ref={detailsDialog}
+        aria-labelledby="job-detail-title"
+        onCancel={event => { event.preventDefault(); setSelectedJob(null); }}
+        onClick={event => { if (event.target === event.currentTarget) setSelectedJob(null); }}
+        className="m-auto max-h-[90dvh] w-[calc(100%-2rem)] max-w-2xl overflow-y-auto overscroll-contain rounded-3xl border border-indigo-100 bg-white shadow-2xl backdrop:bg-slate-950/50 [overflow-wrap:anywhere]"
+      >
+              {selectedJob && (
+                <div>
+                  <div className="border-b border-indigo-100 bg-gradient-to-br from-blue-50 to-violet-100 p-5 sm:p-6">
+                    <div className="mb-3 flex items-start justify-between gap-3">
+                      <h2 id="job-detail-title" className="text-2xl font-extrabold leading-tight text-slate-950">
                         {selectedJob.title}
                       </h2>
+                      <div className="flex shrink-0 gap-1">
                       <button
                         onClick={() => toggleSaveJob(selectedJob.id)}
                         disabled={pending}
-                        className={`p-3 rounded-full transition-all duration-300 transform hover:scale-110 ${
+                        aria-label={`Save ${selectedJob.title}`}
+                        aria-pressed={savedJobs.includes(selectedJob.id)}
+                        className={`grid h-10 w-10 place-items-center rounded-full bg-white transition-colors ${
                           savedJobs.includes(selectedJob.id) 
-                            ? 'text-red-500 bg-red-50 hover:bg-red-100 shadow-lg' 
-                            : 'text-gray-400 hover:text-red-500 hover:bg-red-50 hover:shadow-lg'
+                            ? 'text-rose-700 hover:bg-rose-100'
+                            : 'text-indigo-800 hover:bg-rose-50 hover:text-rose-700'
                         }`}
                       >
-                        <Heart className={`w-6 h-6 ${savedJobs.includes(selectedJob.id) ? 'fill-current' : ''}`} />
+                        <Heart className={`h-5 w-5 ${savedJobs.includes(selectedJob.id) ? 'fill-current' : ''}`} />
                       </button>
+                      <button type="button" aria-label="Close job details" onClick={() => setSelectedJob(null)}
+                        className="grid h-10 w-10 place-items-center rounded-full bg-white text-slate-700 hover:bg-indigo-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-indigo-700">
+                        <X aria-hidden="true" className="h-5 w-5" />
+                      </button>
+                      </div>
                     </div>
                     
-                    <div className="flex items-center space-x-2 mb-4">
+                    <div className="flex flex-wrap items-center gap-2">
                       <Building className="w-5 h-5 text-indigo-500" />
                       <span className="text-lg font-medium text-indigo-600">{selectedJob.company}</span>
                       {selectedJob.rating && (
@@ -699,8 +703,9 @@ Application Date: ${new Date().toLocaleDateString()}`;
                     </div>
                   </div>
 
+                  <div className="p-5 sm:p-6">
                   {/* Quick Info */}
-                  <div className="space-y-4 mb-6">
+                  <div className="mb-6 grid gap-2 sm:grid-cols-2">
                     <div className="flex items-center text-gray-600 bg-gray-50 p-3 rounded-xl">
                       <MapPin className="w-5 h-5 mr-3 text-gray-400" />
                       <span>{selectedJob.location}</span>
@@ -798,35 +803,21 @@ Application Date: ${new Date().toLocaleDateString()}`;
                         <span>Apply for this Job</span>
                       </button>
                       
-                      <div className="grid grid-cols-2 gap-2">
+                      <div>
                         <button
                           onClick={() => handleContactEmployer(selectedJob)}
-                          className="border-2 border-gray-300 text-gray-700 py-3 rounded-2xl font-medium hover:bg-gray-50 transition-all duration-300 text-sm flex items-center justify-center space-x-1 shadow-lg hover:shadow-xl transform hover:scale-105"
+                          className="flex w-full items-center justify-center gap-2 rounded-xl border border-indigo-200 py-3 text-sm font-semibold text-indigo-800 hover:bg-indigo-50"
                         >
                           <Mail className="w-4 h-4" />
                           <span>Contact</span>
                         </button>
-                        <button className="border-2 border-gray-300 text-gray-700 py-3 rounded-2xl font-medium hover:bg-gray-50 transition-all duration-300 text-sm flex items-center justify-center space-x-1 shadow-lg hover:shadow-xl transform hover:scale-105">
-                          <ExternalLink className="w-4 h-4" />
-                          <span>Company</span>
-                        </button>
                       </div>
                     </div>
                   )}
-                </div>
-              ) : (
-                <div className="bg-white/90 backdrop-blur-lg rounded-3xl p-6 shadow-2xl text-center text-gray-500 sticky top-6 border border-white/20">
-                  <div className="w-16 h-16 bg-gradient-to-r from-indigo-100 to-purple-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                    <Briefcase className="w-8 h-8 text-indigo-500" />
                   </div>
-                  <h3 className="text-lg font-medium text-gray-900 mb-2">Select a job to view details</h3>
-                  <p className="text-sm">Click on any job card to see comprehensive information and application options</p>
                 </div>
               )}
-            </div>
-          </div>
-        </div>
-      </div>
+      </dialog>
 
       {/* Application Modal */}
       {showApplicationModal && currentApplicationJob && (
@@ -917,41 +908,37 @@ function ApplicationModal({ job, onClose, onSubmit, pending, error }: {
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50 backdrop-blur-sm">
-      <div className="bg-white rounded-3xl max-w-2xl w-full max-h-[90vh] overflow-y-auto shadow-2xl border border-white/20">
-        <div className="p-6 border-b border-gray-200 bg-gradient-to-r from-indigo-50 to-purple-50">
-          <div className="flex items-center justify-between mb-4">
+      <div className="max-h-[90dvh] w-full min-w-0 max-w-2xl overflow-y-auto overscroll-contain rounded-3xl border border-indigo-100 bg-white shadow-2xl [overflow-wrap:anywhere]">
+        <div className="border-b border-indigo-100 bg-gradient-to-r from-blue-50 to-violet-100 p-4 sm:p-6">
+          <div className="mb-4 flex items-start justify-between gap-2">
             <h2 className="text-2xl font-bold text-gray-900">Apply for {job.title}</h2>
             <button
               onClick={onClose}
-              className="p-2 hover:bg-gray-100 rounded-full transition-colors"
+              aria-label="Close application"
+              className="shrink-0 rounded-full p-2 transition-colors hover:bg-white"
             >
               <X className="w-6 h-6" />
             </button>
           </div>
           
           {/* Progress Steps */}
-          <div className="flex items-center justify-between">
+          <ol className="grid grid-cols-2 gap-2 sm:grid-cols-4">
             {steps.map((step, index) => (
-              <div key={index} className="flex items-center">
-                <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium transition-all duration-300 ${
-                  index <= currentStep ? 'bg-indigo-600 text-white shadow-lg' : 'bg-gray-200 text-gray-600'
+              <li key={step} aria-current={index === currentStep ? 'step' : undefined} className="flex min-w-0 items-center gap-1.5 text-xs font-semibold sm:text-sm">
+                <span className={`grid h-6 w-6 shrink-0 place-items-center rounded-full ${
+                  index <= currentStep ? 'bg-indigo-700 text-white' : 'bg-white text-slate-600'
                 }`}>
                   {index + 1}
-                </div>
-                <span className={`ml-2 text-sm font-medium ${index <= currentStep ? 'text-indigo-600' : 'text-gray-500'}`}>
+                </span>
+                <span className={index <= currentStep ? 'text-indigo-900' : 'text-slate-600'}>
                   {step}
                 </span>
-                {index < steps.length - 1 && (
-                  <div className={`mx-4 h-1 w-16 rounded-full transition-all duration-300 ${
-                    index < currentStep ? 'bg-indigo-600' : 'bg-gray-200'
-                  }`} />
-                )}
-              </div>
+              </li>
             ))}
-          </div>
+          </ol>
         </div>
 
-        <div className="p-6">
+        <div className="p-4 sm:p-6">
           {currentStep === 0 && (
             <div className="space-y-4">
               <h3 className="text-lg font-semibold mb-4">Personal Information</h3>
@@ -1073,7 +1060,7 @@ function ApplicationModal({ job, onClose, onSubmit, pending, error }: {
             </div>
           )}
 
-          <div className="flex justify-between items-center mt-8 pt-6 border-t border-gray-200">
+          <div className="mt-8 flex flex-wrap items-center justify-between gap-2 border-t border-gray-200 pt-6">
             <button
               onClick={() => setCurrentStep(Math.max(0, currentStep - 1))}
               disabled={currentStep === 0}
@@ -1127,7 +1114,7 @@ function ContactModal({ job, onClose, emailContent }: { job: Job; onClose: () =>
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50 backdrop-blur-sm">
-      <div className="bg-white rounded-3xl max-w-3xl w-full max-h-[90vh] overflow-y-auto shadow-2xl border border-white/20">
+      <div className="max-h-[90dvh] w-full min-w-0 max-w-3xl overflow-y-auto overscroll-contain rounded-3xl border border-indigo-100 bg-white shadow-2xl [overflow-wrap:anywhere]">
         <div className="p-6 border-b border-gray-200 bg-gradient-to-r from-indigo-50 to-purple-50">
           <div className="flex items-center justify-between">
             <h2 className="text-2xl font-bold text-gray-900">Contact Employer</h2>
@@ -1147,9 +1134,9 @@ function ContactModal({ job, onClose, emailContent }: { job: Job; onClose: () =>
           </div>
 
           <div className="bg-gradient-to-r from-gray-50 to-indigo-50 rounded-2xl p-4 mb-6 shadow-lg">
-            <div className="flex items-center justify-between mb-3">
-              <div className="flex items-center space-x-2">
-                <Mail className="w-5 h-5 text-gray-500" />
+            <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+              <div className="flex min-w-0 items-center gap-2">
+                <Mail className="h-5 w-5 shrink-0 text-gray-500" />
                 <span className="font-medium text-gray-900">To: {job.companyEmail}</span>
               </div>
               <button
