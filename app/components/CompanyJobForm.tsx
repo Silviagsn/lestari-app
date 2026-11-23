@@ -3,6 +3,7 @@
 import { useLanguage } from './Language';
 
 import { useState, type ReactNode } from 'react';
+import { indonesianCities, indonesianCityGroups } from '../utils/jobLocations';
 import { accessibilityOptions, emptyJob, experienceLevels, jobCategories, jobDetailLabels, jobTextLimits, jobTypes, workArrangements, type CompanyJob, type JobDraft, type ListingStatus } from '../utils/recruitment';
 
 export const companyCard = 'min-w-0 rounded-3xl border border-violet-100 bg-white p-5 shadow-sm sm:p-6';
@@ -27,6 +28,7 @@ export default function CompanyJobForm({ job, companyName, busy, save, onCancel,
     setDraft(current => ({ ...current, [field]: value }));
   };
   const onePerLine = t('Isi satu poin per baris.', 'Enter one item per line.');
+  const savedLocation = job?.location;
 
   function text(name: TextField, placeholder: string, rows?: number, hint?: string) {
     const id = 'job-' + name;
@@ -87,7 +89,14 @@ export default function CompanyJobForm({ job, companyName, busy, save, onCancel,
               <span className="min-w-0 font-semibold [overflow-wrap:anywhere]">{companyName || t('Nama belum diisi', 'Name missing')}</span>
               <button type="button" onClick={openProfile} className="font-semibold text-indigo-800 hover:underline">{t('Buka profil', 'Open profile')}</button>
             </div>)}
-            {row(t('Lokasi', 'Location'), text('location', t('Contoh: Bandung atau Indonesia', 'Example: Bandung or Indonesia')), 'location')}
+            {row(t('Lokasi', 'Location'), <select id="job-location" className={companyInput}
+              value={draft.location} onChange={event => update('location', event.target.value)}>
+              <option value="">{t('Pilih kota', 'Select a city')}</option>
+              {savedLocation && !indonesianCities.has(savedLocation) && <option value={savedLocation}>{savedLocation}</option>}
+              {Object.entries(indonesianCityGroups).map(([letter, cities]) => <optgroup key={letter} label={letter}>
+                {cities.map(city => <option key={city} value={city}>{city}</option>)}
+              </optgroup>)}
+            </select>, 'location')}
             {row(t('Tipe pekerjaan', 'Employment type'), select('type', jobTypes), 'type')}
             {row(t('Tingkat pengalaman', 'Experience level'), select('experienceLevel', experienceLevels), 'experienceLevel')}
             {row(t('Pengaturan kerja', 'Work arrangement'), select('arrangement', Object.fromEntries(workArrangements.map(value => [value, value]))), 'arrangement')}
