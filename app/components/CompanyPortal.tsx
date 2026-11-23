@@ -3,9 +3,10 @@
 import { LanguageSwitch, useLanguage } from './Language';
 
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { Accessibility, ArrowLeft, ArrowRight, Briefcase, Building2, ClipboardList, EarOff, LayoutDashboard, LogOut, Plus, Users } from 'lucide-react';
+import { Accessibility, ArrowLeft, ArrowRight, Briefcase, Building2, CheckCircle2, ClipboardList, EarOff, Globe, LayoutDashboard, LogOut, Plus, Settings, Users } from 'lucide-react';
 import CompanyJobForm, { companyCard, companyInput, companyPrimary, companySecondary } from './CompanyJobForm';
 import ProfilePage from './ProfilePage';
+import RecruitmentSearch from './RecruitmentSearch';
 import { accessibilityOptions, applicantStatuses, jobTypes, listingStatuses, type ApplicantStatus, type CompanyApplicant, type CompanyJob, type ListingStatus, type RecruitmentData } from '../utils/recruitment';
 
 const companyNavigation = (t: (id: string, en: string) => string) => [
@@ -15,19 +16,23 @@ const companyNavigation = (t: (id: string, en: string) => string) => [
   { id: 'applicants', title: t("Pelamar", "Applicants"), icon: Users },
   { id: 'profile', title: t("Profil Perusahaan", "Company Profile"), icon: Building2 },
 ] as const;
-type View = ReturnType<typeof companyNavigation>[number]['id'];
+type View = ReturnType<typeof companyNavigation>[number]['id'] | 'settings';
 const compactDate = (value: string) => new Date(value).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric', timeZone: 'Asia/Jakarta' });
 const listingState = (job: CompanyJob): ListingStatus => job.status === 'published' && job.expired ? 'closed' : job.status;
 const applicationCommunication: Record<string, string> = {
   email: 'Email', text: 'Pesan teks', 'video-asl': 'Panggilan video dengan juru bahasa isyarat', 'written-chat': 'Chat tertulis',
 };
+const applicantStatusesEnglish: Record<ApplicantStatus, string> = {
+  applied: 'New', reviewing: 'Under review', interview: 'Interview', offer: 'Offered', rejected: 'Rejected',
+};
+const listingStatusesEnglish: Record<ListingStatus, string> = { draft: 'Draft', published: 'Published', closed: 'Closed' };
 
 function ListingBadge({ job }: { job: CompanyJob }) {
   const { t } = useLanguage();
   const status = listingState(job);
   const styles = { draft: 'bg-amber-100 text-amber-900', published: 'bg-emerald-100 text-emerald-900', closed: 'bg-slate-100 text-slate-700' };
   return <span className={`inline-flex rounded-full px-2.5 py-1 text-xs font-bold ${styles[status]}`}>
-    {job.status === 'published' && job.expired ? t("Berakhir", "Expired") : listingStatuses[status]}
+    {job.status === 'published' && job.expired ? t('Berakhir', 'Expired') : t(listingStatuses[status], listingStatusesEnglish[status])}
   </span>;
 }
 
@@ -62,15 +67,27 @@ function Listings({ jobs, openEditor, openApplicants, closeJob, busy }: {
   ) : <p className="py-5 text-sm text-slate-600">{t("Belum ada lowongan di tampilan ini.", "There are no jobs in this view yet.")}</p>;
 }
 
-function ApplicantCard({ applicant, jobTitle, busy, update }: {
+function ApplicantCard({ applicant, jobTitle, busy, update, highlighted }: {
   applicant: CompanyApplicant; jobTitle: string; busy: boolean; update: (status: ApplicantStatus) => void;
+  highlighted?: { jobId: number; applicantId: number };
 }) {
   const { t } = useLanguage();
+  const card = useRef<HTMLDetailsElement>(null);
+  useEffect(() => {
+    if (!highlighted) return;
+    const frame = requestAnimationFrame(() => {
+      if (!card.current) return;
+      card.current.open = true;
+      card.current.querySelector('summary')?.focus({ preventScroll: true });
+      card.current.scrollIntoView({ block: 'nearest' });
+    });
+    return () => cancelAnimationFrame(frame);
+  }, [highlighted]);
   return (
-    <details className={`${companyCard} group`}>
+    <details ref={card} className={`${companyCard} group scroll-mt-24`}>
       <summary className="cursor-pointer rounded-lg marker:text-indigo-600 focus-visible:outline focus-visible:outline-2 focus-visible:outline-indigo-700">
         <span className="ml-1 inline-block break-words text-base font-bold">{applicant.name}</span>
-        <span className="ml-2 inline-block rounded-full bg-violet-100 px-2.5 py-1 text-xs font-bold text-indigo-900">{applicantStatuses[applicant.status]}</span>
+        <span className="ml-2 inline-block rounded-full bg-violet-100 px-2.5 py-1 text-xs font-bold text-indigo-900">{t(applicantStatuses[applicant.status], applicantStatusesEnglish[applicant.status])}</span>
         <span className="mt-1 block break-words text-sm text-slate-600">{jobTitle} · {compactDate(applicant.appliedAt)}</span>
       </summary>
       <div className="mt-4 grid gap-4 border-t border-slate-100 pt-4">
@@ -83,8 +100,8 @@ function ApplicantCard({ applicant, jobTitle, busy, update }: {
         </dl>
         <label className="grid max-w-xs gap-1.5 text-sm font-bold text-slate-900">
           {t("Status lamaran", "Application status")}
-          <select disabled={busy} value={applicant.status} onChange={event => update(event.target.value as ApplicantStatus)} className={companyInput}>
-            {Object.entries(applicantStatuses).map(([status, label]) => <option key={status} value={status}>{label}</option>)}
+          <select aria-label={t('Status lamaran', 'Application status')} disabled={busy} value={applicant.status} onChange={event => update(event.target.value as ApplicantStatus)} className={companyInput}>
+            {(Object.keys(applicantStatuses) as ApplicantStatus[]).map(status => <option key={status} value={status}>{t(applicantStatuses[status], applicantStatusesEnglish[status])}</option>)}
           </select>
         </label>
       </div>
@@ -100,6 +117,8 @@ export default function CompanyPortal({ logout, authError }: { logout: () => voi
   const [editing, setEditing] = useState<CompanyJob>();
   const [listingFilter, setListingFilter] = useState<ListingStatus | 'all'>('all');
   const [applicantFilter, setApplicantFilter] = useState('all');
+  const [applicantStatus, setApplicantStatus] = useState<ApplicantStatus | 'all'>('all');
+  const [focusedApplicant, setFocusedApplicant] = useState<{ jobId: number; applicantId: number }>();
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
   const [notice, setNotice] = useState('');
@@ -132,7 +151,11 @@ export default function CompanyPortal({ logout, authError }: { logout: () => voi
   function navigate(next: View) {
     if (busy || next === view) return;
     if (next === 'editor') setEditing(undefined);
-    if (next === 'applicants') setApplicantFilter('all');
+    if (next === 'applicants') {
+      setApplicantFilter('all');
+      setApplicantStatus('all');
+      setFocusedApplicant(undefined);
+    }
     setView(next);
     if (data) setError('');
     setNotice('');
@@ -147,9 +170,11 @@ export default function CompanyPortal({ logout, authError }: { logout: () => voi
     setNotice('');
   }
 
-  function openApplicants(id: number) {
+  function openApplicants(id: number, applicantId?: number) {
     if (busy) return;
     setApplicantFilter(String(id));
+    setApplicantStatus('all');
+    setFocusedApplicant(applicantId === undefined ? undefined : { jobId: id, applicantId });
     setView('applicants');
     setError('');
     setNotice('');
@@ -180,42 +205,75 @@ export default function CompanyPortal({ logout, authError }: { logout: () => voi
   const activeJobs = data?.jobs.filter(job => listingState(job) === 'published') ?? [];
   const drafts = data?.jobs.filter(job => job.status === 'draft').length ?? 0;
   const newApplicants = data?.applicants.filter(item => item.status === 'applied').length ?? 0;
-  const title = view === 'editor' ? editing ? t("Edit lowongan", "Edit job") : t("Buat lowongan", "Create job") :
-    view === 'jobs' ? t("Lowongan Saya", "My jobs") : view === 'applicants' ? t("Pelamar", "Applicants") : t("Dasbor Rekrutmen", "Recruitment Dashboard");
+  const titles: Record<View, string> = {
+    overview: t('Dasbor Rekrutmen', 'Recruitment Dashboard'), jobs: t('Lowongan Saya', 'My jobs'),
+    editor: editing ? t('Edit lowongan', 'Edit job') : t('Buat lowongan', 'Create job'),
+    applicants: t('Pelamar', 'Applicants'), profile: t('Profil Perusahaan', 'Company Profile'), settings: t('Pengaturan', 'Settings'),
+  };
+  const title = titles[view];
   const jobs = data?.jobs.filter(job => listingFilter === 'all' || listingState(job) === listingFilter) ?? [];
-  const applicants = data?.applicants.filter(item => applicantFilter === 'all' || String(item.jobId) === applicantFilter) ?? [];
+  const applicants = data?.applicants.filter(item => (applicantFilter === 'all' || String(item.jobId) === applicantFilter) &&
+    (applicantStatus === 'all' || item.status === applicantStatus)) ?? [];
+
+  function showJobs(status: ListingStatus | 'all' = 'all') {
+    setListingFilter(status);
+    navigate('jobs');
+  }
+
+  function showNewApplicants() {
+    navigate('applicants');
+    setApplicantStatus('applied');
+  }
+
+  const steps = [
+    { label: t('Lengkapi profil', 'Complete your profile'), detail: t('Isi identitas perusahaan.', 'Add your company details.'), done: Boolean(data?.companyName), go: () => navigate('profile') },
+    { label: t('Terbitkan lowongan', 'Publish a job'), detail: t('Tulis posisi dan dukungan aksesibilitas.', 'Describe the role and accessibility support.'), done: activeJobs.length > 0, go: () => drafts ? showJobs('draft') : activeJobs.length ? showJobs('published') : openEditor() },
+    { label: t('Tinjau pelamar', 'Review applicants'), detail: t('Buka lamaran dan perbarui tahap seleksi.', 'Open applications and update the hiring stage.'), done: Boolean(data?.applicants.some(item => item.status !== 'applied')), go: () => navigate('applicants') },
+  ];
+  const next = !data?.companyName ? steps[0] : newApplicants ? steps[2] : !activeJobs.length ? steps[1] : {
+    label: t('Kelola lowongan', 'Manage jobs'), go: () => showJobs(),
+  };
 
   return (
-    <div className="min-h-screen bg-[#f1f1fa] text-slate-950 lg:grid lg:grid-cols-[15.25rem_minmax(0,1fr)]">
-      <aside className="bg-[#211746] px-4 pb-3 pt-4 text-white lg:sticky lg:top-0 lg:flex lg:h-screen lg:flex-col lg:px-4 lg:py-7">
-        <div className="mb-4 flex items-center justify-between gap-3 px-1 lg:mb-8">
-          <button type="button" onClick={() => navigate('overview')} className="flex items-center gap-2 rounded-xl text-left focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-white">
-            <span className="grid h-10 w-10 place-items-center rounded-xl bg-violet-600"><EarOff className="h-5 w-5" aria-hidden="true" /></span>
-            <span><span className="block text-xl font-extrabold tracking-tight">Lestari</span><span className="block text-xs text-violet-200">{t("Portal Perusahaan", "Employer Portal")}</span></span>
-          </button>
-          <button type="button" onClick={logout} className="flex items-center gap-1 rounded-lg px-2 py-2 text-sm font-semibold text-violet-100 hover:bg-violet-800 lg:hidden">
-            <LogOut aria-hidden="true" className="h-4 w-4" /> {t("Keluar", "Sign out")}
+    <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-[#fafaff] to-violet-50 text-slate-950 lg:grid lg:grid-cols-[14rem_minmax(0,1fr)]">
+      <aside className="border-b border-indigo-100 bg-white px-3 py-3 lg:sticky lg:top-0 lg:flex lg:h-dvh lg:flex-col lg:border-b-0 lg:border-r lg:px-4 lg:py-6">
+        <div className="mb-3 flex items-center justify-between gap-3 px-1 lg:mb-8">
+          <button type="button" onClick={() => navigate('overview')} className="flex items-center gap-2 rounded-xl text-left focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-700">
+            <span className="grid h-10 w-10 place-items-center rounded-xl bg-gradient-to-br from-indigo-600 to-violet-700 text-white"><EarOff className="h-5 w-5" aria-hidden="true" /></span>
+            <span><span className="block text-xl font-extrabold tracking-tight text-indigo-950">Lestari</span><span className="block text-xs font-medium text-slate-600">{t('Portal Perusahaan', 'Employer Portal')}</span></span>
           </button>
         </div>
-        <div className="mb-3 lg:mb-5"><LanguageSwitch /></div>
         <nav aria-label={t('Menu perusahaan', 'Employer navigation')} className="flex flex-wrap gap-1 text-sm lg:grid lg:gap-2">
           {navigation.map(({ id, title, icon: Icon }) => (
             <button key={id} type="button" aria-current={view === id ? 'page' : undefined}
               onClick={() => id === 'editor' ? openEditor() : navigate(id)}
-              className={`flex min-h-10 items-center gap-2 rounded-xl px-2.5 text-left font-semibold focus-visible:outline focus-visible:outline-2 focus-visible:outline-white lg:min-h-11 lg:px-3 ${view === id ? 'bg-violet-700 text-white' : 'text-violet-100 hover:bg-violet-900'}`}>
+              className={`flex min-h-10 items-center gap-2 rounded-xl px-2.5 text-left font-semibold focus-visible:outline focus-visible:outline-2 focus-visible:outline-indigo-700 lg:min-h-11 lg:px-3 ${view === id ? 'bg-indigo-100 text-indigo-950' : 'text-slate-700 hover:bg-indigo-50'}`}>
               <Icon aria-hidden="true" className="h-4 w-4 shrink-0" />{title}
             </button>
           ))}
         </nav>
-        <div className="mt-auto hidden rounded-2xl border border-white/15 bg-white/5 p-3 lg:block">
+        <div className="mt-auto hidden rounded-2xl border border-indigo-100 bg-indigo-50/75 p-3 lg:block">
           <p className="break-words text-sm font-semibold">{data?.companyName || t("Akun perusahaan", "Employer account")}</p>
-          <button type="button" className="mt-2 flex min-h-10 items-center gap-2 rounded-lg text-sm font-semibold text-violet-200 hover:text-white" onClick={logout}>
+          <button type="button" className="mt-2 flex min-h-10 items-center gap-2 rounded-lg text-sm font-semibold text-indigo-800 hover:text-indigo-950" onClick={logout}>
             <LogOut aria-hidden="true" className="h-4 w-4" /> {t("Keluar akun", "Sign out")}
           </button>
         </div>
       </aside>
 
       <div className="min-w-0">
+        <header className="sticky top-0 z-30 border-b border-indigo-100 bg-white/95 backdrop-blur">
+          <div className="mx-auto flex min-h-16 max-w-7xl flex-wrap items-center justify-between gap-2 px-3 py-2 sm:px-7">
+            <span className="hidden min-w-0 truncate text-sm font-semibold text-slate-700 md:inline">{title}</span>
+            <div className="ml-auto flex flex-wrap items-center justify-end gap-1.5 sm:gap-2">
+              <RecruitmentSearch data={data} busy={busy} openJob={openEditor} openApplicant={item => openApplicants(item.jobId, item.applicantId)} />
+              <LanguageSwitch />
+              <button type="button" aria-label={titles.settings} aria-current={view === 'settings' ? 'page' : undefined} onClick={() => navigate('settings')}
+                className={`flex min-h-10 items-center gap-2 rounded-xl border border-indigo-100 px-2.5 text-sm font-semibold text-indigo-900 hover:bg-indigo-100 focus-visible:outline focus-visible:outline-2 focus-visible:outline-indigo-700 ${view === 'settings' ? 'bg-indigo-100' : 'bg-white'}`}>
+                <Settings aria-hidden="true" className="h-4 w-4" /><span className="hidden sm:inline">{titles.settings}</span>
+              </button>
+            </div>
+          </div>
+        </header>
         {view === 'profile' ? <ProfilePage /> : (
           <main className="mx-auto max-w-7xl space-y-5 px-4 py-6 sm:px-7 sm:py-8">
             <header className="flex flex-wrap items-end justify-between gap-3">
@@ -223,46 +281,81 @@ export default function CompanyPortal({ logout, authError }: { logout: () => voi
                 {view === 'editor' && <button type="button" onClick={() => navigate('jobs')} className="mb-2 flex items-center gap-1.5 text-sm font-bold text-indigo-800"><ArrowLeft className="h-4 w-4" aria-hidden="true" /> {t("Kembali ke lowongan", "Back to jobs")}</button>}
                 <h1 ref={heading} tabIndex={-1} className="text-3xl font-extrabold tracking-tight outline-none sm:text-4xl">{title}</h1>
                 <p className="mt-1 text-sm text-slate-600">
-                  {view === 'overview' ? t("Pantau lowongan dan tindak lanjuti lamaran dari satu tempat.", "Track job listings and follow up on applications in one place.") : view === 'editor' ? t("Jelaskan pekerjaan dan dukungan yang tersedia bagi kandidat.", "Describe the role and the support available to candidates.") : view === 'jobs' ? t("Kelola draf, lowongan tayang, dan lowongan yang ditutup.", "Manage draft, published, and closed job listings.") : t("Buka lamaran dan perbarui tahap rekrutmen.", "Review applications and update the recruitment stage.")}
+                  {view === 'overview' ? t('Pantau pekerjaan dan tindak lanjuti lamaran.', 'Track jobs and follow up on applications.') : view === 'editor' ? t('Jelaskan pekerjaan dan dukungan yang tersedia bagi kandidat.', 'Describe the role and the support available to candidates.') : view === 'jobs' ? t('Kelola draf, lowongan tayang, dan lowongan yang ditutup.', 'Manage draft, published, and closed job listings.') : view === 'settings' ? t('Kelola bahasa, profil, dan sesi akun perusahaan.', 'Manage the language, profile, and sign-in session for your employer account.') : t('Buka lamaran dan perbarui tahap rekrutmen.', 'Review applications and update the recruitment stage.')}
                 </p>
               </div>
-              {view !== 'editor' && <button type="button" className={companyPrimary} onClick={() => openEditor()}><Plus className="h-4 w-4" aria-hidden="true" /> {t("Buat lowongan", "Create job")}</button>}
+              {(view === 'overview' || view === 'jobs') && <button type="button" className={companyPrimary} onClick={() => openEditor()}><Plus className="h-4 w-4" aria-hidden="true" /> {t('Buat lowongan', 'Create job')}</button>}
             </header>
             {notice && <p role="status" className="rounded-xl bg-emerald-100 px-4 py-3 text-sm font-semibold text-emerald-950">{notice}</p>}
             {error && <p ref={alert} tabIndex={-1} role="alert" className="rounded-xl bg-red-100 px-4 py-3 text-sm font-semibold text-red-950">{error}</p>}
-            {!data && !error && <p role="status" className={companyCard}>{t("Memuat data rekrutmen…", "Loading recruitment data…")}</p>}
-            {!data && error && <button type="button" className={companySecondary} onClick={() => { setError(''); load().catch((failure: Error) => setError(failure.message)); }}>{t("Coba lagi", "Try again")}</button>}
+            {!data && !error && view !== 'settings' && <p role="status" className={companyCard}>{t('Memuat data rekrutmen…', 'Loading recruitment data…')}</p>}
+            {!data && error && view !== 'settings' && <button type="button" className={companySecondary} onClick={() => { setError(''); load().catch((failure: Error) => setError(failure.message)); }}>{t('Coba lagi', 'Try again')}</button>}
+
+            {view === 'settings' && <div className="grid gap-4 lg:grid-cols-2">
+              <section className={companyCard}>
+                <h2 className="flex items-center gap-2 font-bold"><Globe aria-hidden="true" className="h-5 w-5 text-indigo-700" />{t('Bahasa tampilan', 'Display language')}</h2>
+                <p className="mb-4 mt-1 text-sm text-slate-600">{t('Pilihan ini disimpan di browser yang kamu gunakan.', 'This preference is saved in your current browser.')}</p>
+                <LanguageSwitch />
+              </section>
+              <section className={companyCard}>
+                <h2 className="flex items-center gap-2 font-bold"><Building2 aria-hidden="true" className="h-5 w-5 text-indigo-700" />{t('Akun perusahaan', 'Employer account')}</h2>
+                <p className="mb-4 mt-1 text-sm text-slate-600">{t('Perbarui identitas perusahaan atau akhiri sesi di perangkat ini.', 'Update your company details or end the session on this device.')}</p>
+                <div className="flex flex-wrap gap-2">
+                  <button type="button" className={companyPrimary} onClick={() => navigate('profile')}>{t('Buka profil', 'Open profile')}</button>
+                  <button type="button" className={companySecondary} onClick={logout}><LogOut aria-hidden="true" className="h-4 w-4" />{t('Keluar akun', 'Sign out')}</button>
+                </div>
+              </section>
+            </div>}
 
             {data && view === 'overview' && (
               <>
-                <section className="relative isolate overflow-hidden rounded-3xl bg-gradient-to-br from-[#25205a] via-indigo-800 to-violet-800 px-6 py-7 text-white sm:px-8 sm:py-9">
+                <section className="relative isolate overflow-hidden rounded-3xl bg-gradient-to-br from-[#31216b] via-indigo-800 to-violet-800 px-6 py-7 text-white shadow-lg shadow-indigo-900/10 sm:px-8 sm:py-9">
                   <span aria-hidden="true" className="absolute -right-14 -top-20 h-72 w-72 rounded-full border-[25px] border-white/10" />
                   <span aria-hidden="true" className="absolute -right-6 -top-12 h-52 w-52 rounded-full border border-white/25" />
                   <div className="relative max-w-xl [overflow-wrap:anywhere]">
                     <h2 className="text-2xl font-extrabold tracking-tight sm:text-3xl">{data.companyName || t("Selamat datang di portal perusahaan", "Welcome to the employer portal")}</h2>
-                    <p className="mt-2 text-sm text-indigo-100">{newApplicants ? `${newApplicants} lamaran baru siap ditinjau.` : t("Terbitkan lowongan inklusif dan tinjau lamaran dari kandidat.", "Publish inclusive job listings and review candidate applications.")}</p>
-                    <button type="button" onClick={() => navigate('applicants')} className="mt-4 flex min-h-10 items-center gap-2 rounded-xl bg-white px-3 text-sm font-bold text-indigo-900 hover:bg-violet-100">{t("Lihat pelamar", "View applicants")} <ArrowRight aria-hidden="true" className="h-4 w-4" /></button>
+                    <p className="mt-2 text-sm text-indigo-100">{newApplicants ? t(`${newApplicants} lamaran baru siap ditinjau.`, `${newApplicants} new applications to review.`) : t('Terbitkan lowongan inklusif dan tinjau lamaran dari kandidat.', 'Publish inclusive job listings and review candidate applications.')}</p>
+                    <button type="button" onClick={data.companyName && newApplicants > 0 ? showNewApplicants : next.go} className="mt-4 flex min-h-10 items-center gap-2 rounded-xl bg-white px-3 text-sm font-bold text-indigo-900 hover:bg-violet-100 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white">{next.label} <ArrowRight aria-hidden="true" className="h-4 w-4" /></button>
                   </div>
                 </section>
                 <div className="grid gap-3 sm:grid-cols-3">
                   {[
-                    { label: t("Lowongan tayang", "Published jobs"), value: activeJobs.length, icon: Briefcase, tone: 'bg-emerald-100 text-emerald-900' },
-                    { label: t("Draf lowongan", "Draft jobs"), value: drafts, icon: ClipboardList, tone: 'bg-amber-100 text-amber-900' },
-                    { label: t("Total lamaran", "Total applications"), value: data.applicants.length, icon: Users, tone: 'bg-violet-100 text-indigo-900' },
-                  ].map(({ label, value, icon: Icon, tone }) => (
-                    <div key={label} className={`flex items-center gap-3 ${companyCard}`}>
-                      <span className={`grid h-11 w-11 place-items-center rounded-2xl ${tone}`}><Icon className="h-5 w-5" aria-hidden="true" /></span>
-                      <div><p className="text-sm font-medium text-slate-600">{label}</p><p className="text-2xl font-extrabold">{value}</p></div>
-                    </div>
+                    { label: t('Lowongan tayang', 'Published jobs'), value: activeJobs.length, icon: Briefcase, tone: 'bg-emerald-100 text-emerald-900', go: () => showJobs('published') },
+                    { label: t('Draf lowongan', 'Draft jobs'), value: drafts, icon: ClipboardList, tone: 'bg-amber-100 text-amber-900', go: () => showJobs('draft') },
+                    { label: t('Total lamaran', 'Total applications'), value: data.applicants.length, icon: Users, tone: 'bg-violet-100 text-indigo-900', go: () => navigate('applicants') },
+                  ].map(({ label, value, icon: Icon, tone, go }) => (
+                    <button type="button" key={label} onClick={go} className={`flex items-center gap-3 text-left hover:border-indigo-300 focus-visible:outline focus-visible:outline-2 focus-visible:outline-indigo-700 ${companyCard}`}>
+                      <span className={`grid h-11 w-11 shrink-0 place-items-center rounded-2xl ${tone}`}><Icon className="h-5 w-5" aria-hidden="true" /></span>
+                      <span className="flex-1"><span className="block text-sm font-medium text-slate-600">{label}</span><span className="block text-2xl font-extrabold">{value}</span></span>
+                      <ArrowRight aria-hidden="true" className="h-4 w-4 shrink-0 text-indigo-700" />
+                    </button>
                   ))}
                 </div>
+                <section className={companyCard}>
+                  <h2 className="mb-3 text-lg font-bold">{t('Alur rekrutmen', 'Recruitment steps')}</h2>
+                  <ol className="grid gap-2 xl:grid-cols-3">
+                    {steps.map(({ label, detail, done, go }, index) => <li key={label}>
+                      <button type="button" onClick={go} className="flex h-full w-full items-center gap-3 rounded-xl border border-indigo-100 bg-indigo-50/50 p-3 text-left hover:bg-indigo-100 focus-visible:outline focus-visible:outline-2 focus-visible:outline-indigo-700">
+                        <span className={`grid h-8 w-8 shrink-0 place-items-center rounded-full text-sm font-bold ${done ? 'bg-emerald-100 text-emerald-900' : 'bg-white text-indigo-900'}`}>
+                          {done ? <><CheckCircle2 aria-hidden="true" className="h-4 w-4" /><span className="sr-only">{t('Selesai', 'Completed')}</span></> : index + 1}
+                        </span>
+                        <span className="flex-1"><span className="block text-sm font-bold">{label}</span><span className="block text-xs text-slate-600">{detail}</span></span>
+                        <ArrowRight aria-hidden="true" className="h-4 w-4 shrink-0 text-indigo-700" />
+                      </button>
+                    </li>)}
+                  </ol>
+                </section>
                 <div className="grid items-start gap-4 xl:grid-cols-[minmax(0,1.9fr)_minmax(0,1fr)]">
                   <section className={companyCard}>
                     <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
                       <h2 className="text-lg font-bold">{t("Lowongan terbaru", "Recent jobs")}</h2>
-                      <button type="button" onClick={() => navigate('jobs')} className="text-sm font-bold text-indigo-800 hover:underline">{t("Lihat semua", "View all")}</button>
+                      <button type="button" onClick={() => showJobs()} className="text-sm font-bold text-indigo-800 hover:underline">{t('Lihat semua', 'View all')}</button>
                     </div>
-                    <Listings jobs={data.jobs.slice(0, 5)} openEditor={openEditor} openApplicants={openApplicants} busy={busy} />
+                    {data.jobs.length > 0 ? <Listings jobs={data.jobs.slice(0, 5)} openEditor={openEditor} openApplicants={openApplicants} busy={busy} /> :
+                      <div className="rounded-xl bg-indigo-50/70 p-4 text-sm text-slate-700">
+                        <p>{t('Lowongan yang kamu buat akan muncul di sini.', 'Jobs you create will appear here.')}</p>
+                        <button type="button" onClick={() => openEditor()} className="mt-2 font-bold text-indigo-800 hover:underline">{t('Buat lowongan pertama', 'Create your first job')}</button>
+                      </div>}
                   </section>
                   <section className={companyCard}>
                     <h2 className="flex items-center gap-2 text-lg font-bold"><Accessibility className="h-5 w-5 text-indigo-700" aria-hidden="true" /> {t("Aksesibilitas lowongan", "Job accessibility")}</h2>
@@ -284,7 +377,7 @@ export default function CompanyPortal({ logout, authError }: { logout: () => voi
                 {(['all', 'published', 'draft', 'closed'] as const).map(status => (
                   <button key={status} type="button" aria-pressed={listingFilter === status} onClick={() => setListingFilter(status)}
                     className={`min-h-10 rounded-full px-3.5 text-sm font-semibold ${listingFilter === status ? 'bg-indigo-700 text-white' : 'bg-violet-50 text-indigo-900 hover:bg-violet-100'}`}>
-                    {status === 'all' ? t("Semua", "All") : listingStatuses[status]}
+                    {status === 'all' ? t('Semua', 'All') : t(listingStatuses[status], listingStatusesEnglish[status])}
                   </button>
                 ))}
               </div>
@@ -299,14 +392,23 @@ export default function CompanyPortal({ logout, authError }: { logout: () => voi
 
             {data && view === 'applicants' && (
               <section aria-label="Daftar lamaran" className="grid gap-3">
-                <label className="grid max-w-sm gap-1.5 text-sm font-bold">{t("Filter lowongan", "Filter by job")}
+                <div className="grid max-w-2xl gap-3 sm:grid-cols-2">
+                <label className="grid gap-1.5 text-sm font-bold">{t('Filter lowongan', 'Filter by job')}
                   <select value={applicantFilter} onChange={event => setApplicantFilter(event.target.value)} className={companyInput}>
                     <option value="all">{t("Semua lowongan", "All jobs")}</option>
                     {data.jobs.map(job => <option key={job.id} value={job.id}>{job.title}</option>)}
                   </select>
                 </label>
+                <label className="grid gap-1.5 text-sm font-bold">{t('Filter tahap seleksi', 'Filter by hiring stage')}
+                  <select value={applicantStatus} onChange={event => setApplicantStatus(event.target.value as ApplicantStatus | 'all')} className={companyInput}>
+                    <option value="all">{t('Semua tahap', 'All stages')}</option>
+                    {(Object.keys(applicantStatuses) as ApplicantStatus[]).map(status => <option key={status} value={status}>{t(applicantStatuses[status], applicantStatusesEnglish[status])}</option>)}
+                  </select>
+                </label>
+                </div>
                 {applicants.length ? applicants.map(applicant => <ApplicantCard key={`${applicant.jobId}-${applicant.applicantId}`}
                   applicant={applicant} jobTitle={data.jobs.find(job => job.id === applicant.jobId)?.title ?? ''}
+                  highlighted={focusedApplicant?.jobId === applicant.jobId && focusedApplicant?.applicantId === applicant.applicantId ? focusedApplicant : undefined}
                   busy={busy} update={status => void mutate({ action: 'applicant-status', jobId: applicant.jobId, applicantId: applicant.applicantId, status }, t("Status lamaran diperbarui.", "Application status updated."))} />
                 ) : <p className={`${companyCard} text-sm text-slate-600`}>{t("Belum ada lamaran untuk lowongan yang dipilih.", "There are no applications for the selected job.")}</p>}
               </section>
