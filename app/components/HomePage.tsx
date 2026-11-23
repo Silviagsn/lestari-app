@@ -1,5 +1,7 @@
 'use client';
 
+import { useLanguage } from './Language';
+
 import React, { useState, useEffect } from 'react';
 import { 
   ChevronRight, 
@@ -24,6 +26,7 @@ import { features } from './Features'; // Disesuaikan dengan F besar
 import AssessmentModal from './AssessmentModal';
 
 export default function HomePage({ setCurrentPage }: { setCurrentPage: (page: string) => void }) {
+  const { t } = useLanguage();
   const [currentFeature, setCurrentFeature] = useState<number>(0);
   const [isVisible, setIsVisible] = useState<boolean>(false);
   const [showAssessment, setShowAssessment] = useState<boolean>(false);
@@ -140,7 +143,7 @@ export default function HomePage({ setCurrentPage }: { setCurrentPage: (page: st
     },
     {
       icon: <Globe className="w-6 h-6 text-indigo-500" />,
-      title: "Global Community",
+      title: t("Komunitas global", "Global Community"),
       description: "Connect with deaf professionals worldwide",
       gradient: "from-indigo-50 to-indigo-100"
     }
@@ -178,33 +181,33 @@ export default function HomePage({ setCurrentPage }: { setCurrentPage: (page: st
           <div className={`text-center transition-all duration-1000 ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'}`}>
             <div className="inline-flex items-center px-6 py-3 bg-gradient-to-r from-green-400 to-emerald-500 text-white rounded-full text-sm font-medium mb-8 shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-300">
               <Accessibility className="w-4 h-4 mr-2" />
-              100% Deaf-Friendly Platform
+              {t("Platform untuk komunitas Tuli", "100% Deaf-Friendly Platform")}
               <div className="absolute inset-0 bg-gradient-to-r from-green-400 to-emerald-500 rounded-full blur-lg opacity-30 -z-10"></div>
             </div>
             
             <h1 className="text-4xl sm:text-6xl font-black text-gray-900 tracking-tight mb-6">
-              Empowering the <br className="hidden sm:inline" />
+              {t("Mendukung", "Empowering the")} <br className="hidden sm:inline" />
               <span className="bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600 bg-clip-text text-transparent">
-                Deaf Community
+                {t("Komunitas Tuli", "Deaf Community")}
               </span>
             </h1>
             
             <p className="max-w-2xl mx-auto text-base sm:text-lg text-gray-600 mb-8 leading-relaxed">
-              The world’s first comprehensive platform designed exclusively for deaf individuals. Find employment, learn new skills, and maintain mental wellness through accessible technology.
+              {t("Temukan pekerjaan, pelajari keterampilan baru, dan akses dukungan kesehatan mental dengan teknologi yang lebih aksesibel.", "The world’s first comprehensive platform designed exclusively for deaf individuals. Find employment, learn new skills, and maintain mental wellness through accessible technology.")}
             </p>
 
             <div className="flex flex-wrap justify-center items-center gap-4 mb-10">
               <div className="flex items-center space-x-2 bg-white px-4 py-3 rounded-2xl shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-300 border border-gray-100">
                 <Eye className="w-5 h-5 text-blue-500" />
-                <span className="text-sm font-medium text-gray-700">Visual First</span>
+                <span className="text-sm font-medium text-gray-700">{t("Mengutamakan visual", "Visual First")}</span>
               </div>
               <div className="flex items-center space-x-2 bg-white px-4 py-3 rounded-2xl shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-300 border border-gray-100">
                 <Hand className="w-5 h-5 text-green-500" />
-                <span className="text-sm font-medium text-gray-700">ASL Support</span>
+                <span className="text-sm font-medium text-gray-700">{t("Dukungan ASL", "ASL Support")}</span>
               </div>
               <div className="flex items-center space-x-2 bg-white px-4 py-3 rounded-2xl shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-300 border border-gray-100">
                 <MessageSquare className="w-5 h-5 text-purple-500" />
-                <span className="text-sm font-medium text-gray-700">Text Based</span>
+                <span className="text-sm font-medium text-gray-700">{t("Berbasis teks", "Text Based")}</span>
               </div>
             </div>
             
@@ -214,7 +217,7 @@ export default function HomePage({ setCurrentPage }: { setCurrentPage: (page: st
                 className="group bg-gradient-to-r from-indigo-600 to-purple-600 text-white px-8 py-4 rounded-2xl font-semibold hover:from-indigo-700 hover:to-purple-700 transition-all duration-300 shadow-xl hover:shadow-2xl transform hover:scale-105 hover:-translate-y-1 flex items-center justify-center space-x-2 relative overflow-hidden cursor-pointer"
               >
                 <div className="absolute inset-0 bg-gradient-to-r from-indigo-600 to-purple-600 blur-lg opacity-50 -z-10"></div>
-                <span>Start Your Journey</span>
+                <span>{t("Mulai perjalananmu", "Start Your Journey")}</span>
                 <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
               </button>
               <button 
@@ -222,7 +225,7 @@ export default function HomePage({ setCurrentPage }: { setCurrentPage: (page: st
                 className="group border-2 border-indigo-600 text-indigo-600 px-8 py-4 rounded-2xl font-semibold hover:bg-indigo-600 hover:text-white transition-all duration-300 shadow-lg hover:shadow-xl transform hover:scale-105 hover:-translate-y-1 flex items-center justify-center space-x-2 bg-white cursor-pointer"
               >
                 <Play className="w-5 h-5" />
-                <span>Watch Demo</span>
+                <span>{t("Lihat fitur", "Watch Demo")}</span>
               </button>
             </div>
           </div>
@@ -234,10 +237,10 @@ export default function HomePage({ setCurrentPage }: { setCurrentPage: (page: st
         <div className="max-w-7xl mx-auto">
           <div className="text-center mb-12">
             <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
-              Built for Accessibility
+              {t("Dirancang untuk aksesibilitas", "Built for Accessibility")}
             </h2>
             <p className="text-xl text-gray-600 max-w-3xl mx-auto">
-              Every feature designed with the deaf community's unique needs in mind
+              {t("Setiap fitur mempertimbangkan kebutuhan komunitas Tuli.", "Every feature designed with the deaf community's unique needs in mind")}
             </p>
           </div>
           
@@ -269,10 +272,10 @@ export default function HomePage({ setCurrentPage }: { setCurrentPage: (page: st
         <div className="max-w-7xl mx-auto relative">
           <div className="text-center mb-16">
             <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
-              Platform Features
+              {t("Fitur Lestari", "Platform Features")}
             </h2>
             <p className="text-xl text-gray-600 max-w-2xl mx-auto">
-              Four powerful tools designed specifically for the deaf community's success
+              {t("Empat fitur untuk mendukung komunitas Tuli.", "Four powerful tools designed specifically for the deaf community's success")}
             </p>
           </div>
           
@@ -302,7 +305,7 @@ export default function HomePage({ setCurrentPage }: { setCurrentPage: (page: st
                         {feature.description}
                       </p>
                       <div className="flex items-center text-indigo-600 font-medium group-hover:text-indigo-700 transition-colors">
-                        <span>Explore Feature</span>
+                        <span>{t("Jelajahi fitur", "Explore Feature")}</span>
                         <ChevronRight className="w-5 h-5 ml-2 group-hover:translate-x-2 transition-transform" />
                       </div>
                     </div>
@@ -319,7 +322,7 @@ export default function HomePage({ setCurrentPage }: { setCurrentPage: (page: st
         <div className="max-w-7xl mx-auto">
           <div className="text-center mb-16">
             <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
-              Why Choose Lestari?
+              {t("Mengapa Lestari?", "Why Choose Lestari?")}
             </h2>
             <p className="text-xl text-gray-600 max-w-3xl mx-auto">
               We understand the unique challenges faced by the deaf community and have created solutions that truly work
@@ -356,10 +359,10 @@ export default function HomePage({ setCurrentPage }: { setCurrentPage: (page: st
         <div className="max-w-4xl mx-auto relative">
           <div className="text-center mb-12">
             <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
-              Success Stories
+              {t("Cerita sukses", "Success Stories")}
             </h2>
             <p className="text-xl text-gray-600">
-              Hear from our community members
+              {t("Dengarkan cerita dari komunitas", "Hear from our community members")}
             </p>
           </div>
           
@@ -413,7 +416,7 @@ export default function HomePage({ setCurrentPage }: { setCurrentPage: (page: st
       <section className="py-16 px-4 sm:px-6 lg:px-8 bg-white relative">
         <div className="max-w-7xl mx-auto text-center">
           <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
-            Trusted by the Community
+            {t("Dipercaya komunitas", "Trusted by the Community")}
           </h2>
           <p className="text-xl text-gray-600 mb-12">
             See how we're making a difference every day
@@ -451,7 +454,7 @@ export default function HomePage({ setCurrentPage }: { setCurrentPage: (page: st
         
         <div className="max-w-4xl mx-auto text-center relative z-10">
           <h2 className="text-3xl md:text-4xl font-bold text-white mb-6 drop-shadow-lg">
-            Ready to Transform Your Future?
+            {t("Siap merencanakan langkah berikutnya?", "Ready to Transform Your Future?")}
           </h2>
           <p className="text-xl text-indigo-100 mb-8 max-w-2xl mx-auto drop-shadow-md">
             Join thousands of deaf professionals who trust Lestari for their career and wellness journey. Start with a personalized assessment.
@@ -462,7 +465,7 @@ export default function HomePage({ setCurrentPage }: { setCurrentPage: (page: st
               className="group bg-white text-indigo-600 px-8 py-4 rounded-2xl font-semibold hover:bg-gray-100 transition-all duration-300 shadow-xl hover:shadow-2xl transform hover:scale-105 hover:-translate-y-1 flex items-center justify-center space-x-2 relative overflow-hidden cursor-pointer"
             >
               <div className="absolute inset-0 bg-white blur-lg opacity-50 -z-10"></div>
-              <span>Take Assessment</span>
+              <span>{t("Mulai asesmen", "Take Assessment")}</span>
               <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
             </button>
             <button 
@@ -470,7 +473,7 @@ export default function HomePage({ setCurrentPage }: { setCurrentPage: (page: st
               className="border-2 border-white text-white px-8 py-4 rounded-2xl font-semibold hover:bg-white hover:text-indigo-600 transition-all duration-300 shadow-lg hover:shadow-xl transform hover:scale-105 hover:-translate-y-1 flex items-center justify-center space-x-2 bg-white bg-opacity-10 backdrop-blur-sm cursor-pointer"
             >
               <BookOpen className="w-5 h-5" />
-              <span>Browse Workshops</span>
+              <span>{t("Lihat workshop", "Browse Workshops")}</span>
             </button>
           </div>
           
@@ -485,7 +488,7 @@ export default function HomePage({ setCurrentPage }: { setCurrentPage: (page: st
             </div>
             <div className="flex items-center space-x-2 text-white bg-white bg-opacity-10 px-4 py-2 rounded-full backdrop-blur-sm">
               <Globe className="w-5 h-5" />
-              <span className="text-sm">Global Community</span>
+              <span className="text-sm">{t("Komunitas global", "Global Community")}</span>
             </div>
           </div>
         </div>

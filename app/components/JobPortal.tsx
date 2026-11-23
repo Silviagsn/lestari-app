@@ -1,3 +1,4 @@
+import { useLanguage } from './Language';
 import React, { useEffect, useRef, useState } from 'react';
 import { useCatalog } from '../utils/useCatalog';
 import { applicantStatuses, type ApplicantStatus } from '../utils/recruitment';
@@ -110,6 +111,7 @@ interface JobPortalProps {
 }
 
 export default function JobPortalPage({ userAssessment }: JobPortalProps) {
+  const { t } = useLanguage();
   const [selectedJob, setSelectedJob] = useState<Job | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('all');
@@ -320,10 +322,10 @@ Application Date: ${new Date().toLocaleDateString()}`;
           <div className="mb-5 sm:mb-8">
             <div className="mb-4 text-center sm:mb-6">
               <h1 className="mb-2 bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600 bg-clip-text text-3xl font-bold text-transparent sm:mb-4 sm:text-4xl md:text-5xl">
-                Find Your Perfect Job
+                {t("Temukan Pekerjaan yang Tepat", "Find Your Perfect Job")}
               </h1>
               <p className="mx-auto max-w-3xl text-sm text-slate-600 sm:text-lg md:text-xl">
-                Discover deaf-friendly opportunities tailored to your skills and preferences across Indonesia
+                {t("Jelajahi peluang kerja yang ramah bagi komunitas Tuli di seluruh Indonesia.", "Discover deaf-friendly opportunities tailored to your skills and preferences across Indonesia")}
               </p>
             </div>
             
@@ -331,19 +333,19 @@ Application Date: ${new Date().toLocaleDateString()}`;
             <div className="grid grid-cols-2 gap-2 sm:gap-4 md:grid-cols-4">
               <div className="rounded-2xl border border-white/60 bg-white/80 p-2.5 text-center shadow-sm sm:p-4">
                 <div className="text-2xl font-bold text-indigo-600">{filteredJobs.length}</div>
-                <div className="text-sm text-gray-600">Available Jobs</div>
+                <div className="text-sm text-gray-600">{t("Lowongan tersedia", "Available Jobs")}</div>
               </div>
               <div className="rounded-2xl border border-white/60 bg-white/80 p-2.5 text-center shadow-sm sm:p-4">
                 <div className="text-2xl font-bold text-green-600">{jobs.filter(job => job.isAccessibilityVerified).length}</div>
-                <div className="text-sm text-gray-600">Accessibility Verified</div>
+                <div className="text-sm text-gray-600">{t("Aksesibilitas terverifikasi", "Accessibility Verified")}</div>
               </div>
               <div className="rounded-2xl border border-white/60 bg-white/80 p-2.5 text-center shadow-sm sm:p-4">
                 <div className="text-2xl font-bold text-purple-600">{savedJobs.length}</div>
-                <div className="text-sm text-gray-600">Saved Jobs</div>
+                <div className="text-sm text-gray-600">{t("Lowongan tersimpan", "Saved Jobs")}</div>
               </div>
               <div className="rounded-2xl border border-white/60 bg-white/80 p-2.5 text-center shadow-sm sm:p-4">
                 <div className="text-2xl font-bold text-blue-600">{applications.length}</div>
-                <div className="text-sm text-gray-600">Applications</div>
+                <div className="text-sm text-gray-600">{t("Lamaran", "Applications")}</div>
               </div>
             </div>
           </div>
@@ -365,7 +367,7 @@ Application Date: ${new Date().toLocaleDateString()}`;
             <div className="mb-6 bg-gradient-to-r from-green-50 to-blue-50 border-2 border-green-200 rounded-2xl p-6 shadow-lg">
               <div className="flex items-center space-x-3 mb-3">
                 <Target className="w-6 h-6 text-green-600" />
-                <h3 className="text-lg font-semibold text-green-800">Personalized Recommendations</h3>
+                <h3 className="text-lg font-semibold text-green-800">{t("Rekomendasi untukmu", "Personalized Recommendations")}</h3>
               </div>
               <p className="text-green-700">
                 Based on your assessment, we've found {filteredJobs.filter(job => job.recommendationScore && job.recommendationScore > 60).length} highly recommended jobs matching your interests in{' '}
@@ -407,8 +409,8 @@ Application Date: ${new Date().toLocaleDateString()}`;
                 <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
                 <input
                   type="text"
-                  aria-label="Search jobs"
-                  placeholder="Search jobs, companies, or skills..."
+                  aria-label={t("Cari lowongan", "Search jobs")}
+                  placeholder={t("Cari lowongan, perusahaan, atau keahlian…", "Search jobs, companies, or skills...")}
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
                   className="min-h-11 w-full rounded-xl border border-slate-300 bg-white py-2.5 pl-12 pr-4 text-slate-900 focus:border-indigo-600 focus:outline-none focus:ring-2 focus:ring-indigo-200"
@@ -417,38 +419,38 @@ Application Date: ${new Date().toLocaleDateString()}`;
               
               <div className="min-w-0">
                 <select
-                  aria-label="Job type"
+                  aria-label={t("Jenis pekerjaan", "Job type")}
                   value={filterType}
                   onChange={(e) => setFilterType(e.target.value)}
                   className="min-h-11 w-full rounded-xl border border-slate-300 bg-white px-2 py-2.5 text-sm text-slate-900 focus:border-indigo-600 focus:outline-none focus:ring-2 focus:ring-indigo-200 sm:px-4 sm:text-base"
                 >
-                  <option value="all">All Types</option>
-                  <option value="full-time">Full-time</option>
-                  <option value="part-time">Part-time</option>
-                  <option value="contract">Contract</option>
-                  <option value="freelance">Freelance</option>
-                  <option value="remote">Remote</option>
+                  <option value="all">{t("Semua jenis", "All Types")}</option>
+                  <option value="full-time">{t("Penuh waktu", "Full-time")}</option>
+                  <option value="part-time">{t("Paruh waktu", "Part-time")}</option>
+                  <option value="contract">{t("Kontrak", "Contract")}</option>
+                  <option value="freelance">{t("Lepas", "Freelance")}</option>
+                  <option value="remote">{t("Jarak jauh", "Remote")}</option>
                 </select>
               </div>
               
               <div className="min-w-0">
                 <select
-                  aria-label="Sort jobs"
+                  aria-label={t("Urutkan lowongan", "Sort jobs")}
                   value={sortBy}
                   onChange={(e) => setSortBy(e.target.value)}
                   className="min-h-11 w-full rounded-xl border border-slate-300 bg-white px-2 py-2.5 text-sm text-slate-900 focus:border-indigo-600 focus:outline-none focus:ring-2 focus:ring-indigo-200 sm:px-4 sm:text-base"
                 >
-                  <option value="recommended">Recommended</option>
-                  <option value="newest">Newest First</option>
-                  <option value="salary">Highest Salary</option>
-                  <option value="rating">Highest Rated</option>
-                  <option value="accessibility">Most Accessible</option>
+                  <option value="recommended">{t("Direkomendasikan", "Recommended")}</option>
+                  <option value="newest">{t("Terbaru", "Newest First")}</option>
+                  <option value="salary">{t("Gaji tertinggi", "Highest Salary")}</option>
+                  <option value="rating">{t("Penilaian tertinggi", "Highest Rated")}</option>
+                  <option value="accessibility">{t("Paling aksesibel", "Most Accessible")}</option>
                 </select>
               </div>
             </div>
           </div>
 
-          <section aria-label="Job listings" className="grid gap-5 md:grid-cols-2 sm:gap-6">
+          <section aria-label={t("Daftar lowongan", "Job listings")} className="grid gap-5 md:grid-cols-2 sm:gap-6">
               {filteredJobs.map((job) => {
                 const applicationStatus = getApplicationStatus(job.id);
                 return (
@@ -465,13 +467,13 @@ Application Date: ${new Date().toLocaleDateString()}`;
                               <span className="rounded-full bg-white/15 px-2.5 py-1 text-xs font-semibold text-white">{job.category}</span>
                               {job.urgency === 'high' && (
                                 <span className="rounded-full bg-red-100 px-2.5 py-1 text-xs font-semibold text-red-800">
-                                  🔥 Urgent
+                                  {t("🔥 Mendesak", "🔥 Urgent")}
                                 </span>
                               )}
                               {userAssessment && job.recommendationScore && job.recommendationScore > 70 && (
                                 <span className="inline-flex items-center rounded-full bg-green-100 px-2.5 py-1 text-xs font-semibold text-green-800">
                                   <Target className="w-3 h-3 mr-1" />
-                                  Recommended
+                                  {t("Direkomendasikan", "Recommended")}
                                 </span>
                               )}
                             </div>
@@ -560,7 +562,7 @@ Application Date: ${new Date().toLocaleDateString()}`;
                         <div className="flex items-center space-x-2">
                           <Accessibility className="w-5 h-5 text-green-600" />
                           <span className="text-sm font-medium text-green-800">
-                            Deaf-Friendly Score: {job.deafFriendlyScore}%
+                            {t("Skor ramah Tuli:", "Deaf-Friendly Score:")} {job.deafFriendlyScore}%
                           </span>
                         </div>
                         <div aria-hidden="true" className="flex items-center gap-1">
@@ -585,7 +587,7 @@ Application Date: ${new Date().toLocaleDateString()}`;
                       ))}
                       {job.tags.length > 4 && (
                         <span className="rounded-full bg-indigo-50 px-2.5 py-1 text-xs text-indigo-800">
-                          +{job.tags.length - 4} more
+                          +{job.tags.length - 4} {t("lainnya", "more")}
                         </span>
                       )}
                     </div>
@@ -614,7 +616,7 @@ Application Date: ${new Date().toLocaleDateString()}`;
                             className="flex min-h-11 flex-1 items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-indigo-700 to-violet-700 px-3 py-2 text-sm font-semibold text-white hover:from-indigo-800 hover:to-violet-800"
                           >
                             <Send className="w-4 h-4" />
-                            <span>Apply Now</span>
+                            <span>{t("Lamar sekarang", "Apply Now")}</span>
                           </button>
                           
                           <button
@@ -625,7 +627,7 @@ Application Date: ${new Date().toLocaleDateString()}`;
                             className="flex min-h-11 flex-1 items-center justify-center gap-2 rounded-xl border border-indigo-200 px-3 py-2 text-sm font-semibold text-indigo-800 hover:bg-indigo-50"
                           >
                             <Mail className="w-4 h-4" />
-                            <span>Contact</span>
+                            <span>{t("Kontak", "Contact")}</span>
                           </button>
                         </>
                       )}
@@ -638,8 +640,8 @@ Application Date: ${new Date().toLocaleDateString()}`;
               {filteredJobs.length === 0 && (
                 <div className="col-span-full rounded-3xl border border-indigo-100 bg-white px-5 py-12 text-center shadow-sm">
                   <Briefcase className="w-20 h-20 text-gray-400 mx-auto mb-6" />
-                  <h3 className="text-2xl font-semibold text-gray-900 mb-3">No jobs found</h3>
-                  <p className="text-gray-600 mb-6">Try adjusting your search criteria or browse different categories</p>
+                  <h3 className="text-2xl font-semibold text-gray-900 mb-3">{t("Lowongan belum ditemukan", "No jobs found")}</h3>
+                  <p className="text-gray-600 mb-6">{t("Coba ubah pencarian atau pilih kategori lain.", "Try adjusting your search criteria or browse different categories")}</p>
                   <button
                     onClick={() => {
                       setSearchTerm('');
@@ -648,7 +650,7 @@ Application Date: ${new Date().toLocaleDateString()}`;
                     }}
                     className="bg-gradient-to-r from-indigo-600 to-purple-600 text-white px-8 py-3 rounded-2xl hover:from-indigo-700 hover:to-purple-700 transition-all duration-300 shadow-lg hover:shadow-xl transform hover:scale-105"
                   >
-                    Clear Filters
+                    {t("Hapus filter", "Clear Filters")}
                   </button>
                 </div>
               )}
@@ -684,7 +686,7 @@ Application Date: ${new Date().toLocaleDateString()}`;
                       >
                         <Heart className={`h-5 w-5 ${savedJobs.includes(selectedJob.id) ? 'fill-current' : ''}`} />
                       </button>
-                      <button type="button" aria-label="Close job details" onClick={() => setSelectedJob(null)}
+                      <button type="button" aria-label={t("Tutup detail lowongan", "Close job details")} onClick={() => setSelectedJob(null)}
                         className="grid h-10 w-10 place-items-center rounded-full bg-white text-slate-700 hover:bg-indigo-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-indigo-700">
                         <X aria-hidden="true" className="h-5 w-5" />
                       </button>
@@ -720,19 +722,19 @@ Application Date: ${new Date().toLocaleDateString()}`;
                     </div>
                     <div className="flex items-center text-gray-600 bg-gray-50 p-3 rounded-xl">
                       <Calendar className="w-5 h-5 mr-3 text-gray-400" />
-                      <span>Deadline: {selectedJob.applicationDeadline || 'Tidak ditentukan'}</span>
+                      <span>{t("Tenggat:", "Deadline:")} {selectedJob.applicationDeadline || 'Tidak ditentukan'}</span>
                     </div>
                   </div>
 
                   {/* Description */}
                   <div className="mb-6">
-                    <h3 className="font-semibold text-gray-900 mb-3">About this role</h3>
+                    <h3 className="font-semibold text-gray-900 mb-3">{t("Tentang pekerjaan ini", "About this role")}</h3>
                     <p className="text-gray-600 text-sm leading-relaxed bg-gray-50 p-4 rounded-xl">{selectedJob.description}</p>
                   </div>
 
                   {/* Requirements */}
                   <div className="mb-6">
-                    <h3 className="font-semibold text-gray-900 mb-3">Requirements</h3>
+                    <h3 className="font-semibold text-gray-900 mb-3">{t("Persyaratan", "Requirements")}</h3>
                     <div className="flex flex-wrap gap-2">
                       {selectedJob.requirements.map((req, index) => (
                         <span key={index} className="bg-blue-100 text-blue-800 px-3 py-2 rounded-full text-sm shadow-md">
@@ -745,7 +747,7 @@ Application Date: ${new Date().toLocaleDateString()}`;
                   {/* Benefits */}
                   {selectedJob.benefits && (
                     <div className="mb-6">
-                      <h3 className="font-semibold text-gray-900 mb-3">Benefits</h3>
+                      <h3 className="font-semibold text-gray-900 mb-3">{t("Manfaat", "Benefits")}</h3>
                       <div className="space-y-2">
                         {selectedJob.benefits.map((benefit, index) => (
                           <div key={index} className="flex items-center text-sm text-gray-600 bg-gray-50 p-2 rounded-lg">
@@ -761,12 +763,12 @@ Application Date: ${new Date().toLocaleDateString()}`;
                   <div className="mb-6 bg-gradient-to-r from-green-50 to-emerald-50 border-2 border-green-200 rounded-2xl p-4 shadow-lg">
                     <h3 className="font-semibold text-green-800 mb-2 flex items-center">
                       <Accessibility className="w-5 h-5 mr-2" />
-                      Accessibility Support
+                      {t("Dukungan aksesibilitas", "Accessibility Support")}
                     </h3>
                     <p className="text-green-700 text-sm leading-relaxed mb-3">{selectedJob.accessibility}</p>
                     {!selectedJob.companyListing && <div className="flex items-center justify-between">
                       <span className="text-sm font-medium text-green-800">
-                        Deaf-Friendly Score
+                        {t("Skor ramah Tuli", "Deaf-Friendly Score")}
                       </span>
                       <div className="flex items-center space-x-2">
                         <div className="w-20 h-3 bg-green-200 rounded-full shadow-inner">
@@ -790,7 +792,7 @@ Application Date: ${new Date().toLocaleDateString()}`;
                         <span className="font-semibold text-green-800">Lamaran Tersimpan</span>
                       </div>
                       <p className="text-green-600 text-xs mt-1">
-                        Applied: {formatAppliedDate(getApplicationStatus(selectedJob.id))}
+                        {t("Dilamar:", "Applied:")} {formatAppliedDate(getApplicationStatus(selectedJob.id))}
                       </p>
                     </div>
                   ) : (
@@ -800,7 +802,7 @@ Application Date: ${new Date().toLocaleDateString()}`;
                         className="w-full bg-gradient-to-r from-indigo-600 to-purple-600 text-white py-4 rounded-2xl font-semibold hover:from-indigo-700 hover:to-purple-700 transition-all duration-300 shadow-xl hover:shadow-2xl flex items-center justify-center space-x-2 transform hover:scale-105"
                       >
                         <Send className="w-5 h-5" />
-                        <span>Apply for this Job</span>
+                        <span>{t("Lamar pekerjaan ini", "Apply for this Job")}</span>
                       </button>
                       
                       <div>
@@ -809,7 +811,7 @@ Application Date: ${new Date().toLocaleDateString()}`;
                           className="flex w-full items-center justify-center gap-2 rounded-xl border border-indigo-200 py-3 text-sm font-semibold text-indigo-800 hover:bg-indigo-50"
                         >
                           <Mail className="w-4 h-4" />
-                          <span>Contact</span>
+                          <span>{t("Kontak", "Contact")}</span>
                         </button>
                       </div>
                     </div>
@@ -888,6 +890,7 @@ function ApplicationModal({ job, onClose, onSubmit, pending, error }: {
   pending: boolean;
   error: string;
 }) {
+  const { t } = useLanguage();
   const [currentStep, setCurrentStep] = useState(0);
   const [applicationData, setApplicationData] = useState({
     name: '',
@@ -914,7 +917,7 @@ function ApplicationModal({ job, onClose, onSubmit, pending, error }: {
             <h2 className="text-2xl font-bold text-gray-900">Apply for {job.title}</h2>
             <button
               onClick={onClose}
-              aria-label="Close application"
+              aria-label={t("Tutup formulir lamaran", "Close application")}
               className="shrink-0 rounded-full p-2 transition-colors hover:bg-white"
             >
               <X className="w-6 h-6" />
@@ -941,9 +944,9 @@ function ApplicationModal({ job, onClose, onSubmit, pending, error }: {
         <div className="p-4 sm:p-6">
           {currentStep === 0 && (
             <div className="space-y-4">
-              <h3 className="text-lg font-semibold mb-4">Personal Information</h3>
+              <h3 className="text-lg font-semibold mb-4">{t("Informasi pribadi", "Personal Information")}</h3>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Full Name *</label>
+                <label className="block text-sm font-medium text-gray-700 mb-2">{t("Nama lengkap *", "Full Name *")}</label>
                 <input
                   type="text"
                   value={applicationData.name}
@@ -952,7 +955,7 @@ function ApplicationModal({ job, onClose, onSubmit, pending, error }: {
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Email Address *</label>
+                <label className="block text-sm font-medium text-gray-700 mb-2">{t("Alamat email *", "Email Address *")}</label>
                 <input
                   type="email"
                   value={applicationData.email}
@@ -961,7 +964,7 @@ function ApplicationModal({ job, onClose, onSubmit, pending, error }: {
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Phone Number</label>
+                <label className="block text-sm font-medium text-gray-700 mb-2">{t("Nomor telepon", "Phone Number")}</label>
                 <input
                   type="tel"
                   value={applicationData.phone}
@@ -974,12 +977,12 @@ function ApplicationModal({ job, onClose, onSubmit, pending, error }: {
 
           {currentStep === 1 && (
             <div className="space-y-4">
-              <h3 className="text-lg font-semibold mb-4">Documents</h3>
+              <h3 className="text-lg font-semibold mb-4">{t("Dokumen", "Documents")}</h3>
               <div>
                   <p className="text-sm text-gray-600">Unggah CV belum tersedia.</p>
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Cover Letter</label>
+                <label className="block text-sm font-medium text-gray-700 mb-2">{t("Surat lamaran", "Cover Letter")}</label>
                 <textarea
                   value={applicationData.coverLetter}
                   onChange={(e) => setApplicationData({...applicationData, coverLetter: e.target.value})}
@@ -993,9 +996,9 @@ function ApplicationModal({ job, onClose, onSubmit, pending, error }: {
 
           {currentStep === 2 && (
             <div className="space-y-4">
-              <h3 className="text-lg text-gray-500  bg-white  font-semibold mb-4">Communication Preferences</h3>
+              <h3 className="text-lg text-gray-500  bg-white  font-semibold mb-4">{t("Preferensi komunikasi", "Communication Preferences")}</h3>
               <div>
-                <label className="block text-sm text-gray-500  bg-white  font-medium text-gray-700 mb-2">Preferred Communication Method</label>
+                <label className="block text-sm text-gray-500  bg-white  font-medium text-gray-700 mb-2">{t("Cara komunikasi yang dipilih", "Preferred Communication Method")}</label>
                 <select
                   value={applicationData.communicationPreference}
                   onChange={(e) => setApplicationData({...applicationData, communicationPreference: e.target.value})}
@@ -1003,12 +1006,12 @@ function ApplicationModal({ job, onClose, onSubmit, pending, error }: {
                 >
                   <option value="email">Email</option>
                   <option value="text">Text/SMS</option>
-                  <option value="video-asl">Video Call with ASL Interpreter</option>
-                  <option value="written-chat">Written Chat</option>
+                  <option value="video-asl">{t("Panggilan video dengan penerjemah ASL", "Video Call with ASL Interpreter")}</option>
+                  <option value="written-chat">{t("Chat tertulis", "Written Chat")}</option>
                 </select>
               </div>
               <div>
-                <label className="block text-sm text-gray-500  bg-white  font-medium text-gray-700 mb-2">Available Start Date</label>
+                <label className="block text-sm text-gray-500  bg-white  font-medium text-gray-700 mb-2">{t("Tanggal siap mulai", "Available Start Date")}</label>
                 <input
                   type="date"
                   value={applicationData.availabilityDate}
@@ -1017,7 +1020,7 @@ function ApplicationModal({ job, onClose, onSubmit, pending, error }: {
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Salary Expectation</label>
+                <label className="block text-sm font-medium text-gray-700 mb-2">{t("Ekspektasi gaji", "Salary Expectation")}</label>
                 <input
                   type="text"
                   value={applicationData.salaryExpectation}
@@ -1031,25 +1034,25 @@ function ApplicationModal({ job, onClose, onSubmit, pending, error }: {
 
           {currentStep === 3 && (
             <div className="space-y-6">
-              <h3 className="text-lg font-semibold">Review Your Application</h3>
+              <h3 className="text-lg font-semibold">{t("Tinjau lamaran", "Review Your Application")}</h3>
               <div className="bg-gradient-to-r from-gray-50 to-indigo-50 rounded-xl p-4 space-y-4 shadow-lg">
                 <div>
-                  <h4 className="font-medium text-gray-900">Position</h4>
+                  <h4 className="font-medium text-gray-900">{t("Posisi", "Position")}</h4>
                   <p className="text-gray-600">{job.title} at {job.company}</p>
                 </div>
                 <div>
-                  <h4 className="font-medium text-gray-900">Applicant</h4>
+                  <h4 className="font-medium text-gray-900">{t("Pelamar", "Applicant")}</h4>
                   <p className="text-gray-600">{applicationData.name} ({applicationData.email})</p>
                 </div>
                 <div>
-                  <h4 className="font-medium text-gray-900">Communication Preference</h4>
+                  <h4 className="font-medium text-gray-900">{t("Preferensi komunikasi", "Communication Preference")}</h4>
                   <p className="text-gray-600">{applicationData.communicationPreference}</p>
                 </div>
               </div>
               <div className="bg-green-50 border-2 border-green-200 rounded-xl p-4 shadow-lg">
                 <div className="flex items-center space-x-2">
                   <CheckCircle className="w-5 h-5 text-green-600" />
-                  <span className="font-medium text-green-800">Application Ready</span>
+                  <span className="font-medium text-green-800">{t("Lamaran siap", "Application Ready")}</span>
                 </div>
                 <p className="text-green-700 text-sm mt-2">
                   {job.companyListing
@@ -1070,7 +1073,7 @@ function ApplicationModal({ job, onClose, onSubmit, pending, error }: {
                   : 'text-gray-600 hover:text-gray-800 hover:bg-gray-100 shadow-lg transform hover:scale-105'
               }`}
             >
-              Previous
+              {t("Sebelumnya", "Previous")}
             </button>
 
             {currentStep < steps.length - 1 ? (
@@ -1078,7 +1081,7 @@ function ApplicationModal({ job, onClose, onSubmit, pending, error }: {
                 onClick={() => setCurrentStep(currentStep + 1)}
                 className="bg-gradient-to-r from-indigo-600 to-purple-600 text-white px-6 py-3 rounded-xl font-medium hover:from-indigo-700 hover:to-purple-700 transition-all duration-300 shadow-lg hover:shadow-xl transform hover:scale-105"
               >
-                Next Step
+                {t("Lanjut", "Next Step")}
               </button>
             ) : (
               <button
@@ -1099,6 +1102,7 @@ function ApplicationModal({ job, onClose, onSubmit, pending, error }: {
 
 // Contact Modal Component
 function ContactModal({ job, onClose, emailContent }: { job: Job; onClose: () => void; emailContent: { subject: string; body: string }; }) {
+  const { t } = useLanguage();
   const [copied, setCopied] = useState(false);
 
   const handleCopyEmail = () => {
@@ -1117,7 +1121,7 @@ function ContactModal({ job, onClose, emailContent }: { job: Job; onClose: () =>
       <div className="max-h-[90dvh] w-full min-w-0 max-w-3xl overflow-y-auto overscroll-contain rounded-3xl border border-indigo-100 bg-white shadow-2xl [overflow-wrap:anywhere]">
         <div className="p-6 border-b border-gray-200 bg-gradient-to-r from-indigo-50 to-purple-50">
           <div className="flex items-center justify-between">
-            <h2 className="text-2xl font-bold text-gray-900">Contact Employer</h2>
+            <h2 className="text-2xl font-bold text-gray-900">{t("Hubungi perusahaan", "Contact Employer")}</h2>
             <button
               onClick={onClose}
               className="p-2 hover:bg-gray-100 rounded-full transition-colors"
@@ -1129,7 +1133,7 @@ function ContactModal({ job, onClose, emailContent }: { job: Job; onClose: () =>
 
         <div className="p-6">
           <div className="mb-6">
-            <h3 className="text-lg font-semibold text-gray-900 mb-2">Ready-to-Send Email Template</h3>
+            <h3 className="text-lg font-semibold text-gray-900 mb-2">{t("Templat email siap pakai", "Ready-to-Send Email Template")}</h3>
             <p className="text-gray-600">We've prepared a professional email template for you to contact {job.company} about the {job.title} position.</p>
           </div>
 
@@ -1137,7 +1141,7 @@ function ContactModal({ job, onClose, emailContent }: { job: Job; onClose: () =>
             <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
               <div className="flex min-w-0 items-center gap-2">
                 <Mail className="h-5 w-5 shrink-0 text-gray-500" />
-                <span className="font-medium text-gray-900">To: {job.companyEmail}</span>
+                <span className="font-medium text-gray-900">{t("Kepada:", "To:")} {job.companyEmail}</span>
               </div>
               <button
                 onClick={handleCopyEmail}
@@ -1150,14 +1154,14 @@ function ContactModal({ job, onClose, emailContent }: { job: Job; onClose: () =>
             </div>
             
             <div className="mb-3">
-              <strong className="text-gray-900">Subject:</strong>
+              <strong className="text-gray-900">{t("Subjek:", "Subject:")}</strong>
               <div className="bg-white p-3 rounded-xl border mt-1 text-gray-700 shadow-md">
                 {emailContent.subject}
               </div>
             </div>
             
             <div>
-              <strong className="text-gray-900">Message:</strong>
+              <strong className="text-gray-900">{t("Pesan:", "Message:")}</strong>
               <div className="bg-white p-4 rounded-xl border mt-1 text-gray-700 whitespace-pre-line text-sm max-h-64 overflow-y-auto shadow-md">
                 {emailContent.body}
               </div>
@@ -1170,7 +1174,7 @@ function ContactModal({ job, onClose, emailContent }: { job: Job; onClose: () =>
               className="w-full bg-gradient-to-r from-indigo-600 to-purple-600 text-white py-4 rounded-2xl font-semibold hover:from-indigo-700 hover:to-purple-700 transition-all duration-300 shadow-xl hover:shadow-2xl flex items-center justify-center space-x-2 transform hover:scale-105"
             >
               <Send className="w-5 h-5" />
-              <span>Open in Email Client</span>
+              <span>{t("Buka aplikasi email", "Open in Email Client")}</span>
             </button>
             
             <div className="grid grid-cols-2 gap-3">
@@ -1186,7 +1190,7 @@ function ContactModal({ job, onClose, emailContent }: { job: Job; onClose: () =>
                 onClick={onClose}
                 className="border-2 border-gray-300 text-gray-700 py-3 rounded-2xl font-medium hover:bg-gray-50 transition-all duration-300 shadow-lg hover:shadow-xl transform hover:scale-105"
               >
-                Close
+                {t("Tutup", "Close")}
               </button>
             </div>
           </div>
@@ -1195,7 +1199,7 @@ function ContactModal({ job, onClose, emailContent }: { job: Job; onClose: () =>
             <div className="flex items-start space-x-3">
               <AlertCircle className="w-5 h-5 text-blue-600 mt-0.5" />
               <div>
-                <h4 className="font-medium text-blue-900">Accessibility Note</h4>
+                <h4 className="font-medium text-blue-900">{t("Catatan aksesibilitas", "Accessibility Note")}</h4>
                 <p className="text-blue-800 text-sm mt-1">
                   The email template includes your accessibility needs and communication preferences. 
                   Feel free to customize it before sending to better reflect your personal style and specific interests.

@@ -2,6 +2,7 @@
 
 import React from 'react';
 import { ArrowLeft, Menu, X, EarOff, User } from 'lucide-react';
+import { LanguageSwitch, useLanguage } from './Language';
 
 interface HeaderProps {
   currentPage: string;
@@ -21,6 +22,8 @@ export default function Header({
   onLogout
 }: HeaderProps) {
   const [mobileMenuOpen, setMobileMenuOpen] = React.useState(false);
+  const { t } = useLanguage();
+  const featureTitle = (title: string) => title === 'Job Portal' ? t('Lowongan Kerja', 'Job Portal') : t('Workshop', 'Workshops');
 
   return (
     <header className="bg-white/85 backdrop-blur-md border-b border-indigo-100 sticky top-0 z-50 shadow-sm">
@@ -56,7 +59,7 @@ export default function Header({
                     : 'text-gray-600 hover:text-indigo-600'
                 }`}
               >
-                Home
+                {t('Beranda', 'Home')}
               </button>
 
               {features.map((feature) => (
@@ -69,12 +72,13 @@ export default function Header({
                       : 'text-gray-600 hover:text-indigo-600'
                   }`}
                 >
-                  {feature.title}
+                  {featureTitle(feature.title)}
                 </button>
               ))}
             </nav>
 
             <div className="flex shrink-0 items-center gap-2">
+              <LanguageSwitch />
               <button
                 type="button"
                 aria-current={currentPage === 'profile' ? 'page' : undefined}
@@ -82,22 +86,23 @@ export default function Header({
                 className={`inline-flex items-center gap-1.5 rounded-lg border border-indigo-200 px-3 py-2 text-sm font-semibold text-indigo-800 transition hover:bg-indigo-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-indigo-600 ${currentPage === 'profile' ? 'bg-indigo-100' : 'bg-white'}`}
               >
                 <User aria-hidden="true" className="h-4 w-4" />
-                Profil
+                {t('Profil', 'Profile')}
               </button>
               <button
                 onClick={onLogout}
                 className="bg-red-50 text-red-500 border border-red-200 hover:bg-red-100 px-4 py-2 rounded-lg text-sm font-medium transition-colors cursor-pointer whitespace-nowrap"
               >
-                Logout Account
+                {t('Keluar', 'Sign out')}
               </button>
             </div>
           </div>
 
           {/* Mobile Menu Button */}
-          <div className="lg:hidden">
+          <div className="flex items-center gap-2 lg:hidden">
+            <LanguageSwitch />
             <button
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-              aria-label={mobileMenuOpen ? 'Tutup menu' : 'Buka menu'}
+              aria-label={mobileMenuOpen ? t('Tutup menu', 'Close menu') : t('Buka menu', 'Open menu')}
               aria-expanded={mobileMenuOpen}
               className="text-gray-700 hover:text-indigo-600 transition-colors p-2 cursor-pointer"
             >
@@ -126,7 +131,7 @@ export default function Header({
                     : 'text-gray-700 hover:bg-gray-50'
                 }`}
               >
-                Home
+                {t('Beranda', 'Home')}
               </button>
 
               {features.map((feature) => (
@@ -142,7 +147,7 @@ export default function Header({
                       : 'text-gray-700 hover:bg-gray-50'
                   }`}
                 >
-                  {feature.title}
+                  {featureTitle(feature.title)}
                 </button>
               ))}
 
@@ -156,7 +161,7 @@ export default function Header({
                 className={`flex items-center gap-2 rounded-xl px-4 py-2 text-left font-medium text-indigo-800 hover:bg-indigo-50 ${currentPage === 'profile' ? 'bg-indigo-100' : ''}`}
               >
                 <User aria-hidden="true" className="h-4 w-4" />
-                Profil
+                {t('Profil', 'Profile')}
               </button>
 
               {currentPage !== 'home' && (
@@ -168,7 +173,7 @@ export default function Header({
                   className="flex items-center space-x-2 text-indigo-600 hover:bg-indigo-50 px-4 py-2 rounded-xl transition-colors font-medium text-left cursor-pointer"
                 >
                   <ArrowLeft className="w-4 h-4" />
-                  <span>Kembali ke Beranda</span>
+                  <span>{t('Kembali ke Beranda', 'Back to Home')}</span>
                 </button>
               )}
 
@@ -180,7 +185,7 @@ export default function Header({
                 }}
                 className="text-left text-red-500 bg-red-50 hover:bg-red-100 px-4 py-2 rounded-xl font-medium transition-colors"
               >
-                Logout Account
+                {t('Keluar', 'Sign out')}
               </button>
 
             </div>

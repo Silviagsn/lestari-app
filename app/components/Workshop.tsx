@@ -1,3 +1,4 @@
+import { useLanguage } from './Language';
 import React, { useState } from 'react';
 import { useCatalog } from '../utils/useCatalog';
 import { 
@@ -122,6 +123,7 @@ interface WorkshopPageProps {
 }
 
 export default function WorkshopPage({ userAssessment }: WorkshopPageProps) {
+  const { t } = useLanguage();
   const [selectedWorkshop, setSelectedWorkshop] = useState<Workshop | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('all');
@@ -275,10 +277,10 @@ export default function WorkshopPage({ userAssessment }: WorkshopPageProps) {
           <div className="mb-8">
             <div className="text-center mb-6">
               <h1 className="text-4xl md:text-5xl font-bold bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600 bg-clip-text text-transparent mb-4">
-                Learn New Skills
+                {t("Pelajari Keterampilan Baru", "Learn New Skills")}
               </h1>
               <p className="text-xl text-gray-600 max-w-3xl mx-auto">
-                Master new skills with visual tutorials, ASL support, and hands-on projects designed for the deaf community
+                {t("Kembangkan keterampilan lewat tutorial visual, dukungan ASL, dan proyek praktik untuk komunitas Tuli.", "Master new skills with visual tutorials, ASL support, and hands-on projects designed for the deaf community")}
               </p>
             </div>
             
@@ -286,19 +288,19 @@ export default function WorkshopPage({ userAssessment }: WorkshopPageProps) {
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
               <div className="bg-white/80 backdrop-blur-lg rounded-2xl p-4 text-center shadow-xl border border-white/20 hover:shadow-2xl transition-all duration-300 transform hover:scale-105">
                 <div className="text-2xl font-bold text-indigo-600">{filteredWorkshops.length}</div>
-                <div className="text-sm text-gray-600">Available Workshops</div>
+                <div className="text-sm text-gray-600">{t("Workshop tersedia", "Available Workshops")}</div>
               </div>
               <div className="bg-white/80 backdrop-blur-lg rounded-2xl p-4 text-center shadow-xl border border-white/20 hover:shadow-2xl transition-all duration-300 transform hover:scale-105">
                 <div className="text-2xl font-bold text-green-600">100%</div>
-                <div className="text-sm text-gray-600">ASL Supported</div>
+                <div className="text-sm text-gray-600">{t("Dukungan ASL", "ASL Supported")}</div>
               </div>
               <div className="bg-white/80 backdrop-blur-lg rounded-2xl p-4 text-center shadow-xl border border-white/20 hover:shadow-2xl transition-all duration-300 transform hover:scale-105">
                 <div className="text-2xl font-bold text-purple-600">{savedWorkshops.length}</div>
-                <div className="text-sm text-gray-600">Saved Workshops</div>
+                <div className="text-sm text-gray-600">{t("Workshop tersimpan", "Saved Workshops")}</div>
               </div>
               <div className="bg-white/80 backdrop-blur-lg rounded-2xl p-4 text-center shadow-xl border border-white/20 hover:shadow-2xl transition-all duration-300 transform hover:scale-105">
                 <div className="text-2xl font-bold text-blue-600">{enrollmentStatuses.length}</div>
-                <div className="text-sm text-gray-600">Enrolled</div>
+                <div className="text-sm text-gray-600">{t("Terdaftar", "Enrolled")}</div>
               </div>
             </div>
           </div>
@@ -308,7 +310,7 @@ export default function WorkshopPage({ userAssessment }: WorkshopPageProps) {
             <div className="mb-6 bg-gradient-to-r from-green-50 to-blue-50 border-2 border-green-200 rounded-2xl p-6 shadow-lg">
               <div className="flex items-center space-x-3 mb-3">
                 <Target className="w-6 h-6 text-green-600" />
-                <h3 className="text-lg font-semibold text-green-800">Personalized Recommendations</h3>
+                <h3 className="text-lg font-semibold text-green-800">{t("Rekomendasi untukmu", "Personalized Recommendations")}</h3>
               </div>
               <p className="text-green-700">
                 Based on your assessment, we've found {filteredWorkshops.filter(workshop => workshop.recommendationScore && workshop.recommendationScore > 60).length} highly recommended workshops matching your interests and experience level: {userAssessment.experienceLevel}
@@ -348,7 +350,7 @@ export default function WorkshopPage({ userAssessment }: WorkshopPageProps) {
                 <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
                 <input
                   type="text"
-                  placeholder="Search workshops, instructors, or skills..."
+                  placeholder={t("Cari workshop, pengajar, atau keterampilan…", "Search workshops, instructors, or skills...")}
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
                   className="w-full pl-12 pr-4 py-4 border text-gray-500 border-gray-300 rounded-2xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all shadow-lg bg-white/90 backdrop-blur-sm"
@@ -373,18 +375,18 @@ export default function WorkshopPage({ userAssessment }: WorkshopPageProps) {
                   onChange={(e) => setSortBy(e.target.value)}
                   className="w-full px-4 py-4 border text-gray-500 border-gray-300 rounded-2xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent shadow-lg bg-white/90 backdrop-blur-sm"
                 >
-                  <option value="recommended">Recommended</option>
-                  <option value="popularity">Most Popular</option>
-                  <option value="rating">Highest Rated</option>
-                  <option value="price">Lowest Price</option>
-                  <option value="accessibility">Most Accessible</option>
+                  <option value="recommended">{t("Direkomendasikan", "Recommended")}</option>
+                  <option value="popularity">{t("Terpopuler", "Most Popular")}</option>
+                  <option value="rating">{t("Penilaian tertinggi", "Highest Rated")}</option>
+                  <option value="price">{t("Harga terendah", "Lowest Price")}</option>
+                  <option value="accessibility">{t("Paling aksesibel", "Most Accessible")}</option>
                 </select>
               </div>
               
               <div className="md:col-span-2">
                 <button className="w-full flex items-center justify-center space-x-2 px-4 py-4 bg-gradient-to-r from-indigo-600 to-purple-600 text-white rounded-2xl hover:from-indigo-700 hover:to-purple-700 transition-all duration-300 shadow-xl hover:shadow-2xl transform hover:scale-105">
                   <Filter className="w-4 h-4" />
-                  <span>More Filters</span>
+                  <span>{t("Filter lainnya", "More Filters")}</span>
                 </button>
               </div>
             </div>
@@ -413,7 +415,7 @@ export default function WorkshopPage({ userAssessment }: WorkshopPageProps) {
                       {userAssessment && workshop.recommendationScore && workshop.recommendationScore > 70 && (
                         <span className="bg-white/90 text-indigo-600 px-2 py-1 rounded-full text-xs font-medium flex items-center animate-pulse shadow-lg">
                           <Target className="w-3 h-3 mr-1" />
-                          Recommended
+                          {t("Direkomendasikan", "Recommended")}
                         </span>
                       )}
                     </div>
@@ -465,11 +467,11 @@ export default function WorkshopPage({ userAssessment }: WorkshopPageProps) {
                       </div>
                       <div className="flex items-center text-gray-600 bg-gray-50 p-2 rounded-lg">
                         <Users className="w-4 h-4 mr-2 text-green-500" />
-                        <span>{workshop.enrolled} enrolled</span>
+                        <span>{workshop.enrolled} {t("peserta", "enrolled")}</span>
                       </div>
                       <div className="flex items-center text-gray-600 bg-gray-50 p-2 rounded-lg">
                         <BookOpen className="w-4 h-4 mr-2 text-purple-500" />
-                        <span>{workshop.lessons} lessons</span>
+                        <span>{workshop.lessons} {t("pelajaran", "lessons")}</span>
                       </div>
                       <div className="flex items-center bg-gray-50 p-2 rounded-lg">
                         <Star className="w-4 h-4 text-yellow-400 fill-current mr-1" />
@@ -483,7 +485,7 @@ export default function WorkshopPage({ userAssessment }: WorkshopPageProps) {
                         <div className="flex items-center space-x-2">
                           <Accessibility className="w-4 h-4 text-green-600" />
                           <span className="text-sm font-medium text-green-800">
-                            Accessibility Score: {workshop.deafFriendlyScore}%
+                            {t("Skor aksesibilitas:", "Accessibility Score:")} {workshop.deafFriendlyScore}%
                           </span>
                         </div>
                         <div className="flex items-center space-x-1">
@@ -516,7 +518,7 @@ export default function WorkshopPage({ userAssessment }: WorkshopPageProps) {
                     {/* Next Session */}
                     <div className="flex items-center text-sm text-gray-600 mb-4 bg-blue-50 rounded-xl p-3 shadow-lg">
                       <Calendar className="w-4 h-4 mr-2 text-blue-500" />
-                      <span>Next session: {workshop.nextSession}</span>
+                      <span>{t("Sesi berikutnya:", "Next session:")} {workshop.nextSession}</span>
                     </div>
 
                     {/* Language Support */}
@@ -525,7 +527,7 @@ export default function WorkshopPage({ userAssessment }: WorkshopPageProps) {
                       <span className="text-gray-600">{workshop.language.join(', ')}</span>
                       {workshop.language.includes('ASL') && (
                         <span className="ml-2 bg-blue-100 text-blue-800 px-2 py-1 rounded-full text-xs font-medium shadow-md">
-                          ASL Supported
+                          {t("Dukungan ASL", "ASL Supported")}
                         </span>
                       )}
                     </div>
@@ -537,7 +539,7 @@ export default function WorkshopPage({ userAssessment }: WorkshopPageProps) {
                           <div className="flex items-center space-x-2">
                             <TrendingUp className="w-4 h-4 text-blue-600" />
                             <span className="text-sm font-medium text-blue-800">
-                              Job Placement Rate: {workshop.jobPlacementRate}%
+                              {t("Tingkat penempatan kerja:", "Job Placement Rate:")} {workshop.jobPlacementRate}%
                             </span>
                           </div>
                         </div>
@@ -554,19 +556,19 @@ export default function WorkshopPage({ userAssessment }: WorkshopPageProps) {
                           onClick={() => setSelectedWorkshop(workshop)}
                           className="px-4 py-2 border-2 border-indigo-600 text-indigo-600 rounded-2xl hover:bg-indigo-50 transition-all duration-300 text-sm font-medium shadow-lg hover:shadow-xl transform hover:scale-105"
                         >
-                          View Details
+                          {t("Lihat detail", "View Details")}
                         </button>
                         {enrollmentStatus ? (
                           <div className="px-4 py-2 bg-green-100 text-green-800 rounded-2xl text-sm font-medium flex items-center shadow-lg">
                             <CheckCircle className="w-4 h-4 mr-1" />
-                            Enrolled
+                            {t("Terdaftar", "Enrolled")}
                           </div>
                         ) : (
                           <button
                             onClick={() => handleEnroll(workshop)}
                             className="px-4 py-2 bg-gradient-to-r from-green-600 to-blue-600 text-white rounded-2xl hover:from-green-700 hover:to-blue-700 transition-all duration-300 text-sm font-medium shadow-xl hover:shadow-2xl transform hover:scale-105"
                           >
-                            Enroll Now
+                            {t("Daftar sekarang", "Enroll Now")}
                           </button>
                         )}
                       </div>
@@ -576,7 +578,7 @@ export default function WorkshopPage({ userAssessment }: WorkshopPageProps) {
                     {enrollmentStatus && (
                       <div className="mt-4 bg-green-50 border-2 border-green-200 rounded-2xl p-3 shadow-lg">
                         <div className="flex items-center justify-between mb-2">
-                          <span className="text-sm font-medium text-green-800">Progress</span>
+                          <span className="text-sm font-medium text-green-800">{t("Progres", "Progress")}</span>
                           <span className="text-sm text-green-600">{enrollmentStatus.progress}%</span>
                         </div>
                         <div className="w-full bg-green-200 rounded-full h-2 shadow-inner">
@@ -596,8 +598,8 @@ export default function WorkshopPage({ userAssessment }: WorkshopPageProps) {
           {filteredWorkshops.length === 0 && (
             <div className="text-center py-16 bg-white/90 backdrop-blur-lg rounded-3xl shadow-2xl border border-white/20">
               <BookOpen className="w-20 h-20 text-gray-400 mx-auto mb-6" />
-              <h3 className="text-2xl font-semibold text-gray-900 mb-3">No workshops found</h3>
-              <p className="text-gray-600 mb-6">Try adjusting your search criteria or browse different categories</p>
+              <h3 className="text-2xl font-semibold text-gray-900 mb-3">{t("Workshop belum ditemukan", "No workshops found")}</h3>
+              <p className="text-gray-600 mb-6">{t("Coba ubah pencarian atau pilih kategori lain.", "Try adjusting your search criteria or browse different categories")}</p>
               <button
                 onClick={() => {
                   setSearchTerm('');
@@ -606,7 +608,7 @@ export default function WorkshopPage({ userAssessment }: WorkshopPageProps) {
                 }}
                 className="bg-gradient-to-r from-indigo-600 to-purple-600 text-white px-8 py-3 rounded-2xl hover:from-indigo-700 hover:to-purple-700 transition-all duration-300 shadow-lg hover:shadow-xl transform hover:scale-105"
               >
-                Clear Filters
+                {t("Hapus filter", "Clear Filters")}
               </button>
             </div>
           )}
@@ -696,12 +698,13 @@ function WorkshopDetailModal({
   onSave: () => void; 
   isSaved: boolean; 
 }) {
+  const { t } = useLanguage();
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50 backdrop-blur-sm">
       <div className="bg-white rounded-3xl max-w-6xl w-full max-h-[90vh] overflow-y-auto shadow-2xl border border-white/20">
         <div className="p-6 border-b border-gray-200 bg-gradient-to-r from-indigo-50 to-purple-50">
           <div className="flex items-center justify-between">
-            <h2 className="text-2xl font-bold text-gray-900">Workshop Details</h2>
+            <h2 className="text-2xl font-bold text-gray-900">{t("Detail workshop", "Workshop Details")}</h2>
             <button
               onClick={onClose}
               className="p-2 hover:bg-gray-100 rounded-full transition-colors"
@@ -731,7 +734,7 @@ function WorkshopDetailModal({
                   {workshop.certificateIncluded && (
                     <span className="bg-yellow-100 text-yellow-800 px-2 py-1 rounded text-sm flex items-center">
                       <Award className="w-3 h-3 mr-1" />
-                      Certificate
+                      {t("Sertifikat", "Certificate")}
                     </span>
                   )}
                 </div>
@@ -742,16 +745,16 @@ function WorkshopDetailModal({
                 <div className="flex items-center space-x-4 text-sm text-gray-600">
                   <div className="flex items-center">
                     <Star className="w-4 h-4 text-yellow-400 fill-current mr-1" />
-                    <span>Instructor: {workshop.instructorRating}</span>
+                    <span>{t("Pengajar:", "Instructor:")} {workshop.instructorRating}</span>
                   </div>
                   <div className="flex items-center">
                     <TrendingUp className="w-4 h-4 text-green-500 mr-1" />
-                    <span>Completion: {workshop.completionRate}%</span>
+                    <span>{t("Penyelesaian:", "Completion:")} {workshop.completionRate}%</span>
                   </div>
                   {workshop.jobPlacementRate && (
                     <div className="flex items-center">
                       <Target className="w-4 h-4 text-blue-500 mr-1" />
-                      <span>Job Placement: {workshop.jobPlacementRate}%</span>
+                      <span>{t("Penempatan kerja:", "Job Placement:")} {workshop.jobPlacementRate}%</span>
                     </div>
                   )}
                 </div>
@@ -759,13 +762,13 @@ function WorkshopDetailModal({
 
               {/* Description */}
               <div>
-                <h3 className="text-xl font-semibold text-gray-900 mb-3">About This Workshop</h3>
+                <h3 className="text-xl font-semibold text-gray-900 mb-3">{t("Tentang workshop", "About This Workshop")}</h3>
                 <p className="text-gray-600 leading-relaxed">{workshop.description}</p>
               </div>
 
               {/* Learning Outcomes */}
               <div>
-                <h3 className="text-xl font-semibold text-gray-900 mb-3">What You'll Learn</h3>
+                <h3 className="text-xl font-semibold text-gray-900 mb-3">{t("Yang akan dipelajari", "What You'll Learn")}</h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                   {workshop.learningOutcomes.map((outcome, index) => (
                     <div key={index} className="flex items-center space-x-3">
@@ -778,7 +781,7 @@ function WorkshopDetailModal({
 
               {/* Skills You'll Gain */}
               <div>
-                <h3 className="text-xl font-semibold text-gray-900 mb-3">Skills You'll Gain</h3>
+                <h3 className="text-xl font-semibold text-gray-900 mb-3">{t("Keterampilan yang akan didapat", "Skills You'll Gain")}</h3>
                 <div className="flex flex-wrap gap-2">
                   {workshop.skillTags.map((skill, index) => (
                     <span key={index} className="bg-indigo-100 text-indigo-800 px-3 py-1 rounded-full text-sm font-medium">
@@ -791,7 +794,7 @@ function WorkshopDetailModal({
               {/* Prerequisites */}
               {workshop.prerequisites && workshop.prerequisites.length > 0 && (
                 <div>
-                  <h3 className="text-xl font-semibold text-gray-900 mb-3">Prerequisites</h3>
+                  <h3 className="text-xl font-semibold text-gray-900 mb-3">{t("Prasyarat", "Prerequisites")}</h3>
                   <div className="space-y-2">
                     {workshop.prerequisites.map((prereq, index) => (
                       <div key={index} className="flex items-center text-gray-600">
@@ -805,26 +808,26 @@ function WorkshopDetailModal({
 
               {/* Course Features */}
               <div>
-                <h3 className="text-xl font-semibold text-gray-900 mb-3">Course Features</h3>
+                <h3 className="text-xl font-semibold text-gray-900 mb-3">{t("Fitur kursus", "Course Features")}</h3>
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                   <div className="text-center p-4 bg-gray-50 rounded-lg">
                     <Video className="w-8 h-8 text-indigo-600 mx-auto mb-2" />
-                    <div className="text-sm font-medium text-gray-900">Video Lessons</div>
-                    <div className="text-xs text-gray-600">{workshop.lessons} lessons</div>
+                    <div className="text-sm font-medium text-gray-900">{t("Pelajaran video", "Video Lessons")}</div>
+                    <div className="text-xs text-gray-600">{workshop.lessons} {t("pelajaran", "lessons")}</div>
                   </div>
                   <div className="text-center p-4 bg-gray-50 rounded-lg">
                     <Hand className="w-8 h-8 text-green-600 mx-auto mb-2" />
-                    <div className="text-sm font-medium text-gray-900">ASL Support</div>
+                    <div className="text-sm font-medium text-gray-900">{t("Dukungan ASL", "ASL Support")}</div>
                     <div className="text-xs text-gray-600">Full interpretation</div>
                   </div>
                   <div className="text-center p-4 bg-gray-50 rounded-lg">
                     <MessageCircle className="w-8 h-8 text-purple-600 mx-auto mb-2" />
-                    <div className="text-sm font-medium text-gray-900">Community</div>
+                    <div className="text-sm font-medium text-gray-900">{t("Komunitas", "Community")}</div>
                     <div className="text-xs text-gray-600">Peer support</div>
                   </div>
                   <div className="text-center p-4 bg-gray-50 rounded-lg">
                     <Award className="w-8 h-8 text-yellow-600 mx-auto mb-2" />
-                    <div className="text-sm font-medium text-gray-900">Certificate</div>
+                    <div className="text-sm font-medium text-gray-900">{t("Sertifikat", "Certificate")}</div>
                     <div className="text-xs text-gray-600">Upon completion</div>
                   </div>
                 </div>
@@ -832,7 +835,7 @@ function WorkshopDetailModal({
 
               {/* Accessibility Features */}
               <div>
-                <h3 className="text-xl font-semibold text-gray-900 mb-3">Accessibility Features</h3>
+                <h3 className="text-xl font-semibold text-gray-900 mb-3">{t("Fitur aksesibilitas", "Accessibility Features")}</h3>
                 <div className="bg-green-50 border border-green-200 rounded-lg p-4">
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                     <div className="flex items-center space-x-2">
@@ -875,38 +878,38 @@ function WorkshopDetailModal({
                 {/* Workshop Stats */}
                 <div className="space-y-4 mb-6">
                   <div className="flex justify-between">
-                    <span className="text-gray-600">Duration:</span>
+                    <span className="text-gray-600">{t("Durasi:", "Duration:")}</span>
                     <span className="font-medium">{workshop.duration}</span>
                   </div>
                   <div className="flex justify-between">
-                    <span className="text-gray-600">Level:</span>
+                    <span className="text-gray-600">{t("Tingkat:", "Level:")}</span>
                     <span className="font-medium">{workshop.level}</span>
                   </div>
                   <div className="flex justify-between">
-                    <span className="text-gray-600">Lessons:</span>
+                    <span className="text-gray-600">{t("Pelajaran:", "Lessons:")}</span>
                     <span className="font-medium">{workshop.lessons}</span>
                   </div>
                   <div className="flex justify-between">
-                    <span className="text-gray-600">Enrolled:</span>
+                    <span className="text-gray-600">{t("Terdaftar:", "Enrolled:")}</span>
                     <span className="font-medium">{workshop.enrolled} students</span>
                   </div>
                   <div className="flex justify-between">
-                    <span className="text-gray-600">Max Students:</span>
+                    <span className="text-gray-600">{t("Kapasitas:", "Max Students:")}</span>
                     <span className="font-medium">{workshop.maxStudents}</span>
                   </div>
                   <div className="flex justify-between">
-                    <span className="text-gray-600">Rating:</span>
+                    <span className="text-gray-600">{t("Penilaian:", "Rating:")}</span>
                     <div className="flex items-center">
                       <Star className="w-4 h-4 text-yellow-400 fill-current mr-1" />
                       <span className="font-medium">{workshop.rating}</span>
                     </div>
                   </div>
                   <div className="flex justify-between">
-                    <span className="text-gray-600">Next session:</span>
+                    <span className="text-gray-600">{t("Sesi berikutnya:", "Next session:")}</span>
                     <span className="font-medium text-sm">{workshop.nextSession}</span>
                   </div>
                   <div className="flex justify-between">
-                    <span className="text-gray-600">Languages:</span>
+                    <span className="text-gray-600">{t("Bahasa:", "Languages:")}</span>
                     <span className="font-medium text-sm">{workshop.language.join(', ')}</span>
                   </div>
                 </div>
@@ -938,12 +941,12 @@ function WorkshopDetailModal({
                     <div className="bg-green-50 border border-green-200 rounded-xl p-4">
                       <div className="flex items-center space-x-2 mb-2">
                         <CheckCircle className="w-5 h-5 text-green-600" />
-                        <span className="font-semibold text-green-800">Enrolled</span>
+                        <span className="font-semibold text-green-800">{t("Terdaftar", "Enrolled")}</span>
                       </div>
                       {enrollmentStatus && (
                         <div>
                           <div className="flex justify-between text-sm text-green-700 mb-1">
-                            <span>Progress</span>
+                            <span>{t("Progres", "Progress")}</span>
                             <span>{enrollmentStatus.progress}%</span>
                           </div>
                           <div className="w-full bg-green-200 rounded-full h-2">
@@ -957,7 +960,7 @@ function WorkshopDetailModal({
                     </div>
                     <button className="w-full bg-indigo-600 text-white py-3 rounded-xl font-semibold hover:bg-indigo-700 transition-colors flex items-center justify-center space-x-2">
                       <PlayCircle className="w-5 h-5" />
-                      <span>Continue Learning</span>
+                      <span>{t("Lanjut belajar", "Continue Learning")}</span>
                     </button>
                   </div>
                 ) : (
@@ -966,7 +969,7 @@ function WorkshopDetailModal({
                       onClick={onEnroll}
                       className="w-full bg-gradient-to-r from-green-600 to-blue-600 text-white py-3 rounded-xl font-semibold hover:from-green-700 hover:to-blue-700 transition-all duration-200 shadow-lg hover:shadow-xl flex items-center justify-center space-x-2"
                     >
-                      <span>Enroll in Workshop</span>
+                      <span>{t("Daftar workshop", "Enroll in Workshop")}</span>
                       <ArrowRight className="w-5 h-5" />
                     </button>
                     
@@ -1041,6 +1044,7 @@ function EnrollmentModal({ workshop, onClose, onConfirm, pending, error }: {
   pending: boolean;
   error: string;
 }) {
+  const { t } = useLanguage();
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50 backdrop-blur-sm">
       <div className="bg-white rounded-3xl max-w-md w-full p-6 shadow-2xl border border-white/20">
@@ -1049,7 +1053,7 @@ function EnrollmentModal({ workshop, onClose, onConfirm, pending, error }: {
             <BookOpen className="w-8 h-8 text-green-600" />
           </div>
           
-          <h3 className="text-xl font-bold text-gray-900 mb-2">Enroll in Workshop</h3>
+          <h3 className="text-xl font-bold text-gray-900 mb-2">{t("Daftar workshop", "Enroll in Workshop")}</h3>
           <p className="text-gray-600 mb-6">
             You're about to enroll in <strong>{workshop.title}</strong> by {workshop.instructor}.
           </p>
@@ -1057,19 +1061,19 @@ function EnrollmentModal({ workshop, onClose, onConfirm, pending, error }: {
           <div className="bg-gray-50 rounded-lg p-4 mb-6 text-left">
             <div className="space-y-2 text-sm">
               <div className="flex justify-between">
-                <span className="text-gray-600">Price:</span>
+                <span className="text-gray-600">{t("Harga:", "Price:")}</span>
                 <span className="font-semibold">{workshop.price}</span>
               </div>
               <div className="flex justify-between">
-                <span className="text-gray-600">Duration:</span>
+                <span className="text-gray-600">{t("Durasi:", "Duration:")}</span>
                 <span className="font-semibold">{workshop.duration}</span>
               </div>
               <div className="flex justify-between">
-                <span className="text-gray-600">Level:</span>
+                <span className="text-gray-600">{t("Tingkat:", "Level:")}</span>
                 <span className="font-semibold">{workshop.level}</span>
               </div>
               <div className="flex justify-between">
-                <span className="text-gray-600">Next Session:</span>
+                <span className="text-gray-600">{t("Sesi berikutnya:", "Next Session:")}</span>
                 <span className="font-semibold text-xs">{workshop.nextSession}</span>
               </div>
             </div>
@@ -1080,7 +1084,7 @@ function EnrollmentModal({ workshop, onClose, onConfirm, pending, error }: {
               onClick={onClose}
               className="flex-1 border border-gray-300 text-gray-700 py-3 rounded-xl font-medium hover:bg-gray-50 transition-colors"
             >
-              Cancel
+              {t("Batal", "Cancel")}
             </button>
             <button
               onClick={onConfirm}

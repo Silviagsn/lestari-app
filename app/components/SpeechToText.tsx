@@ -1,5 +1,7 @@
 'use client';
 
+import { useLanguage } from './Language';
+
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Copy, Download, Mic, Pause, Play, Square, Trash2 } from 'lucide-react';
 
@@ -58,6 +60,7 @@ function formatTime(seconds: number) {
 }
 
 export default function SpeechToText({ active }: { active: boolean }) {
+  const { t } = useLanguage();
   const [mode, setMode] = useState<'idle' | 'recording' | 'paused'>('idle');
   const [supported, setSupported] = useState<boolean | null>(null);
   const [sessions, setSessions] = useState<TranscriptionSession[]>([]);
@@ -141,7 +144,7 @@ export default function SpeechToText({ active }: { active: boolean }) {
     };
     recognition.onerror = event => {
       setError(event.error === 'no-speech' ? 'Suara belum terdeteksi. Coba lagi lebih dekat ke mikrofon.'
-        : 'Pengenalan suara gagal. Cek izin mikrofon dan koneksi, lalu coba lagi.');
+        : t("Pengenalan suara gagal. Cek izin mikrofon dan koneksi, lalu coba lagi.", "Speech recognition failed. Check microphone permission and your connection, then try again."));
       stop();
     };
     recognition.onend = stop;
@@ -171,7 +174,7 @@ export default function SpeechToText({ active }: { active: boolean }) {
   async function copy() {
     try {
       await navigator.clipboard.writeText(transcript);
-      setNotice('Teks disalin.');
+      setNotice(t("Teks disalin.", "Text copied."));
     } catch {
       setError('Teks belum bisa disalin otomatis. Kamu bisa menyeleksi teksnya.');
     }
@@ -187,15 +190,15 @@ export default function SpeechToText({ active }: { active: boolean }) {
   }
 
   if (supported === false) {
-    return <p role="status" className="p-4 text-sm text-slate-700">Browser ini belum mendukung pengenalan suara. Coba buka Lestari di browser yang mendukungnya, seperti Chrome.</p>;
+    return <p role="status" className="p-4 text-sm text-slate-700">{t("Browser ini belum mendukung pengenalan suara. Coba buka Lestari di browser yang mendukungnya, seperti Chrome.", "This browser does not support speech recognition. Try a compatible browser such as Chrome.")}</p>;
   }
 
   return (
     <div className="space-y-3 p-3 text-sm text-slate-800 sm:p-4">
-      <p className="text-xs text-slate-600">Ucapan ditampilkan sebagai teks dalam bahasa yang dipilih.</p>
+      <p className="text-xs text-slate-600">{t("Ucapan ditampilkan sebagai teks dalam bahasa yang dipilih.", "Speech appears as text in the selected language.")}</p>
       <div className="flex flex-wrap items-end gap-2">
         <label className="grid min-w-0 flex-1 gap-1 text-xs font-semibold">
-          Bahasa ucapan
+          {t("Bahasa ucapan", "Spoken language")}
           <select value={language} onChange={event => setLanguage(event.target.value)} disabled={mode !== 'idle'}
             className="min-h-10 min-w-0 rounded-lg border border-indigo-200 bg-white px-2 text-sm disabled:opacity-60">
             {languages.map(([code, name]) => <option key={code} value={code}>{name}</option>)}
@@ -204,35 +207,35 @@ export default function SpeechToText({ active }: { active: boolean }) {
         {mode === 'idle' ? (
           <button type="button" disabled={!supported} onClick={() => listen(false)}
             className="inline-flex min-h-10 items-center gap-1.5 rounded-lg bg-indigo-700 px-3 text-xs font-bold text-white hover:bg-indigo-800 disabled:opacity-60">
-            <Mic aria-hidden="true" className="h-4 w-4" /> Mulai rekam
+            <Mic aria-hidden="true" className="h-4 w-4" /> {t("Mulai rekam", "Start listening")}
           </button>
         ) : (
           <div className="flex gap-1">
             <button type="button" className={control} onClick={mode === 'paused' ? () => listen(true) : pause}>
               {mode === 'paused' ? <Play aria-hidden="true" className="h-4 w-4" /> : <Pause aria-hidden="true" className="h-4 w-4" />}
-              {mode === 'paused' ? 'Lanjutkan' : 'Jeda'}
+              {mode === 'paused' ? t("Lanjutkan", "Resume") : t("Jeda", "Pause")}
             </button>
-            <button type="button" className={control} onClick={stop}><Square aria-hidden="true" className="h-4 w-4" /> Selesai</button>
+            <button type="button" className={control} onClick={stop}><Square aria-hidden="true" className="h-4 w-4" /> {t("Selesai", "Stop")}</button>
           </div>
         )}
       </div>
-      {mode !== 'idle' && <p role="status" className="text-xs font-semibold text-indigo-900">{mode === 'paused' ? 'Dijeda' : 'Mendengarkan'} · <span className="font-mono">{formatTime(elapsed)}</span></p>}
+      {mode !== 'idle' && <p role="status" className="text-xs font-semibold text-indigo-900">{mode === 'paused' ? t("Dijeda", "Paused") : t("Mendengarkan", "Listening")} · <span className="font-mono">{formatTime(elapsed)}</span></p>}
       {error && <p role="alert" className="rounded-lg bg-rose-50 p-2 text-xs text-rose-900">{error}</p>}
-      <section aria-label="Hasil transkripsi" className="rounded-xl border border-indigo-100 bg-indigo-50/50 p-3">
-        <h3 className="mb-1 font-semibold">Hasil transkripsi</h3>
-        <p className="min-h-20 whitespace-pre-wrap [overflow-wrap:anywhere]">{transcript || 'Teks akan muncul saat kamu berbicara.'}</p>
+      <section aria-label={t("Hasil transkripsi", "Transcript")} className="rounded-xl border border-indigo-100 bg-indigo-50/50 p-3">
+        <h3 className="mb-1 font-semibold">{t("Hasil transkripsi", "Transcript")}</h3>
+        <p className="min-h-20 whitespace-pre-wrap [overflow-wrap:anywhere]">{transcript || t("Teks akan muncul saat kamu berbicara.", "Your words will appear here as you speak.")}</p>
       </section>
       <div className="flex flex-wrap gap-2">
-        <button type="button" disabled={!transcript} onClick={copy} className={control}><Copy aria-hidden="true" className="h-4 w-4" /> Salin</button>
-        <button type="button" disabled={!transcript} onClick={download} className={control}><Download aria-hidden="true" className="h-4 w-4" /> Unduh</button>
-        <button type="button" disabled={!transcript || mode !== 'idle'} onClick={() => { setTranscript(''); setNotice(''); }} className={control}><Trash2 aria-hidden="true" className="h-4 w-4" /> Bersihkan</button>
+        <button type="button" disabled={!transcript} onClick={copy} className={control}><Copy aria-hidden="true" className="h-4 w-4" /> {t("Salin", "Copy")}</button>
+        <button type="button" disabled={!transcript} onClick={download} className={control}><Download aria-hidden="true" className="h-4 w-4" /> {t("Unduh", "Download")}</button>
+        <button type="button" disabled={!transcript || mode !== 'idle'} onClick={() => { setTranscript(''); setNotice(''); }} className={control}><Trash2 aria-hidden="true" className="h-4 w-4" /> {t("Bersihkan", "Clear")}</button>
       </div>
       {notice && <p role="status" className="text-xs text-indigo-900">{notice}</p>}
       <details className="rounded-xl border border-indigo-100 px-3 py-2">
-        <summary className="cursor-pointer text-xs font-semibold text-indigo-900">Riwayat dan pengaturan</summary>
+        <summary className="cursor-pointer text-xs font-semibold text-indigo-900">{t("Riwayat dan pengaturan", "History and settings")}</summary>
         <label className="mt-2 flex items-center gap-2 text-xs">
           <input type="checkbox" checked={saveHistory} disabled={mode !== 'idle'} onChange={event => setSaveHistory(event.target.checked)} />
-          Simpan riwayat di browser ini
+          {t("Simpan riwayat di browser ini", "Save history in this browser")}
         </label>
         <ul className="mt-2 divide-y divide-indigo-100">
           {sessions.map(session => (
@@ -241,7 +244,7 @@ export default function SpeechToText({ active }: { active: boolean }) {
                 onClick={() => { setTranscript(session.text); setLanguage(session.language); }}>
                 {session.text}
               </button>
-              <button type="button" aria-label="Hapus transkripsi dari riwayat" className={control}
+              <button type="button" aria-label={t("Hapus transkripsi dari riwayat", "Delete transcript from history")} className={control}
                 onClick={() => { setSessions(previous => previous.filter(item => item.id !== session.id)); writeSessions(readSessions().filter(item => item.id !== session.id)); }}>
                 <Trash2 aria-hidden="true" className="h-4 w-4" />
               </button>

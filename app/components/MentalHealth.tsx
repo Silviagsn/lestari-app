@@ -1,5 +1,7 @@
 'use client';
 
+import { useLanguage } from './Language';
+
 import React, { useEffect, useState, useRef } from 'react';
 import {
   Send,
@@ -140,6 +142,7 @@ const callGeminiAPI = async (messagesHistory: Message[], adultConsent: boolean, 
 };
 
 export default function MentalHealthChatbot({ active }: { active: boolean }) {
+  const { t } = useLanguage();
   const [messages, setMessages] = useState<Message[]>([
     {
       id: 1,
@@ -232,12 +235,12 @@ export default function MentalHealthChatbot({ active }: { active: boolean }) {
     <div>
         <div className="border-b border-indigo-100">
           {configured !== true && <p role="status" className="border-b border-indigo-100 bg-indigo-50 px-3 py-2 text-xs text-indigo-900">
-            {configured === null ? 'Menghubungkan ke Lesbot…' : 'Chat belum tersedia. Coba buka lagi nanti.'}
+            {configured === null ? t("Menghubungkan ke Lesbot…", "Connecting to Lesbot…") : t("Chat belum tersedia. Coba buka lagi nanti.", "Chat is unavailable. Try again later.")}
           </p>}
           {/* Mood Selector */}
           {showMoodSelector && (
             <div className="border-b bg-indigo-50/50 p-3">
-              <h3 className="mb-2 text-sm font-semibold text-gray-900">Bagaimana perasaanmu?</h3>
+              <h3 className="mb-2 text-sm font-semibold text-gray-900">{t("Bagaimana perasaanmu?", "How are you feeling?")}</h3>
               <div className="flex flex-wrap gap-1.5">
                 {moodOptions.map((mood) => (
                   <button
@@ -255,7 +258,7 @@ export default function MentalHealthChatbot({ active }: { active: boolean }) {
           )}
 
           {/* Chat Messages */}
-          <div role="log" aria-label="Percakapan Lesbot" className="max-h-36 min-h-24 space-y-3 overflow-y-auto overscroll-contain p-3">
+          <div role="log" aria-label={t("Percakapan Lesbot", "Lesbot conversation")} className="max-h-36 min-h-24 space-y-3 overflow-y-auto overscroll-contain p-3">
             {messages.map((message) => (
               <div
                 key={message.id}
@@ -310,7 +313,7 @@ export default function MentalHealthChatbot({ active }: { active: boolean }) {
 
           {/* Quick Responses */}
           <details className="border-t bg-gray-50 px-3 py-2">
-            <summary className="cursor-pointer text-xs font-semibold text-indigo-800">Ide pesan cepat</summary>
+            <summary className="cursor-pointer text-xs font-semibold text-indigo-800">{t("Ide pesan cepat", "Message suggestions")}</summary>
             <div className="mt-2 flex flex-wrap gap-1.5">
               {quickResponses.map((response, index) => (
                 <button
@@ -329,7 +332,7 @@ export default function MentalHealthChatbot({ active }: { active: boolean }) {
             {configured === true && (
               <label className="mb-2 flex items-start gap-2 text-xs text-gray-700">
                 <input type="checkbox" checked={adultConsent} disabled={isTyping} onChange={event => setAdultConsent(event.target.checked)} className="mt-1 shrink-0 accent-indigo-700" />
-                <span>Saya berusia 18 tahun atau lebih dan setuju pesan dikirim ke Google Gemini. Hindari mencantumkan data pribadi.</span>
+                <span>{t("Saya berusia 18 tahun atau lebih dan setuju pesan dikirim ke Google Gemini. Hindari mencantumkan data pribadi.", "I am 18 or older and agree to send my messages to Google Gemini. Avoid adding personal information.")}</span>
               </label>
             )}
             {chatError && <p role="alert" className="mb-3 text-sm text-red-800">{chatError}</p>}
@@ -339,16 +342,16 @@ export default function MentalHealthChatbot({ active }: { active: boolean }) {
                 value={newMessage}
                 maxLength={4000}
                 disabled={isTyping || configured === false}
-                aria-label="Pesan untuk Lesbot"
+                aria-label={t("Pesan untuk Lesbot", "Message for Lesbot")}
                 onChange={(e) => setNewMessage(e.target.value)}
                 onKeyDown={(e) => e.key === 'Enter' && handleSendMessage()}
-                placeholder="Tulis pesan…"
+                placeholder={t("Tulis pesan…", "Write a message…")}
                 className="min-w-0 flex-1 rounded-xl border border-indigo-200 bg-white p-2.5 text-sm text-gray-800 focus:ring-2 focus:ring-purple-500"
               />
               <button
                 onClick={handleSendMessage}
                 disabled={!newMessage.trim() || !canSend}
-                aria-label="Kirim pesan"
+                aria-label={t("Kirim pesan", "Send message")}
                 className="bg-gradient-to-r from-purple-600 to-indigo-600 text-white p-3 rounded-xl hover:from-purple-700 hover:to-indigo-700 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 <Send className="w-4 h-4 md:w-5 md:h-5" />
@@ -358,7 +361,7 @@ export default function MentalHealthChatbot({ active }: { active: boolean }) {
         </div>
 
         <details className="p-3">
-          <summary className="cursor-pointer text-sm font-semibold text-indigo-800">Panduan dan bantuan</summary>
+          <summary className="cursor-pointer text-sm font-semibold text-indigo-800">{t("Panduan dan bantuan", "Guidance and help")}</summary>
           <div className="mt-3 space-y-3">
           {/* Self-Care Tips */}
           <div className="bg-white/90 backdrop-blur-sm rounded-2xl shadow-lg p-4 md:p-6">
@@ -474,7 +477,7 @@ export default function MentalHealthChatbot({ active }: { active: boolean }) {
             </div>
           </div>
         </div>
-          <p className="px-3 pb-2 text-xs text-slate-600">Lesbot memberikan dukungan umum. Untuk perawatan kesehatan mental, hubungi tenaga profesional.</p>
+          <p className="px-3 pb-2 text-xs text-slate-600">{t("Lesbot memberikan dukungan umum. Untuk perawatan kesehatan mental, hubungi tenaga profesional.", "Lesbot offers general support. For mental health care, reach out to a qualified professional.")}</p>
         </details>
     </div>
   );

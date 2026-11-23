@@ -1,6 +1,7 @@
 import type { Metadata } from 'next'
 import '@fontsource-variable/inter'
 import './globals.css'
+import { LanguageProvider } from './components/Language'
 
 export const metadata: Metadata = {
   title: 'Lestari - Portal Inklusif',
@@ -53,7 +54,7 @@ export default function RootLayout({
   children: React.ReactNode
 }) {
   return (
-    <html lang="en" className="scroll-smooth">
+    <html lang="id" className="scroll-smooth">
       <head>
         <meta name="color-scheme" content="light dark" />
         <meta name="format-detection" content="telephone=no" />
@@ -97,7 +98,7 @@ export default function RootLayout({
 
         {/* Main content wrapper */}
         <div id="main-content" role="main" className="min-h-[100dvh]">
-          {children}
+          <LanguageProvider>{children}</LanguageProvider>
         </div>
 
         {/* Accessibility announcement region */}

@@ -18,7 +18,7 @@ export async function GET(request: NextRequest) {
     return response;
   };
   const failure = (reason: string) => {
-    const destination = flow?.intent === 'signup' ? signupPath[flow.role] : '/';
+    const destination = flow?.intent === 'signup' ? signupPath[flow.role] : '/masuk';
     return redirect(`${destination}?google=${reason}&role=${flow?.role ?? 'jobseeker'}`);
   };
   if (!config) return failure('unavailable');

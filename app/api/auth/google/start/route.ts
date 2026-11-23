@@ -14,7 +14,7 @@ export async function GET(request: NextRequest) {
   }
   const config = googleConfig();
   if (!config) {
-    const destination = intent === 'signup' ? signupPath[role] : '/';
+    const destination = intent === 'signup' ? signupPath[role] : '/masuk';
     return NextResponse.redirect(new URL(`${destination}?google=unavailable&role=${role}`, request.url));
   }
   const flow: GoogleFlow = { role, intent, verifier: randomOAuthValue(), nonce: randomOAuthValue() };
@@ -23,7 +23,7 @@ export async function GET(request: NextRequest) {
     registration = await createGoogleFlow(flow, request.cookies.get(googleFlowCookie)?.value);
   } catch (error) {
     console.error('Gagal memulai sesi Google.', error instanceof Error ? error.name : 'UnknownError');
-    const destination = intent === 'signup' ? signupPath[role] : '/';
+    const destination = intent === 'signup' ? signupPath[role] : '/masuk';
     const response = NextResponse.redirect(new URL(`${destination}?google=failed&role=${role}`, config.origin));
     response.headers.set('Cache-Control', 'no-store');
     return response;

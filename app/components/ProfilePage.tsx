@@ -1,5 +1,7 @@
 'use client';
 
+import { useLanguage } from './Language';
+
 import { type FormEvent, useEffect, useState } from 'react';
 import { BadgeCheck, Briefcase, Building2, Camera, Mail, MapPin, MessageSquare, Pencil } from 'lucide-react';
 import { avatarUrl, ProfilePhoto, ProfilePhotoEditor } from './ProfilePhoto';
@@ -70,6 +72,7 @@ function Detail({ label, value, tags }: { label: string; value: string; tags?: b
 }
 
 export default function ProfilePage() {
+  const { t } = useLanguage();
   const [profile, setProfile] = useState<Profile | null>(null);
   const [draft, setDraft] = useState<ProfileFields | null>(null);
   const [editingPhoto, setEditingPhoto] = useState(false);
@@ -127,7 +130,7 @@ export default function ProfilePage() {
       const saved = await response.json();
       setProfile(current => current && { ...current, ...saved });
       setDraft(null);
-      setNotice('Perubahan profil tersimpan.');
+      setNotice(t("Perubahan profil tersimpan.", "Profile changes saved."));
     } catch {
       setError('Profil gagal disimpan. Periksa koneksi dan coba lagi.');
     } finally {
@@ -138,15 +141,15 @@ export default function ProfilePage() {
   if (!profile) {
     return (
       <main className="mx-auto max-w-6xl px-4 py-8 sm:px-6">
-        <h1 className="text-3xl font-extrabold text-slate-950">Profil saya</h1>
-        {loading ? <p role="status" className="mt-4 text-slate-700">Memuat profil…</p> : (
+        <h1 className="text-3xl font-extrabold text-slate-950">{t("Profil saya", "My profile")}</h1>
+        {loading ? <p role="status" className="mt-4 text-slate-700">{t("Memuat profil…", "Loading profile…")}</p> : (
           <div className="mt-4 space-y-3">
             <p role="alert" className="text-red-800">{error}</p>
             <button type="button" className={secondaryButton} onClick={() => {
               setError('');
               setLoading(true);
               setLoadAttempt(current => current + 1);
-            }}>Coba lagi</button>
+            }}>{t("Coba lagi", "Try again")}</button>
           </div>
         )}
       </main>
@@ -160,19 +163,19 @@ export default function ProfilePage() {
   return (
     <main className="mx-auto max-w-6xl px-4 pb-12 pt-7 sm:px-6 sm:pt-10">
       <div className="mb-5 flex flex-wrap items-center justify-between gap-4 sm:mb-6">
-        <h1 className="text-3xl font-extrabold tracking-tight text-slate-950 sm:text-4xl">{profile.role === 'company' ? 'Profil Perusahaan' : 'Profil saya'}</h1>
+        <h1 className="text-3xl font-extrabold tracking-tight text-slate-950 sm:text-4xl">{profile.role === 'company' ? t("Profil Perusahaan", "Company profile") : t("Profil saya", "My profile")}</h1>
         {!draft && (
           <button type="button" onClick={startEditing} className={primaryButton}>
             <Pencil aria-hidden="true" className="h-4 w-4" />
-            Edit profil
+            {t("Edit profil", "Edit profile")}
           </button>
         )}
       </div>
 
-      <section aria-label="Ringkasan profil" className="relative isolate overflow-hidden rounded-3xl bg-gradient-to-br from-indigo-950 via-indigo-800 to-violet-800 px-5 py-8 text-white sm:px-8 sm:py-10">
+      <section aria-label={t("Ringkasan profil", "Profile overview")} className="relative isolate overflow-hidden rounded-3xl bg-gradient-to-br from-indigo-950 via-indigo-800 to-violet-800 px-5 py-8 text-white sm:px-8 sm:py-10">
         <div aria-hidden="true" className="pointer-events-none absolute -right-16 -top-28 h-72 w-72 rounded-full bg-violet-400/30 blur-3xl" />
         <div className="relative flex flex-wrap items-center gap-5 sm:flex-nowrap">
-          <button type="button" aria-label={profile.avatarVersion ? 'Ubah foto profil' : 'Unggah foto profil'}
+          <button type="button" aria-label={profile.avatarVersion ? t("Ubah foto profil", "Change profile photo") : t("Unggah foto profil", "Upload profile photo")}
             aria-expanded={editingPhoto} aria-controls={editingPhoto ? 'profile-photo-editor' : undefined}
             onClick={() => { setEditingPhoto(true); setNotice(''); }}
             className="relative shrink-0 rounded-full focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-white">
@@ -188,9 +191,9 @@ export default function ProfilePage() {
                 <RoleIcon aria-hidden="true" className="h-3.5 w-3.5" />
                 {role.label}
               </span>
-              {profile.isDemo && <span className="rounded-full bg-violet-950/55 px-2.5 py-1 text-xs font-medium text-white">Data contoh</span>}
+              {profile.isDemo && <span className="rounded-full bg-violet-950/55 px-2.5 py-1 text-xs font-medium text-white">{t("Data contoh", "Sample data")}</span>}
             </div>
-            <h2 className="text-2xl font-bold tracking-tight sm:text-3xl">{profile.displayName || 'Nama belum diisi'}</h2>
+            <h2 className="text-2xl font-bold tracking-tight sm:text-3xl">{profile.displayName || t("Nama belum diisi", "Name missing")}</h2>
             {profile.headline && <p className="mt-1 text-sm text-indigo-50 sm:text-base">{profile.headline}</p>}
             {profile.location && (
               <p className="mt-2 flex items-center gap-1.5 text-sm text-indigo-100">
@@ -214,15 +217,15 @@ export default function ProfilePage() {
 
       {draft ? (
         <form onSubmit={save} className={`mt-5 ${panelStyle}`} aria-busy={saving}>
-          <h2 className="text-lg font-bold text-slate-950">Edit profil</h2>
+          <h2 className="text-lg font-bold text-slate-950">{t("Edit profil", "Edit profile")}</h2>
           <fieldset disabled={saving} className="mt-5 grid gap-5 sm:grid-cols-2">
             <TextField label={role.nameLabel} value={draft.displayName} limit={profileLimits.displayName} required onChange={value => updateDraft('displayName', value)} />
             <TextField label={role.headlineLabel} value={draft.headline} limit={profileLimits.headline} onChange={value => updateDraft('headline', value)} />
-            <TextField label="Lokasi" value={draft.location} limit={profileLimits.location} onChange={value => updateDraft('location', value)} />
+            <TextField label={t("Lokasi", "Location")} value={draft.location} limit={profileLimits.location} onChange={value => updateDraft('location', value)} />
             <label className="block space-y-1.5">
-              <span className="block text-sm font-semibold text-slate-800">Preferensi komunikasi</span>
+              <span className="block text-sm font-semibold text-slate-800">{t("Preferensi komunikasi", "Communication preference")}</span>
               <select value={draft.communication} onChange={event => updateDraft('communication', event.target.value)} className={inputStyle}>
-                <option value="">Pilih preferensi</option>
+                <option value="">{t("Pilih preferensi", "Choose a preference")}</option>
                 {communicationOptions.map(option => <option key={option}>{option}</option>)}
               </select>
             </label>
@@ -236,7 +239,7 @@ export default function ProfilePage() {
                   value={draft.details[field.key] ?? ''}
                   limit={field.limit}
                   multiline={field.multiline}
-                  hint={field.tags ? 'Pisahkan setiap keahlian dengan koma.' : undefined}
+                  hint={field.tags ? t("Pisahkan setiap keahlian dengan koma.", "Separate skills with commas.") : undefined}
                   onChange={value => setDraft(current => current && { ...current, details: { ...current.details, [field.key]: value } })}
                 />
               </div>
@@ -244,8 +247,8 @@ export default function ProfilePage() {
           </fieldset>
           {error && <p role="alert" className="mt-4 rounded-xl bg-red-50 px-4 py-2.5 text-sm text-red-900">{error}</p>}
           <div className="mt-5 flex flex-wrap justify-end gap-2 border-t border-slate-100 pt-4">
-            <button type="button" disabled={saving} className={secondaryButton} onClick={() => { setDraft(null); setError(''); }}>Batal</button>
-            <button type="submit" disabled={saving} className={primaryButton}>{saving ? 'Menyimpan…' : 'Simpan perubahan'}</button>
+            <button type="button" disabled={saving} className={secondaryButton} onClick={() => { setDraft(null); setError(''); }}>{t("Batal", "Cancel")}</button>
+            <button type="submit" disabled={saving} className={primaryButton}>{saving ? t("Menyimpan…", "Saving…") : t("Simpan perubahan", "Save changes")}</button>
           </div>
         </form>
       ) : (
@@ -263,7 +266,7 @@ export default function ProfilePage() {
             </section>
           </div>
           <section className={panelStyle}>
-            <h2 className="text-lg font-bold text-slate-950">Akun dan komunikasi</h2>
+            <h2 className="text-lg font-bold text-slate-950">{t("Akun dan komunikasi", "Account and communication")}</h2>
             <dl className="mt-4 space-y-4">
               <div className="flex min-w-0 gap-2.5">
                 <Mail aria-hidden="true" className="mt-0.5 h-4 w-4 shrink-0 text-indigo-700" />
@@ -271,7 +274,7 @@ export default function ProfilePage() {
               </div>
               <div className="flex min-w-0 gap-2.5">
                 <MessageSquare aria-hidden="true" className="mt-0.5 h-4 w-4 shrink-0 text-indigo-700" />
-                <Detail label="Preferensi komunikasi" value={profile.communication} />
+                <Detail label={t("Preferensi komunikasi", "Communication preference")} value={profile.communication} />
               </div>
             </dl>
           </section>
