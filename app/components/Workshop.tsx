@@ -34,7 +34,6 @@ import {
   ArrowRight,
   Accessibility,
   Heart,
-  Share2,
   ExternalLink,
   Lightbulb,
   Brain,
@@ -392,208 +391,82 @@ export default function WorkshopPage({ userAssessment }: WorkshopPageProps) {
             </div>
           </div>
 
-          {/* Workshop Grid */}
-          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
-            {filteredWorkshops.map((workshop) => {
-              const enrollmentStatus = getEnrollmentStatus(workshop.id);
-              return (
-                <div
-                  key={workshop.id}
-                  className="bg-white/90 backdrop-blur-lg rounded-3xl shadow-xl hover:shadow-2xl transition-all duration-500 border border-white/20 group overflow-hidden transform hover:scale-[1.02]"
-                >
-                  {/* Workshop Header with Thumbnail */}
-                  <div className="relative h-48 bg-gradient-to-br from-indigo-500 to-purple-600 overflow-hidden">
-                    <div className="absolute inset-0 bg-black bg-opacity-20"></div>
-                    <div className="absolute top-4 left-4 flex space-x-2">
-                      <span className={`px-3 py-1 rounded-full text-xs font-medium shadow-lg ${
-                        workshop.level === 'Beginner' ? 'bg-green-100 text-green-800' :
-                        workshop.level === 'Intermediate' ? 'bg-yellow-100 text-yellow-800' :
-                        'bg-red-100 text-red-800'
-                      }`}>
-                        {workshop.level}
-                      </span>
-                      {userAssessment && workshop.recommendationScore && workshop.recommendationScore > 70 && (
-                        <span className="bg-white/90 text-indigo-600 px-2 py-1 rounded-full text-xs font-medium flex items-center animate-pulse shadow-lg">
-                          <Target className="w-3 h-3 mr-1" />
-                          {t("Direkomendasikan", "Recommended")}
-                        </span>
-                      )}
-                    </div>
-                    
-                    <div className="absolute top-4 right-4 flex space-x-2">
-                      <button
-                        onClick={() => toggleSaveWorkshop(workshop.id)}
-                        disabled={pending}
-                        className={`p-2 rounded-full transition-all duration-300 transform hover:scale-110 ${
-                          savedWorkshops.includes(workshop.id) 
-                            ? 'bg-red-500 text-white shadow-lg' 
-                            : 'bg-white/20 text-white hover:bg-white/30'
-                        }`}
-                      >
-                        <Heart className={`w-4 h-4 ${savedWorkshops.includes(workshop.id) ? 'fill-current' : ''}`} />
-                      </button>
-                      <button className="p-2 bg-white/20 text-white rounded-full hover:bg-white/30 transition-all duration-300 transform hover:scale-110">
-                        <Share2 className="w-4 h-4" />
-                      </button>
-                    </div>
 
-                    <div className="absolute bottom-4 left-4 right-4">
-                      <div className="text-white">
-                        <div className="text-sm opacity-90 mb-1">{workshop.category}</div>
-                        <h3 className="text-xl font-bold leading-tight mb-2">{workshop.title}</h3>
-                        <div className="flex items-center space-x-2 text-sm">
-                          <User className="w-4 h-4" />
-                          <span>by {workshop.instructor}</span>
-                          <div className="flex items-center ml-2">
-                            <Star className="w-4 h-4 text-yellow-400 fill-current mr-1" />
-                            <span>{workshop.instructorRating}</span>
-                          </div>
-                        </div>
+          <section aria-label={t('Daftar workshop', 'Workshop listings')} className="grid gap-5 md:grid-cols-2 xl:grid-cols-3">
+            {filteredWorkshops.map(workshop => {
+              const isSaved = savedWorkshops.includes(workshop.id);
+              const enrollmentStatus = getEnrollmentStatus(workshop.id);
+              const level = workshop.level === 'Beginner' ? t('Pemula', 'Beginner')
+                : workshop.level === 'Intermediate' ? t('Menengah', 'Intermediate')
+                : workshop.level === 'Advanced' ? t('Lanjutan', 'Advanced') : workshop.level;
+
+              return (
+                <article key={workshop.id} className="flex min-w-0 flex-col overflow-hidden rounded-3xl border border-indigo-100 bg-white shadow-sm transition-shadow hover:shadow-md">
+                  <div className="bg-gradient-to-br from-indigo-500 to-purple-600 text-white">
+                    <div className="flex items-start justify-between gap-3 bg-black/20 p-4 sm:p-5">
+                      <div className="min-w-0 [overflow-wrap:anywhere]">
+                        <p className="flex flex-wrap items-center gap-1.5 text-xs text-indigo-50">
+                          <span>{workshop.category}</span>
+                          <span aria-hidden="true">·</span>
+                          <span>{level}</span>
+                        </p>
+                        <h3 className="mt-2 text-lg font-bold leading-snug">{workshop.title}</h3>
+                        {userAssessment && (workshop.recommendationScore ?? 0) > 70 && (
+                          <span className="mt-2 inline-flex items-center gap-1 text-xs font-semibold text-indigo-50">
+                            <Target aria-hidden="true" className="h-3.5 w-3.5 shrink-0" />
+                            {t('Direkomendasikan', 'Recommended')}
+                          </span>
+                        )}
                       </div>
+                      <button type="button" onClick={() => toggleSaveWorkshop(workshop.id)} disabled={pending}
+                        aria-pressed={isSaved} aria-label={t('Simpan workshop: ' + workshop.title, 'Save workshop: ' + workshop.title)}
+                        className={'grid h-11 w-11 shrink-0 place-items-center rounded-full transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white disabled:opacity-60 ' +
+                          (isSaved ? 'bg-rose-50 text-rose-700 hover:bg-rose-100' : 'bg-white/20 text-white hover:bg-white/30')}>
+                        <Heart aria-hidden="true" className={'h-4 w-4 ' + (isSaved ? 'fill-current' : '')} />
+                      </button>
                     </div>
                   </div>
 
-                  {/* Workshop Content */}
-                  <div className="p-6">
-                    <p className="text-gray-600 mb-4 text-sm line-clamp-2 leading-relaxed">
-                      {workshop.description.length > 120 ? `${workshop.description.substring(0, 120)}...` : workshop.description}
-                    </p>
-
-                    {/* Workshop Stats */}
-                    <div className="grid grid-cols-2 gap-4 mb-4 text-sm">
-                      <div className="flex items-center text-gray-600 bg-gray-50 p-2 rounded-lg">
-                        <Clock className="w-4 h-4 mr-2 text-indigo-500" />
-                        <span>{workshop.duration}</span>
-                      </div>
-                      <div className="flex items-center text-gray-600 bg-gray-50 p-2 rounded-lg">
-                        <Users className="w-4 h-4 mr-2 text-green-500" />
-                        <span>{workshop.enrolled} {t("peserta", "enrolled")}</span>
-                      </div>
-                      <div className="flex items-center text-gray-600 bg-gray-50 p-2 rounded-lg">
-                        <BookOpen className="w-4 h-4 mr-2 text-purple-500" />
-                        <span>{workshop.lessons} {t("pelajaran", "lessons")}</span>
-                      </div>
-                      <div className="flex items-center bg-gray-50 p-2 rounded-lg">
-                        <Star className="w-4 h-4 text-yellow-400 fill-current mr-1" />
-                        <span className="text-gray-600">{workshop.rating}</span>
-                      </div>
+                  <div className="flex flex-1 flex-col gap-3 p-4 sm:p-5">
+                    <p className="line-clamp-2 text-sm leading-relaxed text-slate-700 [overflow-wrap:anywhere]">{workshop.description}</p>
+                    <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-slate-700">
+                      <span className="inline-flex items-center gap-1.5">
+                        <Clock aria-hidden="true" className="h-4 w-4 shrink-0 text-indigo-700" />
+                        {t(workshop.duration.replace(/ weeks?$/, ' minggu'), workshop.duration)}
+                      </span>
+                      {workshop.language.includes('ASL') && <span className="inline-flex items-center gap-1.5">
+                        <Hand aria-hidden="true" className="h-4 w-4 shrink-0 text-indigo-700" />
+                        {t('Dukungan ASL', 'ASL support')}
+                      </span>}
                     </div>
 
-                    {/* Accessibility Score */}
-                    <div className="mb-4 bg-gradient-to-r from-green-50 to-emerald-50 border-2 border-green-200 rounded-2xl p-3 shadow-lg">
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center space-x-2">
-                          <Accessibility className="w-4 h-4 text-green-600" />
-                          <span className="text-sm font-medium text-green-800">
-                            {t("Skor aksesibilitas:", "Accessibility Score:")} {workshop.deafFriendlyScore}%
+                    <div className="mt-auto border-t border-indigo-100 pt-3">
+                      <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+                        <p className="text-base font-extrabold text-slate-950 [overflow-wrap:anywhere]">{workshop.price}</p>
+                        {enrollmentStatus && (
+                          <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2.5 py-1 text-xs font-semibold text-emerald-900">
+                            <CheckCircle aria-hidden="true" className="h-3.5 w-3.5 shrink-0" /> {t('Terdaftar', 'Enrolled')}
                           </span>
-                        </div>
-                        <div className="flex items-center space-x-1">
-                          {[...Array(5)].map((_, i) => (
-                            <div
-                              key={i}
-                              className={`w-2 h-2 rounded-full transition-all duration-300 ${
-                                i < Math.floor(workshop.deafFriendlyScore / 20) ? 'bg-green-500 shadow-md' : 'bg-gray-300'
-                              }`}
-                            />
-                          ))}
-                        </div>
+                        )}
                       </div>
-                    </div>
-
-                    {/* Skills Tags */}
-                    <div className="flex flex-wrap gap-2 mb-4">
-                      {workshop.skillTags.slice(0, 3).map((tag, index) => (
-                        <span key={index} className="bg-indigo-100 text-indigo-800 px-3 py-1 rounded-full text-xs font-medium shadow-md hover:shadow-lg transition-all duration-300 transform hover:scale-105">
-                          {tag}
-                        </span>
-                      ))}
-                      {workshop.skillTags.length > 3 && (
-                        <span className="bg-gray-100 text-gray-600 px-3 py-1 rounded-full text-xs shadow-md">
-                          +{workshop.skillTags.length - 3} more
-                        </span>
-                      )}
-                    </div>
-
-                    {/* Next Session */}
-                    <div className="flex items-center text-sm text-gray-600 mb-4 bg-blue-50 rounded-xl p-3 shadow-lg">
-                      <Calendar className="w-4 h-4 mr-2 text-blue-500" />
-                      <span>{t("Sesi berikutnya:", "Next session:")} {workshop.nextSession}</span>
-                    </div>
-
-                    {/* Language Support */}
-                    <div className="flex items-center mb-4 text-sm bg-gray-50 rounded-xl p-3 shadow-lg">
-                      <Hand className="w-4 h-4 mr-2 text-blue-500" />
-                      <span className="text-gray-600">{workshop.language.join(', ')}</span>
-                      {workshop.language.includes('ASL') && (
-                        <span className="ml-2 bg-blue-100 text-blue-800 px-2 py-1 rounded-full text-xs font-medium shadow-md">
-                          {t("Dukungan ASL", "ASL Supported")}
-                        </span>
-                      )}
-                    </div>
-
-                    {/* Job Placement Rate */}
-                    {workshop.jobPlacementRate && (
-                      <div className="mb-4 bg-blue-50 border-2 border-blue-200 rounded-2xl p-3 shadow-lg">
-                        <div className="flex items-center justify-between">
-                          <div className="flex items-center space-x-2">
-                            <TrendingUp className="w-4 h-4 text-blue-600" />
-                            <span className="text-sm font-medium text-blue-800">
-                              {t("Tingkat penempatan kerja:", "Job Placement Rate:")} {workshop.jobPlacementRate}%
-                            </span>
-                          </div>
-                        </div>
-                      </div>
-                    )}
-
-                    {/* Price and Action */}
-                    <div className="flex items-center justify-between">
-                      <div className="text-2xl font-bold text-green-600 bg-green-50 px-4 py-2 rounded-2xl shadow-md">
-                        {workshop.price}
-                      </div>
-                      <div className="flex space-x-2">
-                        <button
-                          onClick={() => setSelectedWorkshop(workshop)}
-                          className="px-4 py-2 border-2 border-indigo-600 text-indigo-600 rounded-2xl hover:bg-indigo-50 transition-all duration-300 text-sm font-medium shadow-lg hover:shadow-xl transform hover:scale-105"
-                        >
-                          {t("Lihat detail", "View Details")}
+                      <div className={'grid gap-2 ' + (enrollmentStatus ? '' : 'grid-cols-2')}>
+                        <button type="button" onClick={() => setSelectedWorkshop(workshop)}
+                          className="min-h-11 rounded-xl border border-indigo-200 px-2 py-2 text-sm font-bold text-indigo-800 hover:bg-indigo-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-indigo-700">
+                          {t('Lihat detail', 'View details')}
                         </button>
-                        {enrollmentStatus ? (
-                          <div className="px-4 py-2 bg-green-100 text-green-800 rounded-2xl text-sm font-medium flex items-center shadow-lg">
-                            <CheckCircle className="w-4 h-4 mr-1" />
-                            {t("Terdaftar", "Enrolled")}
-                          </div>
-                        ) : (
-                          <button
-                            onClick={() => handleEnroll(workshop)}
-                            className="px-4 py-2 bg-gradient-to-r from-green-600 to-blue-600 text-white rounded-2xl hover:from-green-700 hover:to-blue-700 transition-all duration-300 text-sm font-medium shadow-xl hover:shadow-2xl transform hover:scale-105"
-                          >
-                            {t("Daftar sekarang", "Enroll Now")}
+                        {!enrollmentStatus && (
+                          <button type="button" onClick={() => handleEnroll(workshop)}
+                            className="min-h-11 rounded-xl bg-indigo-700 px-2 py-2 text-sm font-bold text-white hover:bg-indigo-800 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-700">
+                            {t('Daftar', 'Enroll')}
                           </button>
                         )}
                       </div>
                     </div>
-
-                    {/* Enrollment Status Progress */}
-                    {enrollmentStatus && (
-                      <div className="mt-4 bg-green-50 border-2 border-green-200 rounded-2xl p-3 shadow-lg">
-                        <div className="flex items-center justify-between mb-2">
-                          <span className="text-sm font-medium text-green-800">{t("Progres", "Progress")}</span>
-                          <span className="text-sm text-green-600">{enrollmentStatus.progress}%</span>
-                        </div>
-                        <div className="w-full bg-green-200 rounded-full h-2 shadow-inner">
-                          <div 
-                            className="bg-gradient-to-r from-green-500 to-emerald-600 h-2 rounded-full transition-all duration-300 shadow-md"
-                            style={{ width: `${enrollmentStatus.progress}%` }}
-                          />
-                        </div>
-                      </div>
-                    )}
                   </div>
-                </div>
+                </article>
               );
             })}
-          </div>
+          </section>
 
           {filteredWorkshops.length === 0 && (
             <div className="text-center py-16 bg-white/90 backdrop-blur-lg rounded-3xl shadow-2xl border border-white/20">
