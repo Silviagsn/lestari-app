@@ -3,7 +3,7 @@
 import { useLanguage } from './Language';
 
 import { useState, type ReactNode } from 'react';
-import { indonesianCities, indonesianCityGroups } from '../utils/jobLocations';
+import { cityOptions, provinceByCity } from '../utils/jobLocations';
 import { accessibilityOptions, emptyJob, experienceLevels, jobCategories, jobDetailLabels, jobTextLimits, jobTypes, workArrangements, type CompanyJob, type JobDraft, type ListingStatus } from '../utils/recruitment';
 
 export const companyCard = 'min-w-0 rounded-3xl border border-violet-100 bg-white p-5 shadow-sm sm:p-6';
@@ -92,10 +92,8 @@ export default function CompanyJobForm({ job, companyName, busy, save, onCancel,
             {row(t('Lokasi', 'Location'), <select id="job-location" className={companyInput}
               value={draft.location} onChange={event => update('location', event.target.value)}>
               <option value="">{t('Pilih kota', 'Select a city')}</option>
-              {savedLocation && !indonesianCities.has(savedLocation) && <option value={savedLocation}>{savedLocation}</option>}
-              {Object.entries(indonesianCityGroups).map(([letter, cities]) => <optgroup key={letter} label={letter}>
-                {cities.map(city => <option key={city} value={city}>{city}</option>)}
-              </optgroup>)}
+              {savedLocation && !Object.hasOwn(provinceByCity, savedLocation) && <option value={savedLocation}>{savedLocation}</option>}
+              {cityOptions.map(([city, province]) => <option key={city} value={city}>{city}, {province}</option>)}
             </select>, 'location')}
             {row(t('Tipe pekerjaan', 'Employment type'), select('type', jobTypes), 'type')}
             {row(t('Tingkat pengalaman', 'Experience level'), select('experienceLevel', experienceLevels), 'experienceLevel')}
