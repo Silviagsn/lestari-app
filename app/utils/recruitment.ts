@@ -3,12 +3,22 @@ export const jobCategories = { Design: 'Desain', Technology: 'Teknologi', Hospit
 export const workArrangements = ['Di kantor', 'Hibrida', 'Remote'];
 export const experienceLevels = { Entry: 'Pemula', Mid: 'Menengah', Senior: 'Senior' };
 export const accessibilityOptions = ['Juru bahasa isyarat', 'Komunikasi lewat chat', 'Pemberitahuan visual', 'Instruksi kerja tertulis'];
+export const jobDetailLabels = {
+  description: ['Tentang pekerjaan ini', 'About this role'],
+  responsibilities: ['Tanggung jawab utama', 'Key responsibilities'],
+  requirements: ['Persyaratan', 'Requirements'],
+  skills: ['Keahlian yang dibutuhkan', 'Skills needed'],
+  benefits: ['Manfaat', 'Benefits'],
+  accessibility: ['Dukungan aksesibilitas', 'Accessibility support'],
+} as const;
 export const applicantStatuses = { applied: 'Baru', reviewing: 'Ditinjau', interview: 'Wawancara', offer: 'Ditawari', rejected: 'Tidak lolos' };
 export type ApplicantStatus = keyof typeof applicantStatuses;
 export const listingStatuses = { draft: 'Draf', published: 'Tayang', closed: 'Ditutup' };
 export type ListingStatus = keyof typeof listingStatuses;
 
-export type JobDraft = {
+const optionalJobTextLimits = { responsibilitiesText: 3000, skillsText: 1000, benefitsText: 2000, accessibilityDetails: 2000 };
+
+export type JobDraft = Record<keyof typeof optionalJobTextLimits, string> & {
   title: string; type: string; category: string; arrangement: string; experienceLevel: string;
   location: string; salary: string; description: string; requirementsText: string;
   deadline: string; contactEmail: string; accessibilityOptions: string[];
@@ -17,6 +27,7 @@ export type JobDraft = {
 export const emptyJob: JobDraft = {
   title: '', type: 'Full-time', category: 'Technology', arrangement: 'Di kantor', experienceLevel: 'Entry',
   location: '', salary: '', description: '', requirementsText: '', deadline: '', contactEmail: '', accessibilityOptions: [],
+  responsibilitiesText: '', skillsText: '', benefitsText: '', accessibilityDetails: '',
 };
 
 export type CompanyJob = JobDraft & { id: number; status: ListingStatus; applicants: number; createdAt: string; expired: boolean };
@@ -27,7 +38,11 @@ export type CompanyApplicant = {
 };
 export type RecruitmentData = { companyName: string; jobs: CompanyJob[]; applicants: CompanyApplicant[] };
 
-export const jobTextLimits = { title: 120, location: 120, salary: 120, description: 4000, requirementsText: 2500, contactEmail: 254 };
+export const jobTextLimits = { title: 120, location: 120, salary: 120, description: 4000, requirementsText: 2500, contactEmail: 254, ...optionalJobTextLimits };
+
+export function jobTextItems(text: string) {
+  return [...new Set(text.split('\n').map(line => line.trim()).filter(Boolean))];
+}
 
 export function isOptionalDate(value: unknown): value is string {
   if (value === '') return true;
@@ -42,6 +57,7 @@ export function readJobDraft(data: unknown): JobDraft | null {
   const result = { ...emptyJob };
   for (const field of Object.keys(jobTextLimits) as (keyof typeof jobTextLimits)[]) {
     const value = raw[field];
+    if (value === undefined && Object.hasOwn(optionalJobTextLimits, field)) continue;
     if (typeof value !== 'string' || value.length > jobTextLimits[field] || value.includes('\0')) return null;
     result[field] = value.trim();
   }

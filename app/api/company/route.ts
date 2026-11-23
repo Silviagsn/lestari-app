@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getDatabase, getSessionUser, sessionCookie } from '../../../database/store.mjs';
-import { applicantStatuses, readJobDraft } from '../../utils/recruitment';
+import { applicantStatuses, jobTextItems, readJobDraft } from '../../utils/recruitment';
 
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
@@ -81,15 +81,19 @@ export async function POST(request: NextRequest) {
     if (company.expired) return error('Batas lamaran sudah lewat.', 400);
   }
 
+  const skills = jobTextItems(draft.skillsText);
   const details = JSON.stringify({
     ...draft,
     company: company?.name || 'Perusahaan',
     companyEmail: draft.contactEmail,
-    requirements: draft.requirementsText.split('\n').map(line => line.trim()).filter(Boolean),
+    requirements: jobTextItems(draft.requirementsText),
+    responsibilities: jobTextItems(draft.responsibilitiesText),
+    skills,
+    benefits: jobTextItems(draft.benefitsText),
     accessibility: draft.accessibilityOptions.join(', '),
     isRemote: draft.arrangement === 'Remote',
     applicationDeadline: draft.deadline,
-    tags: draft.accessibilityOptions,
+    tags: [...new Set([...skills, ...draft.accessibilityOptions])],
     urgency: 'low',
     isAccessibilityVerified: false,
     deafFriendlyScore: 0,

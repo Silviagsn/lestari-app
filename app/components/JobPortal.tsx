@@ -1,7 +1,7 @@
 import { useLanguage } from './Language';
 import React, { useEffect, useRef, useState } from 'react';
 import { useCatalog } from '../utils/useCatalog';
-import { applicantStatuses, type ApplicantStatus } from '../utils/recruitment';
+import { applicantStatuses, jobDetailLabels, type ApplicantStatus } from '../utils/recruitment';
 import { 
   Search, 
   MapPin, 
@@ -59,7 +59,10 @@ interface Job {
   salary: string;
   description: string;
   requirements: string[];
+  responsibilities?: string[];
+  skills?: string[];
   accessibility: string;
+  accessibilityDetails?: string;
   posted: string;
   logo?: string;
   rating?: number;
@@ -714,7 +717,7 @@ Application Date: ${new Date().toLocaleDateString()}`;
                     </div>
                     <div className="flex items-center text-gray-600 bg-gray-50 p-3 rounded-xl">
                       <Briefcase className="w-5 h-5 mr-3 text-gray-400" />
-                      <span>{selectedJob.type} • {selectedJob.experienceLevel}</span>
+                      <span>{[selectedJob.type, selectedJob.experienceLevel, selectedJob.arrangement].filter(Boolean).join(' · ')}</span>
                     </div>
                     <div className="flex items-center text-green-600 font-semibold bg-green-50 p-3 rounded-xl">
                       <DollarSign className="w-5 h-5 mr-3" />
@@ -728,13 +731,20 @@ Application Date: ${new Date().toLocaleDateString()}`;
 
                   {/* Description */}
                   <div className="mb-6">
-                    <h3 className="font-semibold text-gray-900 mb-3">{t("Tentang pekerjaan ini", "About this role")}</h3>
-                    <p className="text-gray-600 text-sm leading-relaxed bg-gray-50 p-4 rounded-xl">{selectedJob.description}</p>
+                    <h3 className="font-semibold text-gray-900 mb-3">{t(...jobDetailLabels.description)}</h3>
+                    <p className="whitespace-pre-wrap rounded-xl bg-gray-50 p-4 text-sm leading-relaxed text-gray-600">{selectedJob.description}</p>
                   </div>
+
+                  {!!selectedJob.responsibilities?.length && <section className="mb-6">
+                    <h3 className="mb-3 font-semibold text-gray-900">{t(...jobDetailLabels.responsibilities)}</h3>
+                    <ul className="list-disc space-y-1.5 pl-5 text-sm leading-relaxed text-gray-700">
+                      {selectedJob.responsibilities.map(task => <li key={task}>{task}</li>)}
+                    </ul>
+                  </section>}
 
                   {/* Requirements */}
                   <div className="mb-6">
-                    <h3 className="font-semibold text-gray-900 mb-3">{t("Persyaratan", "Requirements")}</h3>
+                    <h3 className="font-semibold text-gray-900 mb-3">{t(...jobDetailLabels.requirements)}</h3>
                     <div className="flex flex-wrap gap-2">
                       {selectedJob.requirements.map((req, index) => (
                         <span key={index} className="bg-blue-100 text-blue-800 px-3 py-2 rounded-full text-sm shadow-md">
@@ -744,10 +754,17 @@ Application Date: ${new Date().toLocaleDateString()}`;
                     </div>
                   </div>
 
+                  {!!selectedJob.skills?.length && <section className="mb-6">
+                    <h3 className="mb-3 font-semibold text-gray-900">{t(...jobDetailLabels.skills)}</h3>
+                    <ul className="flex flex-wrap gap-2">
+                      {selectedJob.skills.map(skill => <li key={skill} className="rounded-full bg-indigo-50 px-3 py-1.5 text-sm font-medium text-indigo-900">{skill}</li>)}
+                    </ul>
+                  </section>}
+
                   {/* Benefits */}
-                  {selectedJob.benefits && (
+                  {!!selectedJob.benefits?.length && (
                     <div className="mb-6">
-                      <h3 className="font-semibold text-gray-900 mb-3">{t("Manfaat", "Benefits")}</h3>
+                      <h3 className="font-semibold text-gray-900 mb-3">{t(...jobDetailLabels.benefits)}</h3>
                       <div className="space-y-2">
                         {selectedJob.benefits.map((benefit, index) => (
                           <div key={index} className="flex items-center text-sm text-gray-600 bg-gray-50 p-2 rounded-lg">
@@ -763,9 +780,10 @@ Application Date: ${new Date().toLocaleDateString()}`;
                   <div className="mb-6 bg-gradient-to-r from-green-50 to-emerald-50 border-2 border-green-200 rounded-2xl p-4 shadow-lg">
                     <h3 className="font-semibold text-green-800 mb-2 flex items-center">
                       <Accessibility className="w-5 h-5 mr-2" />
-                      {t("Dukungan aksesibilitas", "Accessibility Support")}
+                      {t(...jobDetailLabels.accessibility)}
                     </h3>
-                    <p className="text-green-700 text-sm leading-relaxed mb-3">{selectedJob.accessibility}</p>
+                    <p className="mb-3 text-sm leading-relaxed text-green-800">{selectedJob.accessibility}</p>
+                    {selectedJob.accessibilityDetails && <p className="whitespace-pre-wrap rounded-xl bg-white/70 p-3 text-sm leading-relaxed text-green-900">{selectedJob.accessibilityDetails}</p>}
                     {!selectedJob.companyListing && <div className="flex items-center justify-between">
                       <span className="text-sm font-medium text-green-800">
                         {t("Skor ramah Tuli", "Deaf-Friendly Score")}
