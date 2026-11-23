@@ -3,7 +3,7 @@
 import { LanguageSwitch, useLanguage } from './Language';
 
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { Accessibility, ArrowLeft, ArrowRight, Briefcase, Building2, CheckCircle2, ClipboardList, EarOff, Globe, LayoutDashboard, LogOut, Plus, Settings, Users } from 'lucide-react';
+import { Accessibility, ArrowLeft, ArrowRight, Briefcase, Building2, CheckCircle2, ChevronsUpDown, ClipboardList, EarOff, Globe, LayoutDashboard, LogOut, Plus, Settings, User, Users } from 'lucide-react';
 import CompanyJobForm, { companyCard, companyInput, companyPrimary, companySecondary } from './CompanyJobForm';
 import ProfilePage from './ProfilePage';
 import RecruitmentSearch from './RecruitmentSearch';
@@ -14,9 +14,8 @@ const companyNavigation = (t: (id: string, en: string) => string) => [
   { id: 'jobs', title: t("Lowongan", "Jobs"), icon: Briefcase },
   { id: 'editor', title: t("Buat lowongan", "Create job"), icon: Plus },
   { id: 'applicants', title: t("Pelamar", "Applicants"), icon: Users },
-  { id: 'profile', title: t("Profil Perusahaan", "Company Profile"), icon: Building2 },
 ] as const;
-type View = ReturnType<typeof companyNavigation>[number]['id'] | 'settings';
+type View = ReturnType<typeof companyNavigation>[number]['id'] | 'profile' | 'settings';
 const compactDate = (value: string) => new Date(value).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric', timeZone: 'Asia/Jakarta' });
 const listingState = (job: CompanyJob): ListingStatus => job.status === 'published' && job.expired ? 'closed' : job.status;
 const applicationCommunication: Record<string, string> = {
@@ -26,6 +25,63 @@ const applicantStatusesEnglish: Record<ApplicantStatus, string> = {
   applied: 'New', reviewing: 'Under review', interview: 'Interview', offer: 'Offered', rejected: 'Rejected',
 };
 const listingStatusesEnglish: Record<ListingStatus, string> = { draft: 'Draft', published: 'Published', closed: 'Closed' };
+
+function CompanyAccount({ name, isProfile, busy, openProfile, logout }: {
+  name?: string;
+  isProfile: boolean;
+  busy: boolean;
+  openProfile: () => void;
+  logout: () => void;
+}) {
+  const { t } = useLanguage();
+  const disclosure = useRef<HTMLDetailsElement>(null);
+  const trigger = useRef<HTMLElement>(null);
+
+  function close() {
+    if (disclosure.current) disclosure.current.open = false;
+  }
+
+  useEffect(() => {
+    function dismiss(event: PointerEvent) {
+      if (event.target instanceof Node && !disclosure.current?.contains(event.target)) close();
+    }
+    document.addEventListener('pointerdown', dismiss);
+    return () => document.removeEventListener('pointerdown', dismiss);
+  }, []);
+
+  return (
+    <details ref={disclosure} className="relative mt-3 lg:mt-auto"
+      onBlur={event => {
+        if (event.relatedTarget && !event.currentTarget.contains(event.relatedTarget)) close();
+      }}
+      onKeyDown={event => {
+        if (event.key !== 'Escape' || !event.currentTarget.open) return;
+        event.stopPropagation();
+        close();
+        trigger.current?.focus();
+      }}>
+      <summary ref={trigger} className="flex min-h-12 cursor-pointer list-none items-center gap-2.5 rounded-2xl border border-indigo-100 bg-indigo-50/75 px-3 py-2 text-indigo-950 hover:bg-indigo-100 focus-visible:outline focus-visible:outline-2 focus-visible:outline-indigo-700 [&::-webkit-details-marker]:hidden">
+        <span className="grid h-8 w-8 shrink-0 place-items-center rounded-lg bg-indigo-100 text-indigo-800">
+          <Building2 aria-hidden="true" className="h-4 w-4" />
+        </span>
+        <span className="min-w-0 flex-1 truncate text-sm font-bold">{name || t('Akun perusahaan', 'Employer account')}</span>
+        <ChevronsUpDown aria-hidden="true" className="h-4 w-4 shrink-0 text-indigo-700" />
+      </summary>
+      <div className="absolute inset-x-0 top-full z-40 mt-2 rounded-2xl border border-indigo-100 bg-white p-1.5 shadow-lg shadow-indigo-950/10 lg:bottom-full lg:top-auto lg:mb-2 lg:mt-0">
+        <button type="button" aria-current={isProfile ? 'page' : undefined} disabled={busy}
+          className="flex min-h-11 w-full items-center gap-2 rounded-xl px-2.5 text-left text-sm font-semibold text-indigo-950 hover:bg-indigo-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-indigo-700 disabled:opacity-60"
+          onClick={() => { close(); trigger.current?.focus(); openProfile(); }}>
+          <User aria-hidden="true" className="h-4 w-4 shrink-0" />{t('Profil Saya', 'My Profile')}
+        </button>
+        <button type="button"
+          className="flex min-h-11 w-full items-center gap-2 rounded-xl px-2.5 text-left text-sm font-semibold text-red-700 hover:bg-red-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-red-700"
+          onClick={() => { close(); trigger.current?.focus(); logout(); }}>
+          <LogOut aria-hidden="true" className="h-4 w-4 shrink-0" />{t('Keluar Akun', 'Sign Out')}
+        </button>
+      </div>
+    </details>
+  );
+}
 
 function ListingBadge({ job }: { job: CompanyJob }) {
   const { t } = useLanguage();
@@ -236,7 +292,7 @@ export default function CompanyPortal({ logout, authError }: { logout: () => voi
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-[#fafaff] to-violet-50 text-slate-950 lg:grid lg:grid-cols-[14rem_minmax(0,1fr)]">
-      <aside className="border-b border-indigo-100 bg-white px-3 py-3 lg:sticky lg:top-0 lg:flex lg:h-dvh lg:flex-col lg:border-b-0 lg:border-r lg:px-4 lg:py-6">
+      <aside className="border-b border-indigo-100 bg-white px-3 py-3 lg:sticky lg:top-0 lg:z-40 lg:flex lg:h-dvh lg:flex-col lg:border-b-0 lg:border-r lg:px-4 lg:py-6">
         <div className="mb-3 flex items-center justify-between gap-3 px-1 lg:mb-8">
           <button type="button" onClick={() => navigate('overview')} className="flex items-center gap-2 rounded-xl text-left focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-700">
             <span className="grid h-10 w-10 place-items-center rounded-xl bg-gradient-to-br from-indigo-600 to-violet-700 text-white"><EarOff className="h-5 w-5" aria-hidden="true" /></span>
@@ -252,12 +308,7 @@ export default function CompanyPortal({ logout, authError }: { logout: () => voi
             </button>
           ))}
         </nav>
-        <div className="mt-auto hidden rounded-2xl border border-indigo-100 bg-indigo-50/75 p-3 lg:block">
-          <p className="break-words text-sm font-semibold">{data?.companyName || t("Akun perusahaan", "Employer account")}</p>
-          <button type="button" className="mt-2 flex min-h-10 items-center gap-2 rounded-lg text-sm font-semibold text-indigo-800 hover:text-indigo-950" onClick={logout}>
-            <LogOut aria-hidden="true" className="h-4 w-4" /> {t("Keluar akun", "Sign out")}
-          </button>
-        </div>
+        <CompanyAccount name={data?.companyName} isProfile={view === 'profile'} busy={busy} openProfile={() => navigate('profile')} logout={logout} />
       </aside>
 
       <div className="min-w-0">
@@ -281,7 +332,7 @@ export default function CompanyPortal({ logout, authError }: { logout: () => voi
                 {view === 'editor' && <button type="button" onClick={() => navigate('jobs')} className="mb-2 flex items-center gap-1.5 text-sm font-bold text-indigo-800"><ArrowLeft className="h-4 w-4" aria-hidden="true" /> {t("Kembali ke lowongan", "Back to jobs")}</button>}
                 <h1 ref={heading} tabIndex={-1} className="text-3xl font-extrabold tracking-tight outline-none sm:text-4xl">{title}</h1>
                 <p className="mt-1 text-sm text-slate-600">
-                  {view === 'overview' ? t('Pantau pekerjaan dan tindak lanjuti lamaran.', 'Track jobs and follow up on applications.') : view === 'editor' ? t('Jelaskan pekerjaan dan dukungan yang tersedia bagi kandidat.', 'Describe the role and the support available to candidates.') : view === 'jobs' ? t('Kelola draf, lowongan tayang, dan lowongan yang ditutup.', 'Manage draft, published, and closed job listings.') : view === 'settings' ? t('Kelola bahasa, profil, dan sesi akun perusahaan.', 'Manage the language, profile, and sign-in session for your employer account.') : t('Buka lamaran dan perbarui tahap rekrutmen.', 'Review applications and update the recruitment stage.')}
+                  {view === 'overview' ? t('Pantau pekerjaan dan tindak lanjuti lamaran.', 'Track jobs and follow up on applications.') : view === 'editor' ? t('Jelaskan pekerjaan dan dukungan yang tersedia bagi kandidat.', 'Describe the role and the support available to candidates.') : view === 'jobs' ? t('Kelola draf, lowongan tayang, dan lowongan yang ditutup.', 'Manage draft, published, and closed job listings.') : view === 'settings' ? t('Kelola bahasa tampilan portal perusahaan.', 'Manage the display language for your employer portal.') : t('Buka lamaran dan perbarui tahap rekrutmen.', 'Review applications and update the recruitment stage.')}
                 </p>
               </div>
               {(view === 'overview' || view === 'jobs') && <button type="button" className={companyPrimary} onClick={() => openEditor()}><Plus className="h-4 w-4" aria-hidden="true" /> {t('Buat lowongan', 'Create job')}</button>}
@@ -291,21 +342,11 @@ export default function CompanyPortal({ logout, authError }: { logout: () => voi
             {!data && !error && view !== 'settings' && <p role="status" className={companyCard}>{t('Memuat data rekrutmen…', 'Loading recruitment data…')}</p>}
             {!data && error && view !== 'settings' && <button type="button" className={companySecondary} onClick={() => { setError(''); load().catch((failure: Error) => setError(failure.message)); }}>{t('Coba lagi', 'Try again')}</button>}
 
-            {view === 'settings' && <div className="grid gap-4 lg:grid-cols-2">
-              <section className={companyCard}>
-                <h2 className="flex items-center gap-2 font-bold"><Globe aria-hidden="true" className="h-5 w-5 text-indigo-700" />{t('Bahasa tampilan', 'Display language')}</h2>
-                <p className="mb-4 mt-1 text-sm text-slate-600">{t('Pilihan ini disimpan di browser yang kamu gunakan.', 'This preference is saved in your current browser.')}</p>
-                <LanguageSwitch />
-              </section>
-              <section className={companyCard}>
-                <h2 className="flex items-center gap-2 font-bold"><Building2 aria-hidden="true" className="h-5 w-5 text-indigo-700" />{t('Akun perusahaan', 'Employer account')}</h2>
-                <p className="mb-4 mt-1 text-sm text-slate-600">{t('Perbarui identitas perusahaan atau akhiri sesi di perangkat ini.', 'Update your company details or end the session on this device.')}</p>
-                <div className="flex flex-wrap gap-2">
-                  <button type="button" className={companyPrimary} onClick={() => navigate('profile')}>{t('Buka profil', 'Open profile')}</button>
-                  <button type="button" className={companySecondary} onClick={logout}><LogOut aria-hidden="true" className="h-4 w-4" />{t('Keluar akun', 'Sign out')}</button>
-                </div>
-              </section>
-            </div>}
+            {view === 'settings' && <section className={`${companyCard} max-w-xl`}>
+              <h2 className="flex items-center gap-2 font-bold"><Globe aria-hidden="true" className="h-5 w-5 text-indigo-700" />{t('Bahasa tampilan', 'Display language')}</h2>
+              <p className="mb-4 mt-1 text-sm text-slate-600">{t('Pilihan ini disimpan di browser yang kamu gunakan.', 'This preference is saved in your current browser.')}</p>
+              <LanguageSwitch />
+            </section>}
 
             {data && view === 'overview' && (
               <>
