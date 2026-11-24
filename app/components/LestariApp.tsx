@@ -13,6 +13,7 @@ import FloatingTools, { type FloatingTool } from './FloatingTools';
 import GoogleButton from './GoogleButton';
 import ProfilePage from './ProfilePage';
 import CompanyPortal from './CompanyPortal';
+import AdminPortal from './AdminPortal';
 import { googleErrorMessage, isSignupRole, signupPath } from '../utils/signup';
 import { features } from './Features';
 import { ArrowRight, X, Lock, Mail, EarOff, CheckCircle2, ShieldCheck, Briefcase } from 'lucide-react';
@@ -368,6 +369,10 @@ export default function LestariApp({ initialLogin = false }: { initialLogin?: bo
       </main>
       </>
     );
+  }
+
+  if (role === 'admin') {
+    return <AdminPortal logout={handleLogout} authError={authError} />;
   }
 
   if (role === 'company') {
