@@ -3,7 +3,7 @@
 import { useLanguage } from './Language';
 
 import { type FormEvent, useEffect, useState } from 'react';
-import { BadgeCheck, Briefcase, Building2, Camera, Mail, MapPin, MessageSquare, Pencil } from 'lucide-react';
+import { BadgeCheck, Briefcase, Building2, Camera, Mail, MapPin, MessageSquare, Pencil, User } from 'lucide-react';
 import { avatarUrl, ProfilePhoto, ProfilePhotoEditor } from './ProfilePhoto';
 import {
   communicationOptions, profileByRole, profileLimits, type Profile, type ProfileFields,
@@ -14,6 +14,8 @@ const panelStyle = 'min-w-0 rounded-3xl border border-indigo-100 bg-white p-5 sh
 const primaryButton = 'inline-flex min-h-11 items-center justify-center gap-2 rounded-xl bg-indigo-700 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-indigo-800 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600 disabled:opacity-60';
 const secondaryButton = 'inline-flex min-h-11 items-center justify-center rounded-xl border border-indigo-200 bg-white px-4 py-2.5 text-sm font-semibold text-indigo-800 transition hover:bg-indigo-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600 disabled:opacity-60';
 const roleIcons = { jobseeker: Briefcase, company: Building2, admin: BadgeCheck };
+const sectionIcon = 'grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-indigo-50 text-indigo-700';
+const sectionTitle = 'flex items-center gap-3 text-lg font-bold tracking-tight text-slate-950';
 
 type TextFieldProps = {
   label: string;
@@ -51,16 +53,16 @@ function TextField({ label, value, limit, onChange, multiline, required, hint }:
   );
 }
 
-function Detail({ label, value, tags }: { label: string; value: string; tags?: boolean }) {
+function Detail({ label, value, tags, className }: { label: string; value: string; tags?: boolean; className?: string }) {
   const items = value.split(',').map(part => part.trim()).filter(Boolean);
   return (
-    <div className="min-w-0">
+    <div className={`min-w-0 ${className ?? ''}`}>
       <dt className="text-sm font-semibold text-slate-900">{label}</dt>
       <dd className="mt-1 text-sm leading-relaxed text-slate-600 [overflow-wrap:anywhere]">
         {tags && items.length ? (
           <ul className="mt-2 flex flex-wrap gap-2">
             {[...new Set(items)].map(item => (
-              <li key={item} className="rounded-full bg-indigo-50 px-3 py-1 font-medium text-indigo-800">{item}</li>
+              <li key={item} className="max-w-full rounded-full border border-indigo-100 bg-white px-3 py-1 font-medium text-indigo-800">{item}</li>
             ))}
           </ul>
         ) : (
@@ -162,46 +164,48 @@ export default function ProfilePage({ onProfileChange }: { onProfileChange?: () 
   const initials = profile.displayName.split(/\s+/).slice(0, 2).map(word => Array.from(word)[0]).join('').toUpperCase();
 
   return (
-    <main className="mx-auto max-w-6xl px-4 pb-12 pt-7 sm:px-6 sm:pt-10">
-      <div className="mb-5 flex flex-wrap items-center justify-between gap-4 sm:mb-6">
-        <h1 className="text-3xl font-extrabold tracking-tight text-slate-950 sm:text-4xl">{profile.role === 'company' ? t("Profil Perusahaan", "Company profile") : t("Profil saya", "My profile")}</h1>
-        {!draft && (
-          <button type="button" onClick={startEditing} className={primaryButton}>
-            <Pencil aria-hidden="true" className="h-4 w-4" />
-            {t("Edit profil", "Edit profile")}
-          </button>
-        )}
-      </div>
+    <main className="mx-auto max-w-6xl px-4 pb-24 pt-7 sm:px-6 sm:pt-10">
+      <h1 className="mb-5 text-3xl font-extrabold tracking-tight text-slate-950 sm:mb-6 sm:text-4xl">{profile.role === 'company' ? t("Profil Perusahaan", "Company profile") : t("Profil saya", "My profile")}</h1>
 
-      <section aria-label={t("Ringkasan profil", "Profile overview")} className="relative isolate overflow-hidden rounded-3xl bg-gradient-to-br from-indigo-950 via-indigo-800 to-violet-800 px-5 py-8 text-white sm:px-8 sm:py-10">
-        <div aria-hidden="true" className="pointer-events-none absolute -right-16 -top-28 h-72 w-72 rounded-full bg-violet-400/30 blur-3xl" />
-        <div className="relative flex flex-wrap items-center gap-5 sm:flex-nowrap">
+      <section aria-label={t("Ringkasan profil", "Profile overview")} className="isolate overflow-hidden rounded-3xl border border-indigo-100 bg-white shadow-sm shadow-indigo-950/5">
+        <div aria-hidden="true" className="relative h-24 overflow-hidden border-b border-indigo-100 bg-gradient-to-r from-indigo-200 via-violet-100 to-sky-100 sm:h-32">
+          <div className="absolute -left-12 top-0 h-36 w-72 rounded-full bg-violet-300/60 blur-2xl sm:w-96" />
+          <div className="absolute -right-14 -top-28 h-72 w-72 rounded-full border border-white/80 bg-white/20 sm:right-1" />
+          <div className="absolute -right-4 -top-36 h-80 w-80 rounded-full border border-white/90 sm:right-12" />
+        </div>
+        <div className="relative flex flex-col items-start gap-4 px-5 pb-5 sm:flex-row sm:gap-5 sm:px-7 sm:pb-7">
           <button type="button" aria-label={profile.avatarVersion ? t("Ubah foto profil", "Change profile photo") : t("Unggah foto profil", "Upload profile photo")}
             aria-expanded={editingPhoto} aria-controls={editingPhoto ? 'profile-photo-editor' : undefined}
             onClick={() => { setEditingPhoto(true); setNotice(''); }}
-            className="relative shrink-0 rounded-full focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-white">
+            className="group relative -mt-10 shrink-0 rounded-full focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-indigo-700 sm:-mt-12">
             <ProfilePhoto src={avatarUrl(profile.avatarVersion)} initials={initials} label=""
-              className="h-20 w-20 border-2 border-white/50 bg-white/15 text-white sm:h-24 sm:w-24" />
-            <span className="absolute -bottom-0.5 -right-0.5 grid h-8 w-8 place-items-center rounded-full border-2 border-indigo-800 bg-white text-indigo-800">
+              className="h-24 w-24 border-4 border-white bg-indigo-100 text-indigo-800 shadow-md sm:h-28 sm:w-28" />
+            <span className="absolute bottom-0 right-0 grid h-9 w-9 place-items-center rounded-full border-2 border-white bg-indigo-700 text-white shadow-sm group-hover:bg-indigo-800">
               <Camera aria-hidden="true" className="h-4 w-4" />
             </span>
           </button>
-          <div className="min-w-0 flex-1 [overflow-wrap:anywhere]">
-            <div className="mb-2 flex flex-wrap items-center gap-2">
-              <span className="inline-flex items-center gap-1.5 rounded-full bg-white/15 px-2.5 py-1 text-xs font-semibold text-white">
+          <div className="min-w-0 max-w-full flex-1 [overflow-wrap:anywhere] sm:pt-4">
+            <h2 className="text-2xl font-extrabold tracking-tight text-slate-950 sm:text-3xl">{profile.displayName || t("Nama belum diisi", "Name missing")}</h2>
+            {profile.headline && <p className="mt-1 whitespace-pre-wrap text-sm text-slate-700 sm:text-base">{profile.headline}</p>}
+            <div className="mt-3 flex flex-wrap items-center gap-2">
+              <span className="inline-flex items-center gap-1.5 rounded-full bg-indigo-50 px-2.5 py-1 text-xs font-semibold text-indigo-800">
                 <RoleIcon aria-hidden="true" className="h-3.5 w-3.5" />
                 {role.label}
               </span>
-              {profile.isDemo && <span className="rounded-full bg-violet-950/55 px-2.5 py-1 text-xs font-medium text-white">{t("Data contoh", "Sample data")}</span>}
+              {profile.isDemo && <span className="rounded-full bg-violet-50 px-2.5 py-1 text-xs font-medium text-violet-900">{t("Data contoh", "Sample data")}</span>}
+              {profile.location && (
+                <span className="inline-flex min-w-0 items-center gap-1.5 text-sm text-slate-700">
+                  <MapPin aria-hidden="true" className="h-4 w-4 shrink-0 text-indigo-700" /><span className="min-w-0">{profile.location}</span>
+                </span>
+              )}
             </div>
-            <h2 className="text-2xl font-bold tracking-tight sm:text-3xl">{profile.displayName || t("Nama belum diisi", "Name missing")}</h2>
-            {profile.headline && <p className="mt-1 text-sm text-indigo-50 sm:text-base">{profile.headline}</p>}
-            {profile.location && (
-              <p className="mt-2 flex items-center gap-1.5 text-sm text-indigo-100">
-                <MapPin aria-hidden="true" className="h-4 w-4 shrink-0" />{profile.location}
-              </p>
-            )}
           </div>
+          {!draft && (
+            <button type="button" onClick={startEditing} className={`${primaryButton} shrink-0 sm:mt-4`}>
+              <Pencil aria-hidden="true" className="h-4 w-4" />
+              {t("Edit profil", "Edit profile")}
+            </button>
+          )}
         </div>
       </section>
 
@@ -219,7 +223,7 @@ export default function ProfilePage({ onProfileChange }: { onProfileChange?: () 
 
       {draft ? (
         <form onSubmit={save} className={`mt-5 ${panelStyle}`} aria-busy={saving}>
-          <h2 className="text-lg font-bold text-slate-950">{t("Edit profil", "Edit profile")}</h2>
+          <h2 className={sectionTitle}><span className={sectionIcon}><Pencil aria-hidden="true" className="h-4 w-4" /></span>{t("Edit profil", "Edit profile")}</h2>
           <fieldset disabled={saving} className="mt-5 grid gap-5 sm:grid-cols-2">
             <TextField label={role.nameLabel} value={draft.displayName} limit={profileLimits.displayName} required onChange={value => updateDraft('displayName', value)} />
             <TextField label={role.headlineLabel} value={draft.headline} limit={profileLimits.headline} onChange={value => updateDraft('headline', value)} />
@@ -257,24 +261,25 @@ export default function ProfilePage({ onProfileChange }: { onProfileChange?: () 
         <div className="mt-5 grid items-start gap-5 md:grid-cols-[minmax(0,1fr)_minmax(0,0.55fr)]">
           <div className="grid min-w-0 gap-5">
             <section className={panelStyle}>
-              <h2 className="text-lg font-bold text-slate-950">{role.aboutLabel}</h2>
-              <p className="mt-2 whitespace-pre-wrap text-sm leading-relaxed text-slate-700 [overflow-wrap:anywhere]">{profile.about || 'Belum ada deskripsi.'}</p>
+              <h2 className={sectionTitle}><span className={sectionIcon}><User aria-hidden="true" className="h-5 w-5" /></span>{role.aboutLabel}</h2>
+              <p className="mt-4 whitespace-pre-wrap text-sm leading-relaxed text-slate-700 [overflow-wrap:anywhere]">{profile.about || 'Belum ada deskripsi.'}</p>
             </section>
             <section className={panelStyle}>
-              <h2 className="text-lg font-bold text-slate-950">{role.detailsLabel}</h2>
-              <dl className="mt-4 space-y-4">
-                {role.fields.map(field => <Detail key={field.key} label={field.label} value={profile.details[field.key] ?? ''} tags={field.tags} />)}
+              <h2 className={sectionTitle}><span className={sectionIcon}><RoleIcon aria-hidden="true" className="h-5 w-5" /></span>{role.detailsLabel}</h2>
+              <dl className="mt-4 grid gap-3">
+                {role.fields.map(field => <Detail key={field.key} label={field.label}
+                  value={profile.details[field.key] ?? ''} tags={field.tags} className="rounded-2xl bg-slate-50 px-4 py-3" />)}
               </dl>
             </section>
           </div>
           <section className={panelStyle}>
-            <h2 className="text-lg font-bold text-slate-950">{t("Akun dan komunikasi", "Account and communication")}</h2>
-            <dl className="mt-4 space-y-4">
-              <div className="flex min-w-0 gap-2.5">
+            <h2 className={sectionTitle}><span className={sectionIcon}><MessageSquare aria-hidden="true" className="h-5 w-5" /></span>{t("Akun dan komunikasi", "Account and communication")}</h2>
+            <dl className="mt-3 divide-y divide-indigo-50">
+              <div className="flex min-w-0 gap-2.5 py-3">
                 <Mail aria-hidden="true" className="mt-0.5 h-4 w-4 shrink-0 text-indigo-700" />
                 <Detail label="Email akun" value={profile.email} />
               </div>
-              <div className="flex min-w-0 gap-2.5">
+              <div className="flex min-w-0 gap-2.5 pt-3">
                 <MessageSquare aria-hidden="true" className="mt-0.5 h-4 w-4 shrink-0 text-indigo-700" />
                 <Detail label={t("Preferensi komunikasi", "Communication preference")} value={profile.communication} />
               </div>
