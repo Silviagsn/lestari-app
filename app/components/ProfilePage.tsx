@@ -3,8 +3,9 @@
 import { useLanguage } from './Language';
 
 import { type FormEvent, useEffect, useState } from 'react';
-import { BadgeCheck, Briefcase, Building2, Camera, Mail, MapPin, MessageSquare, Pencil, User } from 'lucide-react';
+import { ArrowUpRight, BadgeCheck, Briefcase, Building2, Camera, GraduationCap, Mail, MapPin, MessageSquare, Pencil, User } from 'lucide-react';
 import { avatarUrl, ProfilePhoto, ProfilePhotoEditor } from './ProfilePhoto';
+import ProfileActivity from './ProfileActivity';
 import {
   communicationOptions, profileByRole, profileLimits, type Profile, type ProfileFields,
 } from '../utils/profile';
@@ -73,7 +74,10 @@ function Detail({ label, value, tags, className }: { label: string; value: strin
   );
 }
 
-export default function ProfilePage({ onProfileChange }: { onProfileChange?: () => void }) {
+export default function ProfilePage({ onProfileChange, onNavigate }: {
+  onProfileChange?: () => void;
+  onNavigate?: (page: 'job-portal' | 'workshop') => void;
+}) {
   const { t } = useLanguage();
   const [profile, setProfile] = useState<Profile | null>(null);
   const [draft, setDraft] = useState<ProfileFields | null>(null);
@@ -162,6 +166,107 @@ export default function ProfilePage({ onProfileChange }: { onProfileChange?: () 
   const role = profileByRole[profile.role];
   const RoleIcon = roleIcons[profile.role];
   const initials = profile.displayName.split(/\s+/).slice(0, 2).map(word => Array.from(word)[0]).join('').toUpperCase();
+  const photoLabel = profile.avatarVersion ? t("Ubah foto profil", "Change profile photo") : t("Unggah foto profil", "Upload profile photo");
+  const photoProps = {
+    'aria-label': photoLabel,
+    'aria-expanded': editingPhoto,
+    'aria-controls': editingPhoto ? 'profile-photo-editor' : undefined,
+    onClick: () => { setEditingPhoto(true); setNotice(''); },
+  };
+  const feedback = notice && <p role="status" className="mt-4 rounded-xl bg-emerald-50 px-4 py-2.5 text-sm font-semibold text-emerald-900">{notice}</p>;
+  const photoEditor = editingPhoto && (
+    <ProfilePhotoEditor version={profile.avatarVersion} initials={initials}
+      onCancel={() => setEditingPhoto(false)}
+      onSaved={avatarVersion => {
+        setProfile(current => current && { ...current, avatarVersion });
+        onProfileChange?.();
+        setEditingPhoto(false);
+        setNotice(avatarVersion ? 'Foto profil tersimpan.' : 'Foto profil dihapus.');
+      }} />
+  );
+  const about = <section className={`${panelStyle} border-t-4 border-t-violet-300`}>
+    <h2 className={sectionTitle}><span className={sectionIcon}><User aria-hidden="true" className="h-5 w-5" /></span>{role.aboutLabel}</h2>
+    <p className="mt-4 whitespace-pre-wrap text-sm leading-relaxed text-slate-700 [overflow-wrap:anywhere] sm:text-base">{profile.about || 'Belum ada deskripsi.'}</p>
+  </section>;
+  const details = <section className={`${panelStyle} ${profile.role === 'jobseeker' && onNavigate ? '' : 'lg:col-span-2'}`}>
+    <h2 className={sectionTitle}><span className={sectionIcon}><RoleIcon aria-hidden="true" className="h-5 w-5" /></span>{role.detailsLabel}</h2>
+    <dl className={`mt-4 grid gap-3 sm:grid-cols-2 ${role.fields.length === 3 && !onNavigate ? 'lg:grid-cols-3' : ''}`}>
+      {role.fields.map(field => <Detail key={field.key} label={field.label}
+        value={profile.details[field.key] ?? ''} tags={field.tags} className="rounded-2xl border border-indigo-50 bg-gradient-to-br from-slate-50 to-indigo-50/70 px-4 py-4" />)}
+    </dl>
+  </section>;
+  const contacts = <dl className="mt-3 divide-y divide-indigo-50">
+    <div className="flex min-w-0 gap-2.5 py-3">
+      <Mail aria-hidden="true" className="mt-0.5 h-4 w-4 shrink-0 text-indigo-700" />
+      <Detail label={t("Email akun", "Account email")} value={profile.email} />
+    </div>
+    <div className="flex min-w-0 gap-2.5 pt-3">
+      <MessageSquare aria-hidden="true" className="mt-0.5 h-4 w-4 shrink-0 text-indigo-700" />
+      <Detail label={t("Preferensi komunikasi", "Communication preference")} value={profile.communication} />
+    </div>
+  </dl>;
+
+  if (profile.role === 'jobseeker' && onNavigate && !draft) {
+    const shortcuts = [
+      { id: 'job-portal', label: t('Lowongan Kerja', 'Job Listings'), icon: Briefcase, color: 'bg-blue-50 text-blue-900 hover:bg-blue-100' },
+      { id: 'workshop', label: t('Workshop', 'Workshops'), icon: GraduationCap, color: 'bg-violet-50 text-violet-900 hover:bg-violet-100' },
+    ] as const;
+    return <main className="mx-auto max-w-6xl px-4 pb-24 pt-6 sm:px-6 sm:pt-9">
+      <section className="relative isolate overflow-hidden rounded-[2rem] border border-indigo-100 bg-gradient-to-br from-white via-indigo-50 to-violet-200 px-5 py-8 shadow-sm sm:px-8 sm:py-10">
+        <div aria-hidden="true" className="pointer-events-none absolute -right-14 -top-24 -z-10 h-72 w-72 rounded-full border-[30px] border-white/45 sm:right-2" />
+        <div aria-hidden="true" className="pointer-events-none absolute bottom-6 right-10 -z-10 hidden h-20 w-36 bg-[radial-gradient(circle,#7763c6_1px,transparent_1px)] [background-size:12px_12px] opacity-30 sm:block" />
+        <h1 className="max-w-3xl break-words text-3xl font-extrabold tracking-tight text-indigo-950 [overflow-wrap:anywhere] sm:text-4xl">
+          {profile.displayName ? t(`Halo, ${profile.displayName}`, `Hi, ${profile.displayName}`) : t('Profil saya', 'My profile')}
+        </h1>
+        <p className="mt-2 max-w-lg text-sm leading-relaxed text-slate-700 sm:text-base">{t('Pantau lamaran, workshop yang kamu ikuti, dan daftar tersimpan dari profilmu.', 'Track your applications, workshops, and saved items from your profile.')}</p>
+      </section>
+      {feedback}
+      <div className="mt-5 grid items-start gap-5 lg:grid-cols-[minmax(0,1fr)_minmax(18rem,0.53fr)]">
+        <div className="grid min-w-0 gap-4 lg:col-start-2 lg:row-start-1">
+          <section aria-label={t('Ringkasan profil', 'Profile overview')} className="overflow-hidden rounded-[1.75rem] border border-indigo-100 bg-white shadow-sm">
+            <div aria-hidden="true" className="relative h-20 overflow-hidden bg-gradient-to-r from-indigo-700 via-violet-600 to-indigo-400">
+              <div className="absolute -right-3 -top-24 h-48 w-48 rounded-full border-[22px] border-white/20" />
+              <div className="absolute bottom-2 left-5 h-12 w-28 bg-[radial-gradient(circle,#ffffff_1px,transparent_1px)] [background-size:10px_10px] opacity-30" />
+            </div>
+            <div className="px-5 pb-5">
+              <div className="flex flex-wrap items-end justify-between gap-3">
+                <button type="button" {...photoProps} className="relative -mt-9 shrink-0 rounded-full border-4 border-white bg-indigo-50 shadow-sm focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-700">
+                  <ProfilePhoto src={avatarUrl(profile.avatarVersion)} initials={initials} label="" className="h-20 w-20 bg-indigo-100 text-indigo-900" />
+                  <span className="absolute -bottom-1 -right-1 grid h-8 w-8 place-items-center rounded-full border-2 border-white bg-indigo-700 text-white"><Camera aria-hidden="true" className="h-4 w-4" /></span>
+                </button>
+                <button type="button" onClick={startEditing} className={secondaryButton}>
+                  <Pencil aria-hidden="true" className="h-4 w-4" />{t('Edit profil', 'Edit profile')}
+                </button>
+              </div>
+              <h2 className="mt-4 text-xl font-extrabold tracking-tight text-slate-950 [overflow-wrap:anywhere]">{profile.displayName || t('Nama belum diisi', 'Name missing')}</h2>
+              {profile.headline && <p className="mt-1 whitespace-pre-wrap text-sm text-slate-700 [overflow-wrap:anywhere]">{profile.headline}</p>}
+              <div className="mt-2 flex flex-wrap items-center gap-2">
+                <span className="inline-flex items-center gap-1.5 rounded-full bg-indigo-50 px-2.5 py-1 text-xs font-bold text-indigo-800"><RoleIcon aria-hidden="true" className="h-3.5 w-3.5" />{role.label}</span>
+                {profile.isDemo && <span className="rounded-full bg-violet-50 px-2.5 py-1 text-xs font-medium text-violet-900">{t('Data contoh', 'Sample data')}</span>}
+              </div>
+              {profile.location && <p className="mt-3 flex items-start gap-2 text-sm text-slate-700 [overflow-wrap:anywhere]"><MapPin aria-hidden="true" className="mt-0.5 h-4 w-4 shrink-0 text-indigo-700" /><span className="min-w-0">{profile.location}</span></p>}
+              <h3 className="mt-5 border-t border-indigo-100 pt-4 text-sm font-bold text-slate-900">{t('Akun dan komunikasi', 'Account and communication')}</h3>
+              {contacts}
+            </div>
+          </section>
+          {photoEditor}
+          <section className="relative isolate grid gap-2 overflow-hidden rounded-[1.75rem] bg-gradient-to-br from-indigo-800 via-indigo-700 to-violet-700 p-4 text-white shadow-sm">
+            <div aria-hidden="true" className="pointer-events-none absolute -right-14 -top-16 -z-10 h-40 w-40 rounded-full border-[18px] border-white/20" />
+            <h2 className="px-1 pb-1 text-base font-extrabold">{t('Jelajahi Lestari', 'Explore Lestari')}</h2>
+            {shortcuts.map(({ id, label, icon: Icon, color }) => <button key={id} type="button" onClick={() => onNavigate(id)}
+              className={`flex min-h-12 items-center gap-2.5 rounded-xl px-3 text-left text-sm font-bold focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-700 ${color}`}>
+              <Icon aria-hidden="true" className="h-5 w-5 shrink-0" /><span className="flex-1">{label}</span><ArrowUpRight aria-hidden="true" className="h-4 w-4 shrink-0" />
+            </button>)}
+          </section>
+        </div>
+        <div className="grid min-w-0 gap-5 lg:col-start-1 lg:row-start-1">
+          <ProfileActivity />
+          {about}
+          {details}
+        </div>
+      </div>
+    </main>;
+  }
 
   return (
     <main className="mx-auto max-w-6xl px-4 pb-24 pt-6 sm:px-6 sm:pt-9">
@@ -182,9 +287,7 @@ export default function ProfilePage({ onProfileChange }: { onProfileChange?: () 
           )}
         </div>
         <div className="mt-5 flex flex-col items-start gap-4 sm:mt-6 sm:flex-row sm:items-center sm:gap-6">
-          <button type="button" aria-label={profile.avatarVersion ? t("Ubah foto profil", "Change profile photo") : t("Unggah foto profil", "Upload profile photo")}
-            aria-expanded={editingPhoto} aria-controls={editingPhoto ? 'profile-photo-editor' : undefined}
-            onClick={() => { setEditingPhoto(true); setNotice(''); }}
+          <button type="button" {...photoProps}
             className="group relative shrink-0 rounded-[1.75rem] border border-white/30 bg-white/10 p-1.5 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-white">
             <ProfilePhoto src={avatarUrl(profile.avatarVersion)} initials={initials} label=""
               className="h-20 w-20 !rounded-[1.35rem] bg-indigo-100 text-indigo-900 shadow-md sm:h-28 sm:w-28" />
@@ -209,17 +312,8 @@ export default function ProfilePage({ onProfileChange }: { onProfileChange?: () 
         </div>
       </section>
 
-      {notice && <p role="status" className="mt-4 rounded-xl bg-emerald-50 px-4 py-2.5 text-sm font-semibold text-emerald-900">{notice}</p>}
-      {editingPhoto && (
-        <ProfilePhotoEditor version={profile.avatarVersion} initials={initials}
-          onCancel={() => setEditingPhoto(false)}
-          onSaved={avatarVersion => {
-            setProfile(current => current && { ...current, avatarVersion });
-            onProfileChange?.();
-            setEditingPhoto(false);
-            setNotice(avatarVersion ? 'Foto profil tersimpan.' : 'Foto profil dihapus.');
-          }} />
-      )}
+      {feedback}
+      {photoEditor}
 
       {draft ? (
         <form onSubmit={save} className={`mt-5 ${panelStyle}`} aria-busy={saving}>
@@ -259,30 +353,12 @@ export default function ProfilePage({ onProfileChange }: { onProfileChange?: () 
         </form>
       ) : (
         <div className="mt-5 grid gap-4 sm:gap-5 lg:grid-cols-[minmax(0,1fr)_minmax(0,0.65fr)]">
-          <section className={`${panelStyle} border-t-4 border-t-violet-300`}>
-            <h2 className={sectionTitle}><span className={sectionIcon}><User aria-hidden="true" className="h-5 w-5" /></span>{role.aboutLabel}</h2>
-            <p className="mt-4 whitespace-pre-wrap text-sm leading-relaxed text-slate-700 [overflow-wrap:anywhere] sm:text-base">{profile.about || 'Belum ada deskripsi.'}</p>
-          </section>
+          {about}
           <section className={`${panelStyle} border-sky-100 bg-gradient-to-br from-white to-sky-50`}>
             <h2 className={sectionTitle}><span className={sectionIcon}><MessageSquare aria-hidden="true" className="h-5 w-5" /></span>{t("Akun dan komunikasi", "Account and communication")}</h2>
-            <dl className="mt-3 divide-y divide-indigo-50">
-              <div className="flex min-w-0 gap-2.5 py-3">
-                <Mail aria-hidden="true" className="mt-0.5 h-4 w-4 shrink-0 text-indigo-700" />
-                <Detail label="Email akun" value={profile.email} />
-              </div>
-              <div className="flex min-w-0 gap-2.5 pt-3">
-                <MessageSquare aria-hidden="true" className="mt-0.5 h-4 w-4 shrink-0 text-indigo-700" />
-                <Detail label={t("Preferensi komunikasi", "Communication preference")} value={profile.communication} />
-              </div>
-            </dl>
+            {contacts}
           </section>
-          <section className={`${panelStyle} lg:col-span-2`}>
-            <h2 className={sectionTitle}><span className={sectionIcon}><RoleIcon aria-hidden="true" className="h-5 w-5" /></span>{role.detailsLabel}</h2>
-            <dl className={`mt-4 grid gap-3 sm:grid-cols-2 ${role.fields.length === 3 ? 'lg:grid-cols-3' : ''}`}>
-              {role.fields.map(field => <Detail key={field.key} label={field.label}
-                value={profile.details[field.key] ?? ''} tags={field.tags} className="rounded-2xl border border-indigo-50 bg-gradient-to-br from-slate-50 to-indigo-50/70 px-4 py-4" />)}
-            </dl>
-          </section>
+          {details}
         </div>
       )}
     </main>

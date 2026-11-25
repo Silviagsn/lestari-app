@@ -388,7 +388,7 @@ export default function LestariApp({ initialLogin = false }: { initialLogin?: bo
   const renderPage = () => {
     switch (currentPage) {
       case 'profile':
-        return <ProfilePage />;
+        return <ProfilePage onNavigate={setCurrentPage} />;
       case 'job-portal':
         return <JobPortalPage />;
       case 'workshop':
