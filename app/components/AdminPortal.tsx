@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useRef, useState, type ReactNode } from 'react';
-import { Activity, ArrowRight, BookOpen, Briefcase, ChevronLeft, ChevronRight, ClipboardList, GitBranch, LayoutDashboard, LogOut, RefreshCw, Search, ShieldCheck, User, Users } from 'lucide-react';
+import { Activity, ArrowRight, BookOpen, Briefcase, Check, ChevronLeft, ChevronRight, ClipboardList, GitBranch, LayoutDashboard, LogOut, Minus, RefreshCw, Search, ShieldCheck, User, Users } from 'lucide-react';
 import { adminFilters, type AdminOverview, type AdminRow, type AdminSection } from '../utils/admin';
 import { applicantStatuses, applicantStatusesEnglish, type ApplicantStatus } from '../utils/recruitment';
 import type { Profile } from '../utils/profile';
@@ -24,6 +24,7 @@ const settings = [
 ] as const;
 
 type View = (typeof sections | typeof settings)[number]['id'] | 'profile';
+type AccountRole = typeof adminFilters.accounts[number];
 const card = 'min-w-0 rounded-3xl border border-indigo-100 bg-white shadow-sm';
 const focusRing = 'focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600';
 const buttonStyle = `inline-flex min-h-10 items-center justify-center gap-2 rounded-xl border border-indigo-100 px-3 py-2 text-sm font-semibold text-indigo-900 hover:bg-indigo-50 disabled:opacity-45 ${focusRing}`;
@@ -76,10 +77,10 @@ function Status({ status, section }: { status: string; section: AdminSection }) 
   return <span className={`inline-block rounded-full px-2.5 py-1 text-xs font-semibold ${color}`}>{labels ? t(...labels) : status || '—'}</span>;
 }
 
-function Directory({ section }: { section: AdminSection }) {
+function Directory({ section, initialRole }: { section: AdminSection; initialRole: AccountRole | '' }) {
   const { t, locale } = useLanguage();
   const [input, setInput] = useState('');
-  const [criteria, setCriteria] = useState({ search: '', status: '', page: 1 });
+  const [criteria, setCriteria] = useState({ search: '', status: String(initialRole), page: 1 });
   const { search, status, page } = criteria;
   const query = new URLSearchParams({ section, q: search, status, page: String(page) }).toString();
   const { result, retry } = usePortalData<{ items: AdminRow[]; hasMore: boolean }>('/api/admin?' + query);
@@ -210,21 +211,63 @@ function Overview({ navigate }: { navigate: (view: View) => void }) {
   </div>;
 }
 
-function RolesAndAccess() {
-  const { t } = useLanguage();
-  const roles = [
-    { id: 'jobseeker', icon: User, description: t('Mencari dan melamar lowongan, mengikuti workshop, serta mengelola profil sendiri.', 'Find and apply for jobs, enroll in workshops, and manage their own profile.') },
-    { id: 'company', icon: Briefcase, description: t('Menerbitkan lowongan perusahaan sendiri, meninjau pelamar, dan memperbarui tahap lamaran.', 'Publish their own job listings, review applicants, and update application stages.') },
-    { id: 'admin', icon: ShieldCheck, description: t('Memantau akun, lowongan, workshop, tahapan lamaran, dan status sistem melalui Portal Admin.', 'Monitor accounts, listings, workshops, application stages, and system status in the Admin Portal.') },
+function RolesAndAccess({ showAccounts }: { showAccounts: (role: AccountRole) => void }) {
+  const { t, locale } = useLanguage();
+  const { result, retry } = usePortalData<AdminOverview>('/api/admin?section=overview');
+  const data = result?.data;
+  const counts = data && { jobseeker: data.jobseekers, company: data.companies, admin: data.admins };
+  const number = new Intl.NumberFormat(locale === 'id' ? 'id-ID' : 'en-GB');
+  const roles = adminFilters.accounts;
+  const permissions: { label: string; allowed: readonly AccountRole[] }[] = [
+    { label: t('Edit profil sendiri', 'Edit own profile'), allowed: roles },
+    { label: t('Kirim lamaran kerja', 'Apply for a job'), allowed: ['jobseeker'] },
+    { label: t('Terbitkan lowongan perusahaan sendiri', 'Publish own company jobs'), allowed: ['company'] },
+    { label: t('Tinjau pelamar dan ubah tahap untuk lowongan sendiri', 'Review applicants and update stages for own jobs'), allowed: ['company'] },
+    { label: t('Lihat daftar akun pengguna Lestari', 'View the Lestari user directory'), allowed: ['admin'] },
+    { label: t('Pantau tahapan lamaran lintas perusahaan', 'Monitor applications across employers'), allowed: ['admin'] },
   ];
   return <>
-    <p className="max-w-2xl text-sm leading-relaxed text-slate-600">{t('Lihat hak akses yang berlaku untuk setiap jenis akun Lestari.', 'Review the permissions for each Lestari account type.')}</p>
-    <div className="grid gap-4 xl:grid-cols-3">
-      {roles.map(({ id, icon: Icon, description }) => <section key={id} className={`${card} p-5`}>
-        <span className="mb-4 grid h-10 w-10 place-items-center rounded-xl bg-indigo-100 text-indigo-800"><Icon aria-hidden="true" className="h-5 w-5" /></span>
-        <h2 className="font-bold">{t(...statusLabels[id])}</h2>
-        <p className="mt-2 text-sm leading-relaxed text-slate-600">{description}</p>
-      </section>)}
+    <p className="max-w-2xl text-sm leading-relaxed text-slate-600">{t('Bandingkan hak akses dan buka daftar akun per peran. Hak akses di halaman ini hanya untuk ditinjau.', 'Compare permissions and open the account list for each role. Permissions are read-only here.')}</p>
+    <div className="grid gap-3 sm:grid-cols-3">
+      {roles.map(role => <div key={role} className={`${card} p-4 sm:p-5`}>
+        <h2 className="text-sm font-semibold text-slate-700">{t(...statusLabels[role])}</h2>
+        {counts && <p className="mt-1"><strong className="text-2xl text-indigo-950">{number.format(counts[role])}</strong> <span className="text-sm text-slate-600">{t('akun', 'accounts')}</span></p>}
+        <button type="button" onClick={() => showAccounts(role)}
+          aria-label={t(`Lihat akun ${statusLabels[role][0]}`, `View ${statusLabels[role][1]} accounts`)}
+          className={`${buttonStyle} mt-3`}>
+          {t('Lihat akun', 'View accounts')}<ArrowRight aria-hidden="true" className="h-4 w-4 shrink-0" />
+        </button>
+      </div>)}
+    </div>
+    {!counts && <DataMessage error={result?.error} retry={retry} />}
+    <div className={`${card} overflow-hidden`}>
+      <table className="w-full table-fixed text-sm">
+        <caption className="px-4 py-4 text-left text-lg font-bold sm:px-5">{t('Perbandingan hak akses', 'Permissions comparison')}</caption>
+        <colgroup><col className="w-[40%]" /><col span={3} /></colgroup>
+        <thead className="bg-indigo-50 text-indigo-950">
+          <tr>
+            <th scope="col" className="p-2 text-left text-xs sm:p-4 sm:text-sm">{t('Fitur', 'Feature')}</th>
+            {roles.map(role => <th key={role} scope="col" className="break-words px-1 py-2 text-xs sm:p-4 sm:text-sm">{t(...statusLabels[role])}</th>)}
+          </tr>
+        </thead>
+        <tbody>
+          {permissions.map(({ label, allowed }) => <tr key={label} className="border-t border-indigo-50">
+            <th scope="row" className="break-words p-2 text-left text-xs font-medium text-slate-800 sm:p-4 sm:text-sm">{label}</th>
+            {roles.map(role => {
+              const canAccess = allowed.includes(role);
+              const Icon = canAccess ? Check : Minus;
+              return <td key={role} className="px-1 py-2 text-center">
+                <Icon aria-hidden="true" className={`mx-auto h-4 w-4 ${canAccess ? 'text-emerald-700' : 'text-slate-500'}`} />
+                <span className="sr-only">{canAccess ? t('Diizinkan', 'Allowed') : t('Tanpa akses', 'No access')}</span>
+              </td>;
+            })}
+          </tr>)}
+        </tbody>
+      </table>
+      <p className="flex flex-wrap gap-x-4 gap-y-1 border-t border-indigo-50 p-3 text-xs text-slate-600 sm:px-5">
+        <span className="inline-flex items-center gap-1"><Check aria-hidden="true" className="h-4 w-4 text-emerald-700" />{t('Diizinkan', 'Allowed')}</span>
+        <span className="inline-flex items-center gap-1"><Minus aria-hidden="true" className="h-4 w-4 text-slate-500" />{t('Tanpa akses', 'No access')}</span>
+      </p>
     </div>
   </>;
 }
@@ -308,10 +351,12 @@ function AdminAccount({ profile, view, navigate, logout }: {
 export default function AdminPortal({ logout, authError }: { logout: () => void; authError: string }) {
   const { t } = useLanguage();
   const [view, setView] = useState<View>('overview');
+  const [initialRole, setInitialRole] = useState<AccountRole | ''>('');
   const heading = useRef<HTMLHeadingElement>(null);
   const { result: identity, retry: refreshIdentity } = usePortalData<Profile>('/api/profile');
 
-  function navigate(next: View) {
+  function navigate(next: View, role: AccountRole | '' = '') {
+    setInitialRole(role);
     setView(next);
     window.scrollTo(0, 0);
   }
@@ -325,9 +370,9 @@ export default function AdminPortal({ logout, authError }: { logout: () => void;
   else content = <main className="mx-auto max-w-7xl space-y-5 px-4 py-6 sm:px-7 sm:py-8">
     <h1 ref={heading} tabIndex={-1} className="text-3xl font-extrabold tracking-tight outline-none sm:text-4xl">{title}</h1>
     {view === 'overview' ? <Overview navigate={navigate} /> :
-      view === 'roles' ? <RolesAndAccess /> :
+      view === 'roles' ? <RolesAndAccess showAccounts={role => navigate('accounts', role)} /> :
       view === 'pipeline' ? <ApplicationStages /> :
-      view === 'health' ? <SystemStatus /> : <Directory key={view} section={view} />}
+      view === 'health' ? <SystemStatus /> : <Directory key={view + initialRole} section={view} initialRole={initialRole} />}
   </main>;
 
   return <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-[#fafaff] to-violet-50 text-slate-950 lg:grid lg:grid-cols-[14rem_minmax(0,1fr)]">
