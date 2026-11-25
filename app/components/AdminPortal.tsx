@@ -4,8 +4,11 @@ import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { Activity, ArrowRight, BookOpen, Briefcase, ChevronLeft, ChevronRight, ClipboardList, GitBranch, LayoutDashboard, LogOut, RefreshCw, Search, ShieldCheck, User, Users } from 'lucide-react';
 import { adminFilters, type AdminOverview, type AdminRow, type AdminSection } from '../utils/admin';
 import { applicantStatuses, applicantStatusesEnglish, type ApplicantStatus } from '../utils/recruitment';
+import type { Profile } from '../utils/profile';
 import { LanguageSwitch, useLanguage } from './Language';
 import ProfilePage from './ProfilePage';
+import { avatarUrl, ProfilePhoto } from './ProfilePhoto';
+import SidebarAccount from './SidebarAccount';
 
 const sections = [
   { id: 'overview', labels: ['Dasbor', 'Dashboard'], icon: LayoutDashboard },
@@ -260,10 +263,53 @@ function SystemStatus() {
   </section>;
 }
 
+function AdminAccount({ profile, view, navigate, logout }: {
+  profile?: Profile;
+  view: View;
+  navigate: (view: View) => void;
+  logout: () => void;
+}) {
+  const { t } = useLanguage();
+  const name = profile?.displayName || t('Akun admin', 'Admin account');
+  const initials = profile?.displayName.trim().split(/\s+/).slice(0, 2)
+    .map(word => Array.from(word)[0]).join('').toUpperCase() || 'A';
+  const links = [
+    { id: 'profile', label: t('Profil Saya', 'My Profile'), icon: User },
+    { id: 'accounts', label: t('Akun Pengguna', 'User Accounts'), icon: Users },
+  ] as const;
+  const actionStyle = `flex min-h-11 w-full items-center gap-2 rounded-xl px-2.5 text-left text-sm font-semibold ${focusRing}`;
+
+  return <SidebarAccount className="lg:mt-auto" summary={<>
+    <ProfilePhoto src={avatarUrl(profile?.avatarVersion ?? null)} initials={initials} label="" className="h-9 w-9 bg-indigo-100 text-indigo-800" />
+    <span className="min-w-0 flex-1">
+      <span className="block truncate text-sm font-bold">{name}</span>
+      <span className="block text-xs text-slate-600">{t('Admin Lestari', 'Lestari Admin')}</span>
+    </span>
+  </>}>
+    {close => <>
+      <div className="mb-1 border-b border-indigo-100 px-2.5 pb-3 pt-2">
+        <p className="break-words text-sm font-bold text-indigo-950">{name}</p>
+        {profile?.email && <p className="mt-0.5 text-xs text-slate-600 [overflow-wrap:anywhere]">{profile.email}</p>}
+      </div>
+      {links.map(({ id, label, icon: Icon }) => <button key={id} type="button" aria-current={view === id ? 'page' : undefined}
+        className={`${actionStyle} text-indigo-950 ${view === id ? 'bg-indigo-50' : 'hover:bg-indigo-50'}`}
+        onClick={() => { close(); navigate(id); }}>
+        <Icon aria-hidden="true" className="h-4 w-4 shrink-0" />{label}
+      </button>)}
+      <div className="mt-1 border-t border-indigo-100 pt-1">
+        <button type="button" className={`${actionStyle} text-rose-800 hover:bg-rose-50`} onClick={() => { close(); logout(); }}>
+          <LogOut aria-hidden="true" className="h-4 w-4 shrink-0" />{t('Keluar Akun', 'Sign Out')}
+        </button>
+      </div>
+    </>}
+  </SidebarAccount>;
+}
+
 export default function AdminPortal({ logout, authError }: { logout: () => void; authError: string }) {
   const { t } = useLanguage();
   const [view, setView] = useState<View>('overview');
   const heading = useRef<HTMLHeadingElement>(null);
+  const { result: identity, retry: refreshIdentity } = usePortalData<Profile>('/api/profile');
 
   function navigate(next: View) {
     setView(next);
@@ -275,7 +321,7 @@ export default function AdminPortal({ logout, authError }: { logout: () => void;
   const section = [...sections, ...settings].find(item => item.id === view);
   const title = view === 'overview' ? t('Dasbor Admin', 'Admin Dashboard') : section ? t(section.labels[0], section.labels[1]) : t('Profil saya', 'My profile');
   let content: ReactNode;
-  if (view === 'profile') content = <ProfilePage />;
+  if (view === 'profile') content = <ProfilePage onProfileChange={refreshIdentity} />;
   else content = <main className="mx-auto max-w-7xl space-y-5 px-4 py-6 sm:px-7 sm:py-8">
     <h1 ref={heading} tabIndex={-1} className="text-3xl font-extrabold tracking-tight outline-none sm:text-4xl">{title}</h1>
     {view === 'overview' ? <Overview navigate={navigate} /> :
@@ -285,7 +331,7 @@ export default function AdminPortal({ logout, authError }: { logout: () => void;
   </main>;
 
   return <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-[#fafaff] to-violet-50 text-slate-950 lg:grid lg:grid-cols-[14rem_minmax(0,1fr)]">
-    <aside className="flex flex-col gap-3 border-b border-indigo-100 bg-white p-3 lg:sticky lg:top-0 lg:h-dvh lg:gap-6 lg:overflow-y-auto lg:border-b-0 lg:border-r lg:px-4 lg:py-6">
+    <aside className="flex flex-col gap-3 border-b border-indigo-100 bg-white p-3 lg:sticky lg:top-0 lg:z-30 lg:h-dvh lg:gap-6 lg:overflow-y-auto lg:border-b-0 lg:border-r lg:px-4 lg:py-6">
       <div className="flex items-center gap-2.5 px-1">
         <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-gradient-to-br from-indigo-600 to-violet-700 text-white"><ShieldCheck aria-hidden="true" className="h-5 w-5" /></span>
         <span><strong className="block text-xl tracking-tight text-indigo-950">Lestari</strong><span className="block text-xs text-slate-600">{t('Portal Admin', 'Admin Portal')}</span></span>
@@ -303,14 +349,7 @@ export default function AdminPortal({ logout, authError }: { logout: () => void;
           </ul>
         </div>)}
       </nav>
-      <div className="flex flex-wrap gap-2 border-t border-indigo-100 pt-3 lg:mt-auto lg:grid">
-        <button type="button" aria-current={view === 'profile' ? 'page' : undefined} onClick={() => navigate('profile')} className={`${buttonStyle} lg:justify-start`}>
-          <User aria-hidden="true" className="h-4 w-4" />{t('Profil saya', 'My profile')}
-        </button>
-        <button type="button" onClick={logout} className={`inline-flex min-h-10 items-center gap-2 rounded-xl px-3 py-2 text-sm font-semibold text-rose-800 hover:bg-rose-50 ${focusRing}`}>
-          <LogOut aria-hidden="true" className="h-4 w-4" />{t('Keluar akun', 'Sign out')}
-        </button>
-      </div>
+      <AdminAccount profile={identity?.data} view={view} navigate={navigate} logout={logout} />
     </aside>
     <div className="min-w-0">
       <header className="sticky top-0 z-20 border-b border-indigo-100 bg-white/95 backdrop-blur">

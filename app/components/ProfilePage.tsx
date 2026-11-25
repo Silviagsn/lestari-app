@@ -71,7 +71,7 @@ function Detail({ label, value, tags }: { label: string; value: string; tags?: b
   );
 }
 
-export default function ProfilePage() {
+export default function ProfilePage({ onProfileChange }: { onProfileChange?: () => void }) {
   const { t } = useLanguage();
   const [profile, setProfile] = useState<Profile | null>(null);
   const [draft, setDraft] = useState<ProfileFields | null>(null);
@@ -129,6 +129,7 @@ export default function ProfilePage() {
       }
       const saved = await response.json();
       setProfile(current => current && { ...current, ...saved });
+      onProfileChange?.();
       setDraft(null);
       setNotice(t("Perubahan profil tersimpan.", "Profile changes saved."));
     } catch {
@@ -210,6 +211,7 @@ export default function ProfilePage() {
           onCancel={() => setEditingPhoto(false)}
           onSaved={avatarVersion => {
             setProfile(current => current && { ...current, avatarVersion });
+            onProfileChange?.();
             setEditingPhoto(false);
             setNotice(avatarVersion ? 'Foto profil tersimpan.' : 'Foto profil dihapus.');
           }} />

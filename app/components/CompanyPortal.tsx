@@ -3,10 +3,11 @@
 import { LanguageSwitch, useLanguage } from './Language';
 
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { Accessibility, ArrowLeft, ArrowRight, Briefcase, Building2, CheckCircle2, ChevronsUpDown, ClipboardList, EarOff, Globe, LayoutDashboard, LogOut, Plus, Settings, User, Users } from 'lucide-react';
+import { Accessibility, ArrowLeft, ArrowRight, Briefcase, Building2, CheckCircle2, ClipboardList, EarOff, Globe, LayoutDashboard, LogOut, Plus, Settings, User, Users } from 'lucide-react';
 import CompanyJobForm, { companyCard, companyInput, companyPrimary, companySecondary } from './CompanyJobForm';
 import ProfilePage from './ProfilePage';
 import RecruitmentSearch from './RecruitmentSearch';
+import SidebarAccount from './SidebarAccount';
 import { accessibilityOptions, applicantStatuses, applicantStatusesEnglish, jobTypes, listingStatuses, type ApplicantStatus, type CompanyApplicant, type CompanyJob, type ListingStatus, type RecruitmentData } from '../utils/recruitment';
 
 const companyNavigation = (t: (id: string, en: string) => string) => [
@@ -31,53 +32,25 @@ function CompanyAccount({ name, isProfile, busy, openProfile, logout }: {
   logout: () => void;
 }) {
   const { t } = useLanguage();
-  const disclosure = useRef<HTMLDetailsElement>(null);
-  const trigger = useRef<HTMLElement>(null);
-
-  function close() {
-    if (disclosure.current) disclosure.current.open = false;
-  }
-
-  useEffect(() => {
-    function dismiss(event: PointerEvent) {
-      if (event.target instanceof Node && !disclosure.current?.contains(event.target)) close();
-    }
-    document.addEventListener('pointerdown', dismiss);
-    return () => document.removeEventListener('pointerdown', dismiss);
-  }, []);
-
-  return (
-    <details ref={disclosure} className="relative mt-3 lg:mt-auto"
-      onBlur={event => {
-        if (event.relatedTarget && !event.currentTarget.contains(event.relatedTarget)) close();
-      }}
-      onKeyDown={event => {
-        if (event.key !== 'Escape' || !event.currentTarget.open) return;
-        event.stopPropagation();
-        close();
-        trigger.current?.focus();
-      }}>
-      <summary ref={trigger} className="flex min-h-12 cursor-pointer list-none items-center gap-2.5 rounded-2xl border border-indigo-100 bg-indigo-50/75 px-3 py-2 text-indigo-950 hover:bg-indigo-100 focus-visible:outline focus-visible:outline-2 focus-visible:outline-indigo-700 [&::-webkit-details-marker]:hidden">
-        <span className="grid h-8 w-8 shrink-0 place-items-center rounded-lg bg-indigo-100 text-indigo-800">
-          <Building2 aria-hidden="true" className="h-4 w-4" />
-        </span>
-        <span className="min-w-0 flex-1 truncate text-sm font-bold">{name || t('Akun perusahaan', 'Employer account')}</span>
-        <ChevronsUpDown aria-hidden="true" className="h-4 w-4 shrink-0 text-indigo-700" />
-      </summary>
-      <div className="absolute inset-x-0 top-full z-40 mt-2 rounded-2xl border border-indigo-100 bg-white p-1.5 shadow-lg shadow-indigo-950/10 lg:bottom-full lg:top-auto lg:mb-2 lg:mt-0">
-        <button type="button" aria-current={isProfile ? 'page' : undefined} disabled={busy}
-          className="flex min-h-11 w-full items-center gap-2 rounded-xl px-2.5 text-left text-sm font-semibold text-indigo-950 hover:bg-indigo-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-indigo-700 disabled:opacity-60"
-          onClick={() => { close(); trigger.current?.focus(); openProfile(); }}>
-          <User aria-hidden="true" className="h-4 w-4 shrink-0" />{t('Profil Saya', 'My Profile')}
-        </button>
-        <button type="button"
-          className="flex min-h-11 w-full items-center gap-2 rounded-xl px-2.5 text-left text-sm font-semibold text-red-700 hover:bg-red-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-red-700"
-          onClick={() => { close(); trigger.current?.focus(); logout(); }}>
-          <LogOut aria-hidden="true" className="h-4 w-4 shrink-0" />{t('Keluar Akun', 'Sign Out')}
-        </button>
-      </div>
-    </details>
-  );
+  return <SidebarAccount className="mt-3 lg:mt-auto" summary={<>
+    <span className="grid h-8 w-8 shrink-0 place-items-center rounded-lg bg-indigo-100 text-indigo-800">
+      <Building2 aria-hidden="true" className="h-4 w-4" />
+    </span>
+    <span className="min-w-0 flex-1 truncate text-sm font-bold">{name || t('Akun perusahaan', 'Employer account')}</span>
+  </>}>
+    {close => <>
+      <button type="button" aria-current={isProfile ? 'page' : undefined} disabled={busy}
+        className="flex min-h-11 w-full items-center gap-2 rounded-xl px-2.5 text-left text-sm font-semibold text-indigo-950 hover:bg-indigo-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-indigo-700 disabled:opacity-60"
+        onClick={() => { close(); openProfile(); }}>
+        <User aria-hidden="true" className="h-4 w-4 shrink-0" />{t('Profil Saya', 'My Profile')}
+      </button>
+      <button type="button"
+        className="flex min-h-11 w-full items-center gap-2 rounded-xl px-2.5 text-left text-sm font-semibold text-red-700 hover:bg-red-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-red-700"
+        onClick={() => { close(); logout(); }}>
+        <LogOut aria-hidden="true" className="h-4 w-4 shrink-0" />{t('Keluar Akun', 'Sign Out')}
+      </button>
+    </>}
+  </SidebarAccount>;
 }
 
 function ListingBadge({ job }: { job: CompanyJob }) {
