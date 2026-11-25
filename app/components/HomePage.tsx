@@ -12,7 +12,6 @@ import {
   Hand,
   MessageSquare,
   Volume2,
-  ArrowRight,
   BookOpen,
   Briefcase,
   Heart,
@@ -23,13 +22,11 @@ import {
   Accessibility
 } from 'lucide-react';
 import { features } from './Features'; // Disesuaikan dengan F besar
-import AssessmentModal from './AssessmentModal';
 
 export default function HomePage({ setCurrentPage }: { setCurrentPage: (page: string) => void }) {
   const { t } = useLanguage();
   const [currentFeature, setCurrentFeature] = useState<number>(0);
   const [isVisible, setIsVisible] = useState<boolean>(false);
-  const [showAssessment, setShowAssessment] = useState<boolean>(false);
   const [currentTestimonial, setCurrentTestimonial] = useState<number>(0);
 
   useEffect(() => {
@@ -149,21 +146,6 @@ export default function HomePage({ setCurrentPage }: { setCurrentPage: (page: st
     }
   ];
 
-  const handleGetStarted = () => {
-    setShowAssessment(true);
-  };
-
-  const handleAssessmentComplete = (results: Record<string, any>) => {
-    setShowAssessment(false);
-    if (results.primaryGoal === 'employment') {
-      setCurrentPage('job-portal');
-    } else if (results.primaryGoal === 'learning') {
-      setCurrentPage('workshop');
-    } else {
-      setCurrentPage('job-portal');
-    }
-  };
-
   return (
     <>
       {/* Hero Section */}
@@ -211,21 +193,13 @@ export default function HomePage({ setCurrentPage }: { setCurrentPage: (page: st
               </div>
             </div>
             
-            <div className="flex flex-col sm:flex-row gap-4 justify-center max-w-md mx-auto">
-              <button 
-                onClick={handleGetStarted}
-                className="group bg-gradient-to-r from-indigo-600 to-purple-600 text-white px-8 py-4 rounded-2xl font-semibold hover:from-indigo-700 hover:to-purple-700 transition-all duration-300 shadow-xl hover:shadow-2xl transform hover:scale-105 hover:-translate-y-1 flex items-center justify-center space-x-2 relative overflow-hidden cursor-pointer"
-              >
-                <div className="absolute inset-0 bg-gradient-to-r from-indigo-600 to-purple-600 blur-lg opacity-50 -z-10"></div>
-                <span>{t("Mulai perjalananmu", "Start Your Journey")}</span>
-                <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
-              </button>
+            <div className="flex justify-center">
               <button 
                 onClick={() => document.getElementById('features')?.scrollIntoView({ behavior: 'smooth' })}
                 className="group border-2 border-indigo-600 text-indigo-600 px-8 py-4 rounded-2xl font-semibold hover:bg-indigo-600 hover:text-white transition-all duration-300 shadow-lg hover:shadow-xl transform hover:scale-105 hover:-translate-y-1 flex items-center justify-center space-x-2 bg-white cursor-pointer"
               >
                 <Play className="w-5 h-5" />
-                <span>{t("Lihat fitur", "Watch Demo")}</span>
+                <span>{t("Lihat fitur", "Explore features")}</span>
               </button>
             </div>
           </div>
@@ -456,18 +430,7 @@ export default function HomePage({ setCurrentPage }: { setCurrentPage: (page: st
           <h2 className="text-3xl md:text-4xl font-bold text-white mb-6 drop-shadow-lg">
             {t("Siap merencanakan langkah berikutnya?", "Ready to Transform Your Future?")}
           </h2>
-          <p className="text-xl text-indigo-100 mb-8 max-w-2xl mx-auto drop-shadow-md">
-            Join thousands of deaf professionals who trust Lestari for their career and wellness journey. Start with a personalized assessment.
-          </p>
-          <div className="flex flex-col sm:flex-row gap-4 justify-center max-w-md mx-auto">
-            <button 
-              onClick={handleGetStarted}
-              className="group bg-white text-indigo-600 px-8 py-4 rounded-2xl font-semibold hover:bg-gray-100 transition-all duration-300 shadow-xl hover:shadow-2xl transform hover:scale-105 hover:-translate-y-1 flex items-center justify-center space-x-2 relative overflow-hidden cursor-pointer"
-            >
-              <div className="absolute inset-0 bg-white blur-lg opacity-50 -z-10"></div>
-              <span>{t("Mulai asesmen", "Take Assessment")}</span>
-              <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
-            </button>
+          <div className="flex justify-center">
             <button 
               onClick={() => setCurrentPage('workshop')}
               className="border-2 border-white text-white px-8 py-4 rounded-2xl font-semibold hover:bg-white hover:text-indigo-600 transition-all duration-300 shadow-lg hover:shadow-xl transform hover:scale-105 hover:-translate-y-1 flex items-center justify-center space-x-2 bg-white bg-opacity-10 backdrop-blur-sm cursor-pointer"
@@ -493,15 +456,6 @@ export default function HomePage({ setCurrentPage }: { setCurrentPage: (page: st
           </div>
         </div>
       </section>
-
-      {/* Assessment Modal */}
-      {showAssessment && (
-        <AssessmentModal
-          isOpen={showAssessment}
-          onClose={() => setShowAssessment(false)}
-          onComplete={handleAssessmentComplete}
-        />
-      )}
 
       <style jsx>{`
         @keyframes blob {
