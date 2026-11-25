@@ -22,6 +22,7 @@ import {
   Accessibility
 } from 'lucide-react';
 import { features } from './Features'; // Disesuaikan dengan F besar
+import WebsiteGuide from './WebsiteGuide';
 
 export default function HomePage({ setCurrentPage }: { setCurrentPage: (page: string) => void }) {
   const { t } = useLanguage();
@@ -193,7 +194,8 @@ export default function HomePage({ setCurrentPage }: { setCurrentPage: (page: st
               </div>
             </div>
             
-            <div className="flex justify-center">
+            <div className="flex flex-wrap justify-center gap-3">
+              <WebsiteGuide navigate={setCurrentPage} />
               <button 
                 onClick={() => document.getElementById('features')?.scrollIntoView({ behavior: 'smooth' })}
                 className="group border-2 border-indigo-600 text-indigo-600 px-8 py-4 rounded-2xl font-semibold hover:bg-indigo-600 hover:text-white transition-all duration-300 shadow-lg hover:shadow-xl transform hover:scale-105 hover:-translate-y-1 flex items-center justify-center space-x-2 bg-white cursor-pointer"
