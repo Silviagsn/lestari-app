@@ -1,8 +1,8 @@
 'use client';
 
 import { useEffect, useRef, useState, type ReactNode } from 'react';
-import { Activity, ArrowRight, BookOpen, Briefcase, Check, ChevronLeft, ChevronRight, ClipboardList, GitBranch, LayoutDashboard, LogOut, Minus, RefreshCw, Search, ShieldCheck, User, Users } from 'lucide-react';
-import { adminFilters, type AdminOverview, type AdminRow, type AdminSection } from '../utils/admin';
+import { Activity, ArrowRight, BookOpen, Briefcase, Check, ChevronLeft, ChevronRight, ClipboardList, Cpu, Database, GitBranch, LayoutDashboard, LogOut, Minus, RefreshCw, Search, Server, ShieldCheck, User, Users } from 'lucide-react';
+import { adminFilters, type AdminDiagnostics, type AdminOverview, type AdminRow, type AdminSection } from '../utils/admin';
 import { applicantStatuses, applicantStatusesEnglish, type ApplicantStatus } from '../utils/recruitment';
 import type { Profile } from '../utils/profile';
 import { LanguageSwitch, useLanguage } from './Language';
@@ -290,20 +290,101 @@ function ApplicationStages() {
 }
 
 function SystemStatus() {
-  const { t } = useLanguage();
-  const { result, retry } = usePortalData<{ status: 'ready' }>('/api/health');
-  const ready = result?.data?.status === 'ready';
-  const label = !result ? t('Memeriksa…', 'Checking…') :
-    ready ? t('Siap', 'Ready') : result.error === 503 ? t('Belum siap', 'Unavailable') :
-    t('Pemeriksaan gagal', 'Check failed');
-  return <section className={`${card} flex max-w-2xl flex-wrap items-center justify-between gap-4 p-5 sm:p-6`}>
-    <div>
-      <h2 className="flex items-center gap-2 font-bold"><Activity aria-hidden="true" className="h-5 w-5 text-indigo-700" />{t('Kesiapan backend', 'Backend readiness')}</h2>
-      <p className="mt-1 text-sm text-slate-600">{t('Memeriksa koneksi PostgreSQL dan skema yang dibutuhkan aplikasi.', 'Checks the PostgreSQL connection and required application schema.')}</p>
-      <span role="status" className={`mt-3 inline-block rounded-full px-3 py-1 text-sm font-semibold ${ready ? 'bg-emerald-100 text-emerald-900' : !result ? 'bg-slate-100 text-slate-700' : 'bg-amber-100 text-amber-900'}`}>{label}</span>
+  const { t, locale } = useLanguage();
+  const { result, retry } = usePortalData<AdminDiagnostics>('/api/admin?section=diagnostics');
+  const data = result?.data;
+  const language = locale === 'id' ? 'id-ID' : 'en-GB';
+  const number = new Intl.NumberFormat(language, { maximumFractionDigits: 1 });
+  const time = new Intl.DateTimeFormat(language, { dateStyle: 'medium', timeStyle: 'medium', timeZone: 'Asia/Jakarta' });
+  const formatBytes = (bytes: number) => bytes >= 1024 ** 3
+    ? `${number.format(bytes / 1024 ** 3)} GiB`
+    : `${number.format(bytes / 1024 ** 2)} MiB`;
+  const entities: [keyof AdminDiagnostics['records'], string][] = [
+    ['users', t('Akun pengguna', 'User accounts')],
+    ['profiles', t('Profil pengguna', 'User profiles')],
+    ['photos', t('Foto profil', 'Profile photos')],
+    ['jobs', t('Lowongan', 'Job listings')],
+    ['applications', t('Lamaran kerja', 'Job applications')],
+    ['workshops', t('Workshop', 'Workshops')],
+    ['enrollments', t('Pendaftaran workshop', 'Workshop enrollments')],
+    ['savedJobs', t('Lowongan tersimpan', 'Saved jobs')],
+    ['savedWorkshops', t('Workshop tersimpan', 'Saved workshops')],
+  ];
+
+  return <>
+    <div className="flex flex-wrap items-center justify-between gap-3">
+      <div>
+        <p className="text-sm text-slate-600">{t('Pantau koneksi database, jumlah data, dan proses aplikasi Lestari.', 'Monitor the database connection, record counts, and the Lestari application process.')}</p>
+        {data && <p role="status" className="mt-1 text-xs text-slate-600">{t('Pemeriksaan terakhir', 'Last checked')} <time dateTime={data.checkedAt}>{time.format(new Date(data.checkedAt))} WIB</time></p>}
+      </div>
+      <button type="button" className={buttonStyle} disabled={!result} onClick={retry}>
+        <RefreshCw aria-hidden="true" className="h-4 w-4" />{t('Periksa ulang', 'Check again')}
+      </button>
     </div>
-    <button type="button" className={buttonStyle} disabled={!result} onClick={retry}><RefreshCw aria-hidden="true" className="h-4 w-4" />{t('Periksa ulang', 'Check again')}</button>
-  </section>;
+    {data ? <>
+      <div className="grid gap-4 md:grid-cols-3">
+        <section className={`${card} p-5`}>
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <h2 className="flex items-center gap-2 text-sm font-bold"><Activity aria-hidden="true" className="h-4 w-4 text-indigo-700" />PostgreSQL</h2>
+            <span className="rounded-full bg-emerald-100 px-2.5 py-1 text-xs font-semibold text-emerald-900">{t('Terhubung', 'Connected')}</span>
+          </div>
+          <p className="mt-3 text-2xl font-extrabold tabular-nums">{number.format(data.database.latencyMs)} ms</p>
+          <p className="mt-1 text-xs text-slate-600">{t('Waktu respons kueri uji dari backend', 'Backend test query response time')}</p>
+        </section>
+        <section className={`${card} p-5`}>
+          <h2 className="flex items-center gap-2 text-sm font-bold"><Database aria-hidden="true" className="h-4 w-4 text-indigo-700" />{t('Ukuran database', 'Database size')}</h2>
+          <p className="mt-3 text-2xl font-extrabold tabular-nums">{formatBytes(data.database.sizeBytes)}</p>
+          <p className="mt-1 text-xs text-slate-600">{t('Penyimpanan PostgreSQL, termasuk indeks', 'PostgreSQL storage, including indexes')}</p>
+        </section>
+        <section className={`${card} p-5`}>
+          <h2 className="flex items-center gap-2 text-sm font-bold"><Cpu aria-hidden="true" className="h-4 w-4 text-indigo-700" />{t('Memori Node.js', 'Node.js memory')}</h2>
+          <p className="mt-3 text-2xl font-extrabold tabular-nums">{formatBytes(data.runtime.heapBytes)}</p>
+          <p className="mt-1 text-xs text-slate-600">{t('Heap terpakai', 'Heap used')} · RSS {formatBytes(data.runtime.rssBytes)}</p>
+        </section>
+      </div>
+      <div className={`${card} overflow-hidden`}>
+        <table className="w-full text-sm">
+          <caption className="px-4 py-4 text-left text-lg font-bold sm:px-5">{t('Jumlah data per kategori', 'Records by category')}</caption>
+          <thead className="bg-indigo-50 text-indigo-950">
+            <tr>
+              <th scope="col" className="px-4 py-2.5 text-left sm:px-5">{t('Kategori', 'Category')}</th>
+              <th scope="col" className="px-4 py-2.5 text-right sm:px-5">{t('Jumlah', 'Count')}</th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-indigo-50">
+            {entities.map(([id, label]) => <tr key={id}>
+              <th scope="row" className="px-4 py-2.5 text-left font-medium text-slate-700 sm:px-5">{label}</th>
+              <td className="px-4 py-2.5 text-right tabular-nums sm:px-5">{number.format(data.records[id])}</td>
+            </tr>)}
+          </tbody>
+          <tfoot className="border-t border-indigo-100 bg-indigo-50/60 font-bold">
+            <tr>
+              <th scope="row" className="px-4 py-3 text-left sm:px-5">{t('Total kategori di atas', 'Total across these categories')}</th>
+              <td className="px-4 py-3 text-right tabular-nums sm:px-5">{number.format(entities.reduce((sum, [id]) => sum + data.records[id], 0))}</td>
+            </tr>
+          </tfoot>
+        </table>
+      </div>
+      <div className="grid gap-4 md:grid-cols-2">
+        <section className={`${card} p-5`}>
+          <h2 className="flex items-center gap-2 font-bold"><Server aria-hidden="true" className="h-4 w-4 text-indigo-700" />{t('Proses aplikasi', 'Application process')}</h2>
+          <dl className="mt-2 divide-y divide-indigo-50 text-sm">
+            <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1 py-2"><dt className="text-slate-600">{t('Versi Node.js', 'Node.js version')}</dt><dd className="font-medium">{data.runtime.version}</dd></div>
+            <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1 py-2"><dt className="text-slate-600">{t('Platform dan arsitektur', 'Platform and architecture')}</dt><dd className="font-medium">{data.runtime.platform} ({data.runtime.architecture})</dd></div>
+            <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1 py-2"><dt className="text-slate-600">{t('Mode aplikasi', 'Application mode')}</dt><dd className="font-medium">{data.runtime.mode}</dd></div>
+            <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1 py-2"><dt className="text-slate-600">{t('Waktu proses berjalan', 'Process uptime')}</dt><dd className="font-medium">{t(`${number.format(data.runtime.uptimeSeconds / 60)} menit`, `${number.format(data.runtime.uptimeSeconds / 60)} minutes`)}</dd></div>
+          </dl>
+        </section>
+        <section className={`${card} p-5`}>
+          <h2 className="flex items-center gap-2 font-bold"><Database aria-hidden="true" className="h-4 w-4 text-indigo-700" />{t('Database dan skema', 'Database and schema')}</h2>
+          <dl className="mt-2 divide-y divide-indigo-50 text-sm">
+            <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1 py-2"><dt className="text-slate-600">{t('Versi PostgreSQL', 'PostgreSQL version')}</dt><dd className="font-medium">{data.database.version}</dd></div>
+            <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1 py-2"><dt className="text-slate-600">{t('Migrasi tercatat', 'Recorded migrations')}</dt><dd className="font-medium">{number.format(data.database.migrations)}</dd></div>
+          </dl>
+        </section>
+      </div>
+    </> : <DataMessage error={result?.error} retry={retry} />}
+  </>;
 }
 
 function AdminAccount({ profile, view, navigate, logout }: {

@@ -28,3 +28,33 @@ export type AdminOverview = {
   enrollments: number;
   recentJobs: AdminRow[];
 };
+
+export type AdminDiagnostics = {
+  checkedAt: string;
+  database: {
+    version: string;
+    latencyMs: number;
+    sizeBytes: number;
+    migrations: number;
+  };
+  records: {
+    users: number;
+    profiles: number;
+    photos: number;
+    jobs: number;
+    applications: number;
+    workshops: number;
+    enrollments: number;
+    savedJobs: number;
+    savedWorkshops: number;
+  };
+  runtime: {
+    version: string;
+    platform: string;
+    architecture: string;
+    mode: string;
+    uptimeSeconds: number;
+    heapBytes: number;
+    rssBytes: number;
+  };
+};

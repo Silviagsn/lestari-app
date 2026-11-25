@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getDatabase, getSessionUser, sessionCookie } from '../../../database/store.mjs';
-import { adminFilters, adminPageSize, type AdminSection } from '../../utils/admin';
+import { adminFilters, adminPageSize, type AdminDiagnostics, type AdminSection } from '../../utils/admin';
 
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
@@ -30,6 +30,38 @@ const lists: Record<AdminSection, string> = {
   `,
 };
 
+async function readDiagnostics(db: ReturnType<typeof getDatabase>): Promise<AdminDiagnostics> {
+  const started = performance.now();
+  const { rows: [engine] } = await db.query("SELECT current_setting('server_version') AS version");
+  const latencyMs = Math.round((performance.now() - started) * 10) / 10;
+  const { rows: [snapshot] } = await db.query(`
+    SELECT pg_database_size(current_database())::float8 AS size,
+           (SELECT count(*)::int FROM schema_migrations) AS migrations,
+           jsonb_build_object(
+             'users', (SELECT count(*) FROM users),
+             'profiles', (SELECT count(*) FROM user_profiles),
+             'photos', (SELECT count(*) FROM profile_avatars),
+             'jobs', (SELECT count(*) FROM jobs),
+             'applications', (SELECT count(*) FROM applications),
+             'workshops', (SELECT count(*) FROM workshops),
+             'enrollments', (SELECT count(*) FROM enrollments),
+             'savedJobs', (SELECT count(*) FROM saved_jobs),
+             'savedWorkshops', (SELECT count(*) FROM saved_workshops)
+           ) AS records
+  `);
+  const { heapUsed, rss } = process.memoryUsage();
+  return {
+    checkedAt: new Date().toISOString(),
+    database: { version: engine.version, latencyMs, sizeBytes: snapshot.size, migrations: snapshot.migrations },
+    records: snapshot.records,
+    runtime: {
+      version: process.version, platform: process.platform, architecture: process.arch,
+      mode: process.env.NODE_ENV ?? 'unknown', uptimeSeconds: Math.floor(process.uptime()),
+      heapBytes: heapUsed, rssBytes: rss,
+    },
+  };
+}
+
 export async function GET(request: NextRequest) {
   try {
     const user = await getSessionUser(request.cookies.get(sessionCookie)?.value);
@@ -39,6 +71,7 @@ export async function GET(request: NextRequest) {
     const db = getDatabase();
     const params = request.nextUrl.searchParams;
     const section = params.get('section') ?? 'overview';
+    if (section === 'diagnostics') return respond(await readDiagnostics(db));
     if (section === 'pipeline') {
       const { rows } = await db.query('SELECT status, count(*)::int AS total FROM applications GROUP BY status');
       return respond({ counts: Object.fromEntries(rows.map(({ status, total }: { status: string; total: number }) => [status, total])) });
