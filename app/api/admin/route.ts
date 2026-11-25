@@ -39,6 +39,10 @@ export async function GET(request: NextRequest) {
     const db = getDatabase();
     const params = request.nextUrl.searchParams;
     const section = params.get('section') ?? 'overview';
+    if (section === 'pipeline') {
+      const { rows } = await db.query('SELECT status, count(*)::int AS total FROM applications GROUP BY status');
+      return respond({ counts: Object.fromEntries(rows.map(({ status, total }: { status: string; total: number }) => [status, total])) });
+    }
     if (section === 'overview') {
       const [counts, recent] = await Promise.all([
         db.query(`

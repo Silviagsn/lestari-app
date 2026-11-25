@@ -13,6 +13,9 @@ export const jobDetailLabels = {
 } as const;
 export const applicantStatuses = { applied: 'Baru', reviewing: 'Ditinjau', interview: 'Wawancara', offer: 'Ditawari', rejected: 'Tidak lolos' };
 export type ApplicantStatus = keyof typeof applicantStatuses;
+export const applicantStatusesEnglish: Record<ApplicantStatus, string> = {
+  applied: 'New', reviewing: 'Under review', interview: 'Interview', offer: 'Offered', rejected: 'Rejected',
+};
 export const listingStatuses = { draft: 'Draf', published: 'Tayang', closed: 'Ditutup' };
 export type ListingStatus = keyof typeof listingStatuses;
 

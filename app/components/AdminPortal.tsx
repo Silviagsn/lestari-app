@@ -1,19 +1,26 @@
 'use client';
 
 import { useEffect, useRef, useState, type ReactNode } from 'react';
-import { ArrowRight, BookOpen, Briefcase, ChevronLeft, ChevronRight, ClipboardList, LayoutDashboard, LogOut, Search, ShieldCheck, User, Users } from 'lucide-react';
+import { Activity, ArrowRight, BookOpen, Briefcase, ChevronLeft, ChevronRight, ClipboardList, GitBranch, LayoutDashboard, LogOut, RefreshCw, Search, ShieldCheck, User, Users } from 'lucide-react';
 import { adminFilters, type AdminOverview, type AdminRow, type AdminSection } from '../utils/admin';
+import { applicantStatuses, applicantStatusesEnglish, type ApplicantStatus } from '../utils/recruitment';
 import { LanguageSwitch, useLanguage } from './Language';
 import ProfilePage from './ProfilePage';
 
 const sections = [
   { id: 'overview', labels: ['Dasbor', 'Dashboard'], icon: LayoutDashboard },
-  { id: 'accounts', labels: ['Akun pengguna', 'User accounts'], icon: Users },
   { id: 'jobs', labels: ['Lowongan', 'Job listings'], icon: Briefcase },
   { id: 'workshops', labels: ['Workshop', 'Workshops'], icon: BookOpen },
 ] as const;
 
-type View = typeof sections[number]['id'] | 'profile';
+const settings = [
+  { id: 'accounts', labels: ['Akun pengguna', 'User accounts'], icon: Users },
+  { id: 'roles', labels: ['Peran dan akses', 'Roles and access'], icon: ShieldCheck },
+  { id: 'pipeline', labels: ['Tahapan lamaran', 'Application stages'], icon: GitBranch },
+  { id: 'health', labels: ['Status sistem', 'System status'], icon: Activity },
+] as const;
+
+type View = (typeof sections | typeof settings)[number]['id'] | 'profile';
 const card = 'min-w-0 rounded-3xl border border-indigo-100 bg-white shadow-sm';
 const focusRing = 'focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600';
 const buttonStyle = `inline-flex min-h-10 items-center justify-center gap-2 rounded-xl border border-indigo-100 px-3 py-2 text-sm font-semibold text-indigo-900 hover:bg-indigo-50 disabled:opacity-45 ${focusRing}`;
@@ -26,14 +33,14 @@ const statusLabels: Record<string, [string, string]> = {
   closed: ['Ditutup', 'Closed'],
 };
 
-function useAdminData<T>(query: string) {
+function usePortalData<T>(url: string) {
   const [attempt, setAttempt] = useState(0);
-  const key = `${query}:${attempt}`;
+  const key = `${url}:${attempt}`;
   const [result, setResult] = useState<{ key: string; data?: T; error?: number }>();
 
   useEffect(() => {
     const controller = new AbortController();
-    fetch('/api/admin?' + query, { signal: controller.signal })
+    fetch(url, { signal: controller.signal, cache: 'no-store' })
       .then(async response => {
         if (!response.ok) return { key, error: response.status };
         return { key, data: await response.json() as T };
@@ -41,7 +48,7 @@ function useAdminData<T>(query: string) {
       .then(value => { if (!controller.signal.aborted) setResult(value); })
       .catch(() => { if (!controller.signal.aborted) setResult({ key, error: 500 }); });
     return () => controller.abort();
-  }, [key, query]);
+  }, [key, url]);
 
   return { result: result?.key === key ? result : undefined, retry: () => setAttempt(value => value + 1) };
 }
@@ -72,7 +79,7 @@ function Directory({ section }: { section: AdminSection }) {
   const [criteria, setCriteria] = useState({ search: '', status: '', page: 1 });
   const { search, status, page } = criteria;
   const query = new URLSearchParams({ section, q: search, status, page: String(page) }).toString();
-  const { result, retry } = useAdminData<{ items: AdminRow[]; hasMore: boolean }>(query);
+  const { result, retry } = usePortalData<{ items: AdminRow[]; hasMore: boolean }>('/api/admin?' + query);
   const name = section === 'accounts' ? t('Nama atau email', 'Name or email') :
     section === 'jobs' ? t('Judul atau perusahaan', 'Title or employer') : t('Judul atau instruktur', 'Title or instructor');
   const filterLabel = section === 'accounts' ? t('Peran', 'Role') : t('Status', 'Status');
@@ -135,7 +142,7 @@ function Directory({ section }: { section: AdminSection }) {
 
 function Overview({ navigate }: { navigate: (view: View) => void }) {
   const { t, locale } = useLanguage();
-  const { result, retry } = useAdminData<AdminOverview>('section=overview');
+  const { result, retry } = usePortalData<AdminOverview>('/api/admin?section=overview');
   const data = result?.data;
   const format = new Intl.NumberFormat(locale === 'id' ? 'id-ID' : 'en-GB');
   const metrics = data && [
@@ -200,6 +207,59 @@ function Overview({ navigate }: { navigate: (view: View) => void }) {
   </div>;
 }
 
+function RolesAndAccess() {
+  const { t } = useLanguage();
+  const roles = [
+    { id: 'jobseeker', icon: User, description: t('Mencari dan melamar lowongan, mengikuti workshop, serta mengelola profil sendiri.', 'Find and apply for jobs, enroll in workshops, and manage their own profile.') },
+    { id: 'company', icon: Briefcase, description: t('Menerbitkan lowongan perusahaan sendiri, meninjau pelamar, dan memperbarui tahap lamaran.', 'Publish their own job listings, review applicants, and update application stages.') },
+    { id: 'admin', icon: ShieldCheck, description: t('Memantau akun, lowongan, workshop, tahapan lamaran, dan status sistem melalui Portal Admin.', 'Monitor accounts, listings, workshops, application stages, and system status in the Admin Portal.') },
+  ];
+  return <>
+    <p className="max-w-2xl text-sm leading-relaxed text-slate-600">{t('Lihat hak akses yang berlaku untuk setiap jenis akun Lestari.', 'Review the permissions for each Lestari account type.')}</p>
+    <div className="grid gap-4 xl:grid-cols-3">
+      {roles.map(({ id, icon: Icon, description }) => <section key={id} className={`${card} p-5`}>
+        <span className="mb-4 grid h-10 w-10 place-items-center rounded-xl bg-indigo-100 text-indigo-800"><Icon aria-hidden="true" className="h-5 w-5" /></span>
+        <h2 className="font-bold">{t(...statusLabels[id])}</h2>
+        <p className="mt-2 text-sm leading-relaxed text-slate-600">{description}</p>
+      </section>)}
+    </div>
+  </>;
+}
+
+function ApplicationStages() {
+  const { t, locale } = useLanguage();
+  const { result, retry } = usePortalData<{ counts: Partial<Record<ApplicantStatus, number>> }>('/api/admin?section=pipeline');
+  const counts = result?.data?.counts;
+  const stages = Object.keys(applicantStatuses) as ApplicantStatus[];
+  const format = new Intl.NumberFormat(locale === 'id' ? 'id-ID' : 'en-GB');
+  return <>
+    <p className="max-w-2xl text-sm leading-relaxed text-slate-600">{t('Lihat jumlah lamaran pada setiap tahap yang digunakan perusahaan untuk meninjau kandidat.', 'See how many applications are at each stage employers use to review candidates.')}</p>
+    {counts ? <dl className="grid gap-3 sm:grid-cols-2 xl:grid-cols-5">
+      {stages.map(stage => <div key={stage} className={`${card} p-5`}>
+        <dt className="text-sm font-semibold text-slate-600">{t(applicantStatuses[stage], applicantStatusesEnglish[stage])}</dt>
+        <dd className="mt-2 text-3xl font-extrabold text-indigo-950">{format.format(counts[stage] ?? 0)}</dd>
+      </div>)}
+    </dl> : <DataMessage error={result?.error} retry={retry} />}
+  </>;
+}
+
+function SystemStatus() {
+  const { t } = useLanguage();
+  const { result, retry } = usePortalData<{ status: 'ready' }>('/api/health');
+  const ready = result?.data?.status === 'ready';
+  const label = !result ? t('Memeriksa…', 'Checking…') :
+    ready ? t('Siap', 'Ready') : result.error === 503 ? t('Belum siap', 'Unavailable') :
+    t('Pemeriksaan gagal', 'Check failed');
+  return <section className={`${card} flex max-w-2xl flex-wrap items-center justify-between gap-4 p-5 sm:p-6`}>
+    <div>
+      <h2 className="flex items-center gap-2 font-bold"><Activity aria-hidden="true" className="h-5 w-5 text-indigo-700" />{t('Kesiapan backend', 'Backend readiness')}</h2>
+      <p className="mt-1 text-sm text-slate-600">{t('Memeriksa koneksi PostgreSQL dan skema yang dibutuhkan aplikasi.', 'Checks the PostgreSQL connection and required application schema.')}</p>
+      <span role="status" className={`mt-3 inline-block rounded-full px-3 py-1 text-sm font-semibold ${ready ? 'bg-emerald-100 text-emerald-900' : !result ? 'bg-slate-100 text-slate-700' : 'bg-amber-100 text-amber-900'}`}>{label}</span>
+    </div>
+    <button type="button" className={buttonStyle} disabled={!result} onClick={retry}><RefreshCw aria-hidden="true" className="h-4 w-4" />{t('Periksa ulang', 'Check again')}</button>
+  </section>;
+}
+
 export default function AdminPortal({ logout, authError }: { logout: () => void; authError: string }) {
   const { t } = useLanguage();
   const [view, setView] = useState<View>('overview');
@@ -212,26 +272,36 @@ export default function AdminPortal({ logout, authError }: { logout: () => void;
 
   useEffect(() => { heading.current?.focus({ preventScroll: true }); }, [view]);
 
-  const section = sections.find(item => item.id === view);
+  const section = [...sections, ...settings].find(item => item.id === view);
   const title = view === 'overview' ? t('Dasbor Admin', 'Admin Dashboard') : section ? t(section.labels[0], section.labels[1]) : t('Profil saya', 'My profile');
   let content: ReactNode;
   if (view === 'profile') content = <ProfilePage />;
   else content = <main className="mx-auto max-w-7xl space-y-5 px-4 py-6 sm:px-7 sm:py-8">
     <h1 ref={heading} tabIndex={-1} className="text-3xl font-extrabold tracking-tight outline-none sm:text-4xl">{title}</h1>
-    {view === 'overview' ? <Overview navigate={navigate} /> : <Directory key={view} section={view} />}
+    {view === 'overview' ? <Overview navigate={navigate} /> :
+      view === 'roles' ? <RolesAndAccess /> :
+      view === 'pipeline' ? <ApplicationStages /> :
+      view === 'health' ? <SystemStatus /> : <Directory key={view} section={view} />}
   </main>;
 
   return <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-[#fafaff] to-violet-50 text-slate-950 lg:grid lg:grid-cols-[14rem_minmax(0,1fr)]">
-    <aside className="flex flex-col gap-3 border-b border-indigo-100 bg-white p-3 lg:sticky lg:top-0 lg:h-dvh lg:gap-6 lg:border-b-0 lg:border-r lg:px-4 lg:py-6">
+    <aside className="flex flex-col gap-3 border-b border-indigo-100 bg-white p-3 lg:sticky lg:top-0 lg:h-dvh lg:gap-6 lg:overflow-y-auto lg:border-b-0 lg:border-r lg:px-4 lg:py-6">
       <div className="flex items-center gap-2.5 px-1">
         <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-gradient-to-br from-indigo-600 to-violet-700 text-white"><ShieldCheck aria-hidden="true" className="h-5 w-5" /></span>
         <span><strong className="block text-xl tracking-tight text-indigo-950">Lestari</strong><span className="block text-xs text-slate-600">{t('Portal Admin', 'Admin Portal')}</span></span>
       </div>
-      <nav aria-label={t('Menu admin', 'Admin navigation')} className="flex flex-wrap gap-1 lg:grid lg:gap-2">
-        {sections.map(({ id, labels, icon: Icon }) => <button type="button" key={id} onClick={() => navigate(id)} aria-current={view === id ? 'page' : undefined}
-          className={`flex min-h-10 items-center gap-2 rounded-xl px-2.5 text-left text-sm font-semibold lg:min-h-11 lg:px-3 ${focusRing} ${view === id ? 'bg-indigo-100 text-indigo-950' : 'text-slate-700 hover:bg-indigo-50'}`}>
-          <Icon aria-hidden="true" className="h-4 w-4 shrink-0" />{t(labels[0], labels[1])}
-        </button>)}
+      <nav aria-label={t('Menu admin', 'Admin navigation')} className="space-y-3 lg:space-y-5">
+        {([sections, settings] as const).map((items, index) => <div key={items[0].id} className={index ? 'border-t border-indigo-100 pt-3' : undefined}>
+          {index === 1 && <h2 className="mb-1.5 px-2.5 text-xs font-bold uppercase tracking-wide text-slate-600">{t('Pengaturan', 'Settings')}</h2>}
+          <ul className="flex flex-wrap gap-1 lg:grid">
+            {items.map(({ id, labels, icon: Icon }) => <li key={id}>
+              <button type="button" onClick={() => navigate(id)} aria-current={view === id ? 'page' : undefined}
+                className={`flex min-h-10 w-full items-center gap-2 rounded-xl px-2.5 text-left text-sm font-semibold lg:min-h-11 lg:px-3 ${focusRing} ${view === id ? 'bg-indigo-100 text-indigo-950' : 'text-slate-700 hover:bg-indigo-50'}`}>
+                <Icon aria-hidden="true" className="h-4 w-4 shrink-0" />{t(labels[0], labels[1])}
+              </button>
+            </li>)}
+          </ul>
+        </div>)}
       </nav>
       <div className="flex flex-wrap gap-2 border-t border-indigo-100 pt-3 lg:mt-auto lg:grid">
         <button type="button" aria-current={view === 'profile' ? 'page' : undefined} onClick={() => navigate('profile')} className={`${buttonStyle} lg:justify-start`}>

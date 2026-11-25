@@ -7,7 +7,7 @@ import { Accessibility, ArrowLeft, ArrowRight, Briefcase, Building2, CheckCircle
 import CompanyJobForm, { companyCard, companyInput, companyPrimary, companySecondary } from './CompanyJobForm';
 import ProfilePage from './ProfilePage';
 import RecruitmentSearch from './RecruitmentSearch';
-import { accessibilityOptions, applicantStatuses, jobTypes, listingStatuses, type ApplicantStatus, type CompanyApplicant, type CompanyJob, type ListingStatus, type RecruitmentData } from '../utils/recruitment';
+import { accessibilityOptions, applicantStatuses, applicantStatusesEnglish, jobTypes, listingStatuses, type ApplicantStatus, type CompanyApplicant, type CompanyJob, type ListingStatus, type RecruitmentData } from '../utils/recruitment';
 
 const companyNavigation = (t: (id: string, en: string) => string) => [
   { id: 'overview', title: t("Dasbor", "Dashboard"), icon: LayoutDashboard },
@@ -20,9 +20,6 @@ const compactDate = (value: string) => new Date(value).toLocaleDateString('id-ID
 const listingState = (job: CompanyJob): ListingStatus => job.status === 'published' && job.expired ? 'closed' : job.status;
 const applicationCommunication: Record<string, string> = {
   email: 'Email', text: 'Pesan teks', 'video-asl': 'Panggilan video dengan juru bahasa isyarat', 'written-chat': 'Chat tertulis',
-};
-const applicantStatusesEnglish: Record<ApplicantStatus, string> = {
-  applied: 'New', reviewing: 'Under review', interview: 'Interview', offer: 'Offered', rejected: 'Rejected',
 };
 const listingStatusesEnglish: Record<ListingStatus, string> = { draft: 'Draft', published: 'Published', closed: 'Closed' };
 
