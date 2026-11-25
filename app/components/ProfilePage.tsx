@@ -164,48 +164,48 @@ export default function ProfilePage({ onProfileChange }: { onProfileChange?: () 
   const initials = profile.displayName.split(/\s+/).slice(0, 2).map(word => Array.from(word)[0]).join('').toUpperCase();
 
   return (
-    <main className="mx-auto max-w-6xl px-4 pb-24 pt-7 sm:px-6 sm:pt-10">
-      <h1 className="mb-5 text-3xl font-extrabold tracking-tight text-slate-950 sm:mb-6 sm:text-4xl">{profile.role === 'company' ? t("Profil Perusahaan", "Company profile") : t("Profil saya", "My profile")}</h1>
-
-      <section aria-label={t("Ringkasan profil", "Profile overview")} className="isolate overflow-hidden rounded-3xl border border-indigo-100 bg-white shadow-sm shadow-indigo-950/5">
-        <div aria-hidden="true" className="relative h-24 overflow-hidden border-b border-indigo-100 bg-gradient-to-r from-indigo-200 via-violet-100 to-sky-100 sm:h-32">
-          <div className="absolute -left-12 top-0 h-36 w-72 rounded-full bg-violet-300/60 blur-2xl sm:w-96" />
-          <div className="absolute -right-14 -top-28 h-72 w-72 rounded-full border border-white/80 bg-white/20 sm:right-1" />
-          <div className="absolute -right-4 -top-36 h-80 w-80 rounded-full border border-white/90 sm:right-12" />
+    <main className="mx-auto max-w-6xl px-4 pb-24 pt-6 sm:px-6 sm:pt-9">
+      <section aria-label={t("Ringkasan profil", "Profile overview")} className="relative isolate overflow-hidden rounded-[2rem] bg-[#1d1846] px-5 pb-6 pt-5 text-white shadow-lg shadow-indigo-950/15 sm:px-8 sm:pb-8 sm:pt-6">
+        <div aria-hidden="true" className="pointer-events-none absolute inset-0 -z-10 bg-[radial-gradient(ellipse_at_100%_0%,#674bbb,transparent_62%),radial-gradient(ellipse_at_75%_100%,#303e94,transparent_62%)]">
+          <div className="absolute -right-16 -top-40 h-96 w-72 rotate-[32deg] rounded-[45%] border border-white/20 sm:right-4 sm:w-96" />
+          <div className="absolute -right-24 -top-36 h-96 w-72 rotate-[32deg] rounded-[45%] border border-indigo-200/25 sm:-right-4 sm:w-96" />
+          <div className="absolute -right-32 -top-32 h-96 w-72 rotate-[32deg] rounded-[45%] border border-violet-200/20 sm:-right-12 sm:w-96" />
+          <div className="absolute bottom-8 right-10 hidden h-20 w-36 bg-[radial-gradient(circle,#ffffff_1px,transparent_1px)] [background-size:12px_12px] opacity-20 sm:block" />
         </div>
-        <div className="relative flex flex-col items-start gap-4 px-5 pb-5 sm:flex-row sm:gap-5 sm:px-7 sm:pb-7">
-          <button type="button" aria-label={profile.avatarVersion ? t("Ubah foto profil", "Change profile photo") : t("Unggah foto profil", "Upload profile photo")}
-            aria-expanded={editingPhoto} aria-controls={editingPhoto ? 'profile-photo-editor' : undefined}
-            onClick={() => { setEditingPhoto(true); setNotice(''); }}
-            className="group relative -mt-10 shrink-0 rounded-full focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-indigo-700 sm:-mt-12">
-            <ProfilePhoto src={avatarUrl(profile.avatarVersion)} initials={initials} label=""
-              className="h-24 w-24 border-4 border-white bg-indigo-100 text-indigo-800 shadow-md sm:h-28 sm:w-28" />
-            <span className="absolute bottom-0 right-0 grid h-9 w-9 place-items-center rounded-full border-2 border-white bg-indigo-700 text-white shadow-sm group-hover:bg-indigo-800">
-              <Camera aria-hidden="true" className="h-4 w-4" />
-            </span>
-          </button>
-          <div className="min-w-0 max-w-full flex-1 [overflow-wrap:anywhere] sm:pt-4">
-            <h2 className="text-2xl font-extrabold tracking-tight text-slate-950 sm:text-3xl">{profile.displayName || t("Nama belum diisi", "Name missing")}</h2>
-            {profile.headline && <p className="mt-1 whitespace-pre-wrap text-sm text-slate-700 sm:text-base">{profile.headline}</p>}
-            <div className="mt-3 flex flex-wrap items-center gap-2">
-              <span className="inline-flex items-center gap-1.5 rounded-full bg-indigo-50 px-2.5 py-1 text-xs font-semibold text-indigo-800">
-                <RoleIcon aria-hidden="true" className="h-3.5 w-3.5" />
-                {role.label}
-              </span>
-              {profile.isDemo && <span className="rounded-full bg-violet-50 px-2.5 py-1 text-xs font-medium text-violet-900">{t("Data contoh", "Sample data")}</span>}
-              {profile.location && (
-                <span className="inline-flex min-w-0 items-center gap-1.5 text-sm text-slate-700">
-                  <MapPin aria-hidden="true" className="h-4 w-4 shrink-0 text-indigo-700" /><span className="min-w-0">{profile.location}</span>
-                </span>
-              )}
-            </div>
-          </div>
+        <div className="flex flex-wrap items-center justify-between gap-2 border-b border-white/15 pb-3 sm:pb-4">
+          <h1 className="text-sm font-semibold text-indigo-100 sm:text-base">{profile.role === 'company' ? t("Profil Perusahaan", "Company profile") : t("Profil saya", "My profile")}</h1>
           {!draft && (
-            <button type="button" onClick={startEditing} className={`${primaryButton} shrink-0 sm:mt-4`}>
+            <button type="button" onClick={startEditing} className="inline-flex min-h-10 shrink-0 items-center gap-2 rounded-full border border-white/30 bg-white/10 px-3.5 text-sm font-semibold text-white hover:bg-white/20 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white">
               <Pencil aria-hidden="true" className="h-4 w-4" />
               {t("Edit profil", "Edit profile")}
             </button>
           )}
+        </div>
+        <div className="mt-5 flex flex-col items-start gap-4 sm:mt-6 sm:flex-row sm:items-center sm:gap-6">
+          <button type="button" aria-label={profile.avatarVersion ? t("Ubah foto profil", "Change profile photo") : t("Unggah foto profil", "Upload profile photo")}
+            aria-expanded={editingPhoto} aria-controls={editingPhoto ? 'profile-photo-editor' : undefined}
+            onClick={() => { setEditingPhoto(true); setNotice(''); }}
+            className="group relative shrink-0 rounded-[1.75rem] border border-white/30 bg-white/10 p-1.5 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-white">
+            <ProfilePhoto src={avatarUrl(profile.avatarVersion)} initials={initials} label=""
+              className="h-20 w-20 !rounded-[1.35rem] bg-indigo-100 text-indigo-900 shadow-md sm:h-28 sm:w-28" />
+            <span className="absolute -bottom-1.5 -right-1.5 grid h-9 w-9 place-items-center rounded-xl border-2 border-indigo-200 bg-white text-indigo-800 shadow-sm group-hover:bg-indigo-50">
+              <Camera aria-hidden="true" className="h-4 w-4" />
+            </span>
+          </button>
+          <div className="min-w-0 max-w-full flex-1 [overflow-wrap:anywhere]">
+            <div className="mb-2 flex flex-wrap items-center gap-2">
+              <span className="inline-flex items-center gap-1.5 rounded-full border border-white/15 bg-white/10 px-2.5 py-1 text-xs font-semibold text-indigo-50">
+                <RoleIcon aria-hidden="true" className="h-3.5 w-3.5" />
+                {role.label}
+              </span>
+              {profile.isDemo && <span className="rounded-full border border-violet-200/25 bg-violet-200/10 px-2.5 py-1 text-xs font-medium text-violet-50">{t("Data contoh", "Sample data")}</span>}
+            </div>
+            <h2 className="text-3xl font-extrabold tracking-tight sm:text-4xl">{profile.displayName || t("Nama belum diisi", "Name missing")}</h2>
+            {profile.headline && <p className="mt-1 whitespace-pre-wrap text-sm text-indigo-50 sm:text-base">{profile.headline}</p>}
+            {profile.location && <p className="mt-2 flex items-start gap-1.5 text-sm text-indigo-100">
+              <MapPin aria-hidden="true" className="mt-0.5 h-4 w-4 shrink-0" /><span className="min-w-0">{profile.location}</span>
+            </p>}
+          </div>
         </div>
       </section>
 
@@ -258,21 +258,12 @@ export default function ProfilePage({ onProfileChange }: { onProfileChange?: () 
           </div>
         </form>
       ) : (
-        <div className="mt-5 grid items-start gap-5 md:grid-cols-[minmax(0,1fr)_minmax(0,0.55fr)]">
-          <div className="grid min-w-0 gap-5">
-            <section className={panelStyle}>
-              <h2 className={sectionTitle}><span className={sectionIcon}><User aria-hidden="true" className="h-5 w-5" /></span>{role.aboutLabel}</h2>
-              <p className="mt-4 whitespace-pre-wrap text-sm leading-relaxed text-slate-700 [overflow-wrap:anywhere]">{profile.about || 'Belum ada deskripsi.'}</p>
-            </section>
-            <section className={panelStyle}>
-              <h2 className={sectionTitle}><span className={sectionIcon}><RoleIcon aria-hidden="true" className="h-5 w-5" /></span>{role.detailsLabel}</h2>
-              <dl className="mt-4 grid gap-3">
-                {role.fields.map(field => <Detail key={field.key} label={field.label}
-                  value={profile.details[field.key] ?? ''} tags={field.tags} className="rounded-2xl bg-slate-50 px-4 py-3" />)}
-              </dl>
-            </section>
-          </div>
-          <section className={panelStyle}>
+        <div className="mt-5 grid gap-4 sm:gap-5 lg:grid-cols-[minmax(0,1fr)_minmax(0,0.65fr)]">
+          <section className={`${panelStyle} border-t-4 border-t-violet-300`}>
+            <h2 className={sectionTitle}><span className={sectionIcon}><User aria-hidden="true" className="h-5 w-5" /></span>{role.aboutLabel}</h2>
+            <p className="mt-4 whitespace-pre-wrap text-sm leading-relaxed text-slate-700 [overflow-wrap:anywhere] sm:text-base">{profile.about || 'Belum ada deskripsi.'}</p>
+          </section>
+          <section className={`${panelStyle} border-sky-100 bg-gradient-to-br from-white to-sky-50`}>
             <h2 className={sectionTitle}><span className={sectionIcon}><MessageSquare aria-hidden="true" className="h-5 w-5" /></span>{t("Akun dan komunikasi", "Account and communication")}</h2>
             <dl className="mt-3 divide-y divide-indigo-50">
               <div className="flex min-w-0 gap-2.5 py-3">
@@ -283,6 +274,13 @@ export default function ProfilePage({ onProfileChange }: { onProfileChange?: () 
                 <MessageSquare aria-hidden="true" className="mt-0.5 h-4 w-4 shrink-0 text-indigo-700" />
                 <Detail label={t("Preferensi komunikasi", "Communication preference")} value={profile.communication} />
               </div>
+            </dl>
+          </section>
+          <section className={`${panelStyle} lg:col-span-2`}>
+            <h2 className={sectionTitle}><span className={sectionIcon}><RoleIcon aria-hidden="true" className="h-5 w-5" /></span>{role.detailsLabel}</h2>
+            <dl className={`mt-4 grid gap-3 sm:grid-cols-2 ${role.fields.length === 3 ? 'lg:grid-cols-3' : ''}`}>
+              {role.fields.map(field => <Detail key={field.key} label={field.label}
+                value={profile.details[field.key] ?? ''} tags={field.tags} className="rounded-2xl border border-indigo-50 bg-gradient-to-br from-slate-50 to-indigo-50/70 px-4 py-4" />)}
             </dl>
           </section>
         </div>
