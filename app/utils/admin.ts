@@ -14,6 +14,8 @@ export type AdminRow = {
   status: string;
   date?: string;
   total?: number;
+  externalUrl?: string | null;
+  location?: string;
 };
 
 export type AdminOverview = {

@@ -36,8 +36,10 @@ export async function GET(request: NextRequest, { params: { catalog } }: Context
   const [items, savedItems, activity] = await Promise.all([
     catalog === 'jobs'
       ? db.query(`
-          SELECT details || CASE WHEN company_user_id IS NOT NULL
-            THEN jsonb_build_object('posted', to_char(published_at, 'DD Mon YYYY')) ELSE '{}'::jsonb END AS details
+          SELECT details || CASE
+            WHEN external_url IS NOT NULL THEN jsonb_build_object('externalUrl', external_url, 'posted', to_char(published_at, 'DD Mon YYYY'))
+            WHEN company_user_id IS NOT NULL THEN jsonb_build_object('posted', to_char(published_at, 'DD Mon YYYY'))
+            ELSE '{}'::jsonb END AS details
           FROM jobs WHERE ${openListings} ORDER BY published_at DESC NULLS LAST, id
         `)
       : db.query('SELECT details FROM workshops ORDER BY id'),
@@ -61,7 +63,7 @@ export async function POST(request: NextRequest, { params: { catalog } }: Contex
   const data = await request.json().catch(() => null);
   if (!Number.isInteger(data?.id) || data.id < 1 || data.id > 2147483647) return error('ID tidak valid.', 400);
   const db = getDatabase();
-  const item = await db.query(`SELECT 1 FROM ${catalog} WHERE id = $1${catalog === 'jobs' ? ` AND ${openListings}` : ''}`, [data.id]);
+  const item = await db.query(`SELECT ${catalog === 'jobs' ? 'external_url' : '1'} FROM ${catalog} WHERE id = $1${catalog === 'jobs' ? ` AND ${openListings}` : ''}`, [data.id]);
   if (!item.rowCount) {
     return error('Item tidak ditemukan.', 404);
   }
@@ -89,6 +91,7 @@ export async function POST(request: NextRequest, { params: { catalog } }: Contex
   }
   if (catalog === 'jobs' && data.action === 'apply') {
     if (user.role !== 'jobseeker') return error('Gunakan akun pencari kerja untuk melamar.', 403);
+    if (item.rows[0].external_url) return error('Lamaran lowongan eksternal dikirim melalui halaman sumber.', 409);
     const { name, email, phone, coverLetter, communicationPreference, availabilityDate, salaryExpectation } =
       data.application ?? {};
     if (typeof name !== 'string' || !name.trim() || name.length > 160 ||
@@ -101,7 +104,7 @@ export async function POST(request: NextRequest, { params: { catalog } }: Contex
       return error('Periksa nama, email, dan isian lamaran.', 400);
     }
     await db.query(`
-      WITH open_job AS (SELECT id FROM jobs WHERE id = $2 AND ${openListings} FOR SHARE)
+      WITH open_job AS (SELECT id FROM jobs WHERE id = $2 AND external_url IS NULL AND ${openListings} FOR SHARE)
       INSERT INTO applications (
         user_id, job_id, name, email, phone, cover_letter, communication_preference,
         availability_date, salary_expectation

@@ -1,11 +1,12 @@
 'use client';
 
 import { useEffect, useRef, useState, type ReactNode } from 'react';
-import { Activity, ArrowRight, BookOpen, Briefcase, Check, ChevronLeft, ChevronRight, ClipboardList, Cpu, Database, GitBranch, LayoutDashboard, LogOut, Minus, RefreshCw, Search, Server, ShieldCheck, User, Users } from 'lucide-react';
+import { Activity, ArrowRight, BookOpen, Briefcase, Check, ChevronLeft, ChevronRight, ClipboardList, Cpu, Database, ExternalLink, GitBranch, LayoutDashboard, LogOut, Minus, Plus, RefreshCw, Search, Server, ShieldCheck, User, Users } from 'lucide-react';
 import { adminFilters, type AdminDiagnostics, type AdminOverview, type AdminRow, type AdminSection } from '../utils/admin';
 import { applicantStatuses, applicantStatusesEnglish, type ApplicantStatus } from '../utils/recruitment';
 import type { Profile } from '../utils/profile';
 import { LanguageSwitch, useLanguage } from './Language';
+import ExternalJobForm from './ExternalJobForm';
 import ProfilePage from './ProfilePage';
 import { avatarUrl, ProfilePhoto } from './ProfilePhoto';
 import SidebarAccount from './SidebarAccount';
@@ -81,6 +82,10 @@ function Directory({ section, initialRole }: { section: AdminSection; initialRol
   const { t, locale } = useLanguage();
   const [input, setInput] = useState('');
   const [criteria, setCriteria] = useState({ search: '', status: String(initialRole), page: 1 });
+  const [editor, setEditor] = useState<{ job?: AdminRow }>();
+  const [updating, setUpdating] = useState(false);
+  const [mutationError, setMutationError] = useState('');
+  const [notice, setNotice] = useState('');
   const { search, status, page } = criteria;
   const query = new URLSearchParams({ section, q: search, status, page: String(page) }).toString();
   const { result, retry } = usePortalData<{ items: AdminRow[]; hasMore: boolean }>('/api/admin?' + query);
@@ -90,7 +95,56 @@ function Directory({ section, initialRole }: { section: AdminSection; initialRol
   const countLabel = section === 'jobs' ? t('Lamaran', 'Applications') : t('Pendaftaran', 'Enrollments');
   const date = new Intl.DateTimeFormat(locale === 'id' ? 'id-ID' : 'en-GB', { dateStyle: 'medium', timeZone: 'Asia/Jakarta' });
 
+  function openEditor(job?: AdminRow) {
+    setEditor({ job });
+    setNotice('');
+    setMutationError('');
+    window.scrollTo(0, 0);
+  }
+
+  async function changeStatus(item: AdminRow) {
+    if (updating) return;
+    const status = item.status === 'published' ? 'closed' : 'published';
+    setUpdating(true);
+    setMutationError('');
+    setNotice('');
+    try {
+      const response = await fetch('/api/admin', { method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'external-status', id: item.id, status }) });
+      if (!response.ok) throw new Error();
+      setNotice(status === 'closed' ? t('Lowongan ditutup.', 'Listing closed.') : t('Lowongan diterbitkan kembali.', 'Listing republished.'));
+      retry();
+    } catch {
+      setMutationError(t('Status lowongan gagal diperbarui.', 'Could not update the listing status.'));
+    } finally {
+      setUpdating(false);
+    }
+  }
+
+  if (editor) {
+    const job = editor.job;
+    return <ExternalJobForm id={job?.id} initial={job?.externalUrl ? {
+      url: job.externalUrl, title: job.title, company: job.subtitle, location: job.location ?? '',
+    } : undefined} onCancel={() => setEditor(undefined)} onSaved={() => {
+      setEditor(undefined);
+      if (!job) {
+        setInput('');
+        setCriteria({ search: '', status: '', page: 1 });
+      }
+      setNotice(job ? t('Perubahan lowongan tersimpan.', 'Listing changes saved.') : t('Lowongan eksternal diterbitkan.', 'External listing published.'));
+      retry();
+    }} />;
+  }
+
   return <div className="space-y-4">
+    {section === 'jobs' && <div className="flex justify-end">
+      <button type="button" onClick={() => openEditor()}
+        className={`inline-flex min-h-11 items-center justify-center gap-2 rounded-xl bg-indigo-700 px-4 text-sm font-semibold text-white hover:bg-indigo-800 ${focusRing}`}>
+        <Plus aria-hidden="true" className="h-4 w-4" />{t('Tambah lowongan eksternal', 'Add external listing')}
+      </button>
+    </div>}
+    {notice && <p role="status" className="rounded-xl bg-emerald-50 p-3 text-sm text-emerald-900">{notice}</p>}
+    {mutationError && <p role="alert" className="rounded-xl bg-rose-50 p-3 text-sm text-rose-900">{mutationError}</p>}
     <div className={`${card} flex flex-wrap items-end gap-4 p-4 sm:p-5`}>
       <form className="flex min-w-0 flex-1 flex-wrap items-end gap-2 sm:flex-nowrap" onSubmit={event => {
         event.preventDefault();
@@ -120,11 +174,20 @@ function Directory({ section, initialRole }: { section: AdminSection; initialRol
           <div className="min-w-0 break-words">
             <p className="font-semibold text-slate-950">{item.title || (section === 'accounts' ? item.subtitle : '—')}</p>
             {item.title && item.subtitle && <p className="mt-0.5 text-sm text-slate-600">{item.subtitle}</p>}
+            {item.externalUrl && <a href={item.externalUrl} target="_blank" rel="noopener noreferrer"
+              className={`mt-1 inline-flex items-center gap-1.5 rounded text-sm font-semibold text-indigo-800 hover:underline ${focusRing}`}>
+              JobStreet<ExternalLink aria-hidden="true" className="h-3.5 w-3.5" />
+            </a>}
           </div>
           <div><Status status={item.status} section={section} /></div>
           <div className="text-sm text-slate-600">
             {section === 'accounts' && item.date && <time dateTime={item.date}>{date.format(new Date(item.date))}</time>}
-            {item.total !== undefined && <span>{countLabel} <strong className="text-slate-950">{item.total}</strong></span>}
+            {item.externalUrl ? <div className="flex flex-wrap gap-1.5">
+              <button type="button" disabled={updating} className={buttonStyle} onClick={() => openEditor(item)}>{t('Edit', 'Edit')}</button>
+              <button type="button" disabled={updating} className={buttonStyle} onClick={() => void changeStatus(item)}>
+                {item.status === 'published' ? t('Tutup', 'Close') : t('Tayangkan', 'Publish')}
+              </button>
+            </div> : item.total !== undefined && <span>{countLabel} <strong className="text-slate-950">{item.total}</strong></span>}
           </div>
         </li>)}
       </ul>
@@ -224,6 +287,7 @@ function RolesAndAccess({ showAccounts }: { showAccounts: (role: AccountRole) =>
     { label: t('Terbitkan lowongan perusahaan sendiri', 'Publish own company jobs'), allowed: ['company'] },
     { label: t('Tinjau pelamar dan ubah tahap untuk lowongan sendiri', 'Review applicants and update stages for own jobs'), allowed: ['company'] },
     { label: t('Lihat daftar akun pengguna Lestari', 'View the Lestari user directory'), allowed: ['admin'] },
+    { label: t('Kelola lowongan eksternal', 'Manage external job listings'), allowed: ['admin'] },
     { label: t('Pantau tahapan lamaran lintas perusahaan', 'Monitor applications across employers'), allowed: ['admin'] },
   ];
   return <>

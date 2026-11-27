@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getDatabase, getSessionUser, sessionCookie } from '../../../database/store.mjs';
 import { adminFilters, adminPageSize, type AdminDiagnostics, type AdminSection } from '../../utils/admin';
+import { externalJobLimits, jobStreetUrl, type ExternalJobFields } from '../../utils/externalJobs';
 
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
@@ -13,7 +14,7 @@ const jobRows = `
          coalesce(j.details->>'company', '') AS subtitle,
          CASE WHEN j.status = 'published' AND j.deadline < (now() AT TIME ZONE 'Asia/Jakarta')::date
               THEN 'closed' ELSE j.status END AS status,
-         j.created_at AS date
+         j.created_at AS date, j.external_url AS "externalUrl", coalesce(j.details->>'location', '') AS location
   FROM jobs j
 `;
 
@@ -60,6 +61,55 @@ async function readDiagnostics(db: ReturnType<typeof getDatabase>): Promise<Admi
       heapBytes: heapUsed, rssBytes: rss,
     },
   };
+}
+
+export async function POST(request: NextRequest) {
+  try {
+    const user = await getSessionUser(request.cookies.get(sessionCookie)?.value);
+    if (!user) return respond({ error: 'unauthenticated' }, 401);
+    if (user.role !== 'admin') return respond({ error: 'forbidden' }, 403);
+
+    const input = await request.json().catch(() => null);
+    const id = input?.id;
+    if (id != null && (!Number.isInteger(id) || id < 1 || id > 2147483647)) return respond({ error: 'invalid_fields' }, 400);
+    const db = getDatabase();
+    if (input?.action === 'external-status' && id != null && ['published', 'closed'].includes(input.status)) {
+      const result = await db.query(`
+        UPDATE jobs SET status = $2, published_at = CASE
+          WHEN $2 = 'published' AND status = 'closed' THEN now() ELSE published_at END
+        WHERE id = $1 AND external_url IS NOT NULL RETURNING id
+      `, [id, input.status]);
+      return result.rowCount ? respond({ id }) : respond({ error: 'not_found' }, 404);
+    }
+    if (input?.action !== 'save-external-job') return respond({ error: 'invalid_fields' }, 400);
+    const url = typeof input.url === 'string' ? jobStreetUrl(input.url) : null;
+    if (!url) return respond({ error: 'invalid_url' }, 400);
+
+    const fields = {} as Omit<ExternalJobFields, 'url'>;
+    for (const field of Object.keys(externalJobLimits) as (keyof typeof externalJobLimits)[]) {
+      const value = typeof input[field] === 'string' ? input[field].trim() : '';
+      if (!value || value.length > externalJobLimits[field] || value.includes('\0')) return respond({ error: 'invalid_fields' }, 400);
+      fields[field] = value;
+    }
+    const details = JSON.stringify({
+      ...fields, category: 'External', type: '', salary: '', experienceLevel: '', tags: [], requirements: [], deafFriendlyScore: 0,
+    });
+    const result = id == null ? await db.query(`
+      WITH new_job AS (SELECT nextval(pg_get_serial_sequence('jobs', 'id'))::integer AS id)
+      INSERT INTO jobs (id, external_url, status, published_at, details)
+      SELECT id, $1, 'published', now(), $2::jsonb || jsonb_build_object('id', id) FROM new_job
+      RETURNING id
+    `, [url, details]) : await db.query(`
+      UPDATE jobs SET external_url = $2, details = $3::jsonb || jsonb_build_object('id', id)
+      WHERE id = $1 AND external_url IS NOT NULL RETURNING id
+    `, [id, url, details]);
+    return result.rowCount ? respond({ id: result.rows[0].id }, id == null ? 201 : 200) : respond({ error: 'not_found' }, 404);
+  } catch (failure) {
+    const error = failure as { code?: string; constraint?: string };
+    if (error.code === '23505' && error.constraint === 'jobs_external_url_idx') return respond({ error: 'duplicate_url' }, 409);
+    console.error('External listing unavailable:', error.code ?? 'unknown');
+    return respond({ error: 'unavailable' }, 500);
+  }
 }
 
 export async function GET(request: NextRequest) {

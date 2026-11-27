@@ -35,6 +35,7 @@ import {
   X,
   Download,
   ArrowRight,
+  ExternalLink,
   Target,
   ChevronRight,
   ChevronLeft,
@@ -80,6 +81,15 @@ interface Job {
   deafFriendlyScore: number;
   recommendationScore?: number;
   companyListing?: boolean;
+  externalUrl?: string;
+}
+
+function JobStreetLink({ url }: { url: string }) {
+  const { t } = useLanguage();
+  return <a href={url} target="_blank" rel="noopener noreferrer" onClick={event => event.stopPropagation()}
+    className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl bg-indigo-700 px-4 py-2 text-sm font-semibold text-white hover:bg-indigo-800 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-700">
+    {t('Lihat & lamar di JobStreet', 'View & apply on JobStreet')}<ExternalLink aria-hidden="true" className="h-4 w-4 shrink-0" />
+  </a>;
 }
 
 interface ApplicationStatus {
@@ -115,6 +125,7 @@ interface JobPortalProps {
 
 export default function JobPortalPage({ userAssessment }: JobPortalProps) {
   const { t } = useLanguage();
+  const externalNotice = t('Baca detail dan kirim lamaran di JobStreet.', 'Read the details and submit your application on JobStreet.');
   const [selectedJob, setSelectedJob] = useState<Job | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('all');
@@ -467,7 +478,7 @@ Application Date: ${new Date().toLocaleDateString()}`;
                         <div className="flex items-start justify-between gap-3 bg-black/20 p-5 sm:p-6">
                           <div className="min-w-0">
                             <div className="mb-2 flex flex-wrap items-center gap-2">
-                              <span className="rounded-full bg-white/15 px-2.5 py-1 text-xs font-semibold text-white">{job.category}</span>
+                              <span className="rounded-full bg-white/15 px-2.5 py-1 text-xs font-semibold text-white">{job.externalUrl ? 'JobStreet' : job.category}</span>
                               {job.urgency === 'high' && (
                                 <span className="rounded-full bg-red-100 px-2.5 py-1 text-xs font-semibold text-red-800">
                                   {t("🔥 Mendesak", "🔥 Urgent")}
@@ -499,7 +510,7 @@ Application Date: ${new Date().toLocaleDateString()}`;
                               
                               <div className="flex min-w-0 items-start gap-1.5">
                                 <Clock className="mt-0.5 h-4 w-4 shrink-0" />
-                                <span>{job.posted}</span>
+                                <span>{job.externalUrl ? t(`Ditambahkan ${job.posted}`, `Added ${job.posted}`) : job.posted}</span>
                               </div>
                               
                               {job.rating && (
@@ -528,7 +539,10 @@ Application Date: ${new Date().toLocaleDateString()}`;
                         </div>
                     </div>
 
-                    <div className="flex flex-1 flex-col p-5 sm:p-6">
+                    {job.externalUrl ? <div className="flex flex-1 flex-col gap-4 p-5 sm:p-6">
+                      <p className="text-sm text-slate-700">{externalNotice}</p>
+                      <div className="mt-auto"><JobStreetLink url={job.externalUrl} /></div>
+                    </div> : <div className="flex flex-1 flex-col p-5 sm:p-6">
                     {/* Job Type and Salary */}
                     <div className="mb-3 flex flex-wrap items-center gap-x-3 gap-y-2">
                       <div className="flex flex-wrap items-center gap-2">
@@ -635,7 +649,7 @@ Application Date: ${new Date().toLocaleDateString()}`;
                         </>
                       )}
                     </div>
-                    </div>
+                    </div>}
                   </article>
                 );
               })}
@@ -708,7 +722,11 @@ Application Date: ${new Date().toLocaleDateString()}`;
                     </div>
                   </div>
 
-                  <div className="p-5 sm:p-6">
+                  {selectedJob.externalUrl ? <div className="space-y-4 p-5 sm:p-6">
+                    <p className="flex items-center gap-2 text-sm text-slate-700"><MapPin aria-hidden="true" className="h-4 w-4 shrink-0 text-indigo-700" />{selectedJob.location}</p>
+                    <p className="rounded-xl bg-indigo-50 p-3 text-sm text-indigo-950">{externalNotice}</p>
+                    <JobStreetLink url={selectedJob.externalUrl} />
+                  </div> : <div className="p-5 sm:p-6">
                   {/* Quick Info */}
                   <div className="mb-6 grid gap-2 sm:grid-cols-2">
                     <div className="flex items-center text-gray-600 bg-gray-50 p-3 rounded-xl">
@@ -834,7 +852,7 @@ Application Date: ${new Date().toLocaleDateString()}`;
                       </div>
                     </div>
                   )}
-                  </div>
+                  </div>}
                 </div>
               )}
       </dialog>
