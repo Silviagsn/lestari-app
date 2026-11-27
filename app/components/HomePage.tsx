@@ -307,7 +307,10 @@ export default function HomePage({ setCurrentPage, onBrowse }: {
         </div>
       </section>
 
-      <CommunityStories canReview={Boolean(setCurrentPage)} />
+      <CommunityStories onOpenProfile={setCurrentPage ? () => {
+        setCurrentPage('profile');
+        window.scrollTo(0, 0);
+      } : undefined} />
 
       <CommunityStats onBrowse={setCurrentPage ?? onBrowse} />
 

@@ -4,15 +4,20 @@ import { useEffect, useState, type FormEvent } from 'react';
 import Link from 'next/link';
 import { MessageSquare, Star } from 'lucide-react';
 import { useLanguage } from './Language';
-import { reviewLimits, type CommunityReview, type CommunityReviews } from '../utils/communityReviews';
+import { maskedReviewName, reviewLimits, type OwnCommunityReview, type CommunityReviews } from '../utils/communityReviews';
 
 const stars = [1, 2, 3, 4, 5];
 const fields = 'w-full rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-sm text-slate-900 focus-visible:outline focus-visible:outline-2 focus-visible:outline-indigo-600';
 const primary = 'inline-flex min-h-11 items-center justify-center rounded-xl bg-indigo-700 px-4 py-2 text-sm font-semibold text-white hover:bg-indigo-800 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600 disabled:opacity-60';
-const emptyForm = { displayName: '', comment: '', rating: 0 };
+const emptyForm = { maskName: true, comment: '', rating: 0 };
 
-export default function CommunityStories({ canReview }: { canReview: boolean }) {
+function reviewForm(review: OwnCommunityReview | null) {
+  return review ? { maskName: review.maskName ?? true, comment: review.comment, rating: review.rating } : emptyForm;
+}
+
+export default function CommunityStories({ onOpenProfile }: { onOpenProfile?: () => void }) {
   const { locale, t } = useLanguage();
+  const canReview = Boolean(onOpenProfile);
   const [reviews, setReviews] = useState<CommunityReviews | null>(null);
   const [form, setForm] = useState(emptyForm);
   const [visible, setVisible] = useState(3);
@@ -22,6 +27,7 @@ export default function CommunityStories({ canReview }: { canReview: boolean }) 
   const [notice, setNotice] = useState<'saved' | 'removed' | ''>('');
   const [error, setError] = useState('');
   const date = new Intl.DateTimeFormat(locale === 'id' ? 'id-ID' : 'en-US', { dateStyle: 'medium', timeZone: 'Asia/Jakarta' });
+  const authorName = reviews?.authorName;
 
   useEffect(() => {
     const controller = new AbortController();
@@ -31,7 +37,7 @@ export default function CommunityStories({ canReview }: { canReview: boolean }) 
         const result: CommunityReviews = await response.json();
         if (controller.signal.aborted) return;
         setReviews(result);
-        setForm(result.own ?? emptyForm);
+        setForm(reviewForm(result.own));
       })
       .catch(() => { if (!controller.signal.aborted) setLoadError(true); });
     return () => controller.abort();
@@ -48,18 +54,20 @@ export default function CommunityStories({ canReview }: { canReview: boolean }) 
       const response = await fetch('/api/community-reviews', removing ? { method } : {
         method,
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ displayName: form.displayName, comment: form.comment, rating: form.rating }),
+        body: JSON.stringify({ maskName: form.maskName, comment: form.comment, rating: form.rating }),
       });
       if (!response.ok) {
-        setError(response.status === 401 ? 'session' : response.status === 400 ? 'invalid' : 'request');
+        setError(response.status === 401 ? 'session' : response.status === 400 ? 'invalid' :
+          response.status === 422 ? 'profile' : 'request');
         return;
       }
-      const saved: CommunityReview | null = removing ? null : await response.json();
+      const saved: OwnCommunityReview | null = removing ? null : await response.json();
       setReviews(previous => {
         const remaining = (previous?.items ?? []).filter(review => review.id !== previous?.own?.id && review.id !== saved?.id);
-        return { own: saved, items: saved ? [saved, ...remaining].slice(0, reviewLimits.latest) : remaining };
+        return { authorName: previous?.authorName ?? null, own: saved,
+          items: saved ? [saved, ...remaining].slice(0, reviewLimits.latest) : remaining };
       });
-      setForm(saved ?? emptyForm);
+      setForm(reviewForm(saved));
       setNotice(removing ? 'removed' : 'saved');
     } catch {
       setError('request');
@@ -131,12 +139,24 @@ export default function CommunityStories({ canReview }: { canReview: boolean }) 
             </> : reviews && (
               <form onSubmit={submit} className="mt-3">
                 <fieldset disabled={pending} className="grid gap-3">
-                  <p className="text-sm text-gray-600">{t('Nama tampilan, rating, dan komentar akan terlihat di beranda.', 'Your display name, rating and comment will appear on the homepage.')}</p>
-                  <label className="grid gap-1 text-sm font-medium text-gray-900">
-                    {t('Nama tampilan', 'Display name')}
-                    <input className={fields} required maxLength={reviewLimits.name} value={form.displayName}
-                      onChange={event => setForm({ ...form, displayName: event.target.value })} />
-                  </label>
+                  {authorName ? <div className="grid gap-2 rounded-xl border border-indigo-100 p-3">
+                    <p className="text-sm text-gray-600">{t('Nama ulasan diambil dari profil Lestari.', 'Your review uses the name from your Lestari profile.')}</p>
+                    <label className="flex items-center gap-2 text-sm font-medium text-gray-900">
+                      <input type="checkbox" checked={form.maskName}
+                        onChange={event => setForm({ ...form, maskName: event.target.checked })}
+                        className="h-4 w-4 shrink-0 accent-indigo-700" />
+                      {t('Samarkan nama profil', 'Mask my profile name')}
+                    </label>
+                    <p className="break-words text-sm text-gray-600" aria-live="polite">
+                      {t('Nama yang tampil di beranda', 'Name shown on the homepage')}{' '}
+                      <strong className="block text-gray-900">{form.maskName ? maskedReviewName(authorName) : authorName}</strong>
+                    </p>
+                  </div> : <div className="rounded-xl border border-indigo-100 p-3 text-sm text-gray-700">
+                    <p>{t('Isi nama di profil untuk menerbitkan ulasan.', 'Add your name to your profile to publish a review.')}</p>
+                    <button type="button" onClick={onOpenProfile} className="mt-1 min-h-10 font-semibold text-indigo-700 hover:underline">
+                      {t('Buka profil', 'Open profile')}
+                    </button>
+                  </div>}
                   <fieldset>
                     <legend className="mb-1 text-sm font-medium text-gray-900">{t('Rating', 'Rating')}</legend>
                     <div className="flex flex-wrap gap-1">
@@ -157,7 +177,7 @@ export default function CommunityStories({ canReview }: { canReview: boolean }) 
                   </label>
                   <p className="text-right text-xs text-gray-600">{form.comment.length}/{reviewLimits.comment}</p>
                   <div className="flex flex-wrap gap-2">
-                    <button type="submit" className={primary}>
+                    <button type="submit" disabled={!authorName} className={primary}>
                       {reviews.own ? t('Simpan perubahan', 'Save changes') : t('Terbitkan ulasan', 'Publish review')}
                     </button>
                     {reviews.own && <button type="button" onClick={() => void changeReview('DELETE')}
@@ -168,7 +188,8 @@ export default function CommunityStories({ canReview }: { canReview: boolean }) 
                 </fieldset>
                 {error && <p role="alert" className="mt-3 text-sm text-red-700">
                   {error === 'session' ? t('Silakan masuk kembali.', 'Please sign in again.') :
-                    error === 'invalid' ? t('Periksa nama tampilan, komentar, dan rating.', 'Check your display name, comment and rating.') :
+                    error === 'invalid' ? t('Periksa komentar dan rating.', 'Check your comment and rating.') :
+                    error === 'profile' ? t('Isi nama di profil sebelum menyimpan ulasan.', 'Add your name to your profile before saving the review.') :
                     t('Ulasan gagal diperbarui. Coba lagi.', 'Could not update your review. Try again.')}
                 </p>}
                 <p role="status" className="mt-3 text-sm text-gray-700">

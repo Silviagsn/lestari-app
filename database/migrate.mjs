@@ -2,7 +2,7 @@ import { readFile } from 'node:fs/promises';
 import { setTimeout as sleep } from 'node:timers/promises';
 import { getDatabase } from './store.mjs';
 
-const migrations = ['001_initial', '002_signup_rate_limits', '003_user_profiles', '004_google_accounts', '005_google_oauth_flows', '006_profile_avatars', '007_company_recruitment', '008_external_jobs', '009_company_job_removal', '010_community_reviews'];
+const migrations = ['001_initial', '002_signup_rate_limits', '003_user_profiles', '004_google_accounts', '005_google_oauth_flows', '006_profile_avatars', '007_company_recruitment', '008_external_jobs', '009_company_job_removal', '010_community_reviews', '011_community_review_identity'];
 const transientConnectionErrors = new Set([
   'ECONNREFUSED', 'ECONNRESET', 'ETIMEDOUT', 'EHOSTUNREACH', 'ENETUNREACH',
   'ENOTFOUND', 'EAI_AGAIN', '08001', '08006', '57P01', '57P03',
