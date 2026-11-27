@@ -24,7 +24,7 @@ const applicationColumns = `job_id AS "jobId", status,
 const enrollmentColumns = `workshop_id AS "workshopId", status, progress,
   enrolled_at AS "enrolledDate", last_activity AS "lastActivity"`;
 
-const openListings = "status = 'published' AND (deadline IS NULL OR deadline >= (now() AT TIME ZONE 'Asia/Jakarta')::date)";
+const openListings = "deleted_at IS NULL AND status = 'published' AND (deadline IS NULL OR deadline >= (now() AT TIME ZONE 'Asia/Jakarta')::date)";
 
 export async function GET(request: NextRequest, { params: { catalog } }: Context) {
   if (!isCatalog(catalog)) return error('Katalog tidak ditemukan.', 404);
@@ -43,7 +43,9 @@ export async function GET(request: NextRequest, { params: { catalog } }: Context
           FROM jobs WHERE ${openListings} ORDER BY published_at DESC NULLS LAST, id
         `)
       : db.query('SELECT details FROM workshops ORDER BY id'),
-    db.query(`SELECT ${id} AS id FROM ${saved} WHERE user_id = $1 ORDER BY ${id}`, [user.id]),
+    catalog === 'jobs'
+      ? db.query('SELECT s.job_id AS id FROM saved_jobs s JOIN jobs j ON j.id = s.job_id WHERE s.user_id = $1 AND j.deleted_at IS NULL ORDER BY s.job_id', [user.id])
+      : db.query(`SELECT ${id} AS id FROM ${saved} WHERE user_id = $1 ORDER BY ${id}`, [user.id]),
     catalog === 'jobs'
       ? db.query(`SELECT ${applicationColumns} FROM applications WHERE user_id = $1 ORDER BY applied_at DESC`, [user.id])
       : db.query(`SELECT ${enrollmentColumns} FROM enrollments WHERE user_id = $1 ORDER BY enrolled_at DESC`, [user.id]),

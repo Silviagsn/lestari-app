@@ -15,7 +15,7 @@ const jobRows = `
          CASE WHEN j.status = 'published' AND j.deadline < (now() AT TIME ZONE 'Asia/Jakarta')::date
               THEN 'closed' ELSE j.status END AS status,
          j.created_at AS date, j.external_url AS "externalUrl", coalesce(j.details->>'location', '') AS location
-  FROM jobs j
+  FROM jobs j WHERE j.deleted_at IS NULL
 `;
 
 const lists: Record<AdminSection, string> = {
@@ -132,9 +132,9 @@ export async function GET(request: NextRequest) {
           SELECT (SELECT count(*)::int FROM users WHERE role = 'jobseeker') AS jobseekers,
                  (SELECT count(*)::int FROM users WHERE role = 'company') AS companies,
                  (SELECT count(*)::int FROM users WHERE role = 'admin') AS admins,
-                 (SELECT count(*)::int FROM jobs WHERE status = 'published' AND (deadline IS NULL OR deadline >= (now() AT TIME ZONE 'Asia/Jakarta')::date)) AS published,
-                 (SELECT count(*)::int FROM jobs WHERE status = 'draft') AS drafts,
-                 (SELECT count(*)::int FROM jobs WHERE status = 'closed' OR (status = 'published' AND deadline < (now() AT TIME ZONE 'Asia/Jakarta')::date)) AS closed,
+                 (SELECT count(*)::int FROM jobs WHERE deleted_at IS NULL AND status = 'published' AND (deadline IS NULL OR deadline >= (now() AT TIME ZONE 'Asia/Jakarta')::date)) AS published,
+                 (SELECT count(*)::int FROM jobs WHERE deleted_at IS NULL AND status = 'draft') AS drafts,
+                 (SELECT count(*)::int FROM jobs WHERE deleted_at IS NULL AND (status = 'closed' OR (status = 'published' AND deadline < (now() AT TIME ZONE 'Asia/Jakarta')::date))) AS closed,
                  (SELECT count(*)::int FROM applications) AS applications,
                  (SELECT count(*)::int FROM workshops) AS workshops,
                  (SELECT count(*)::int FROM enrollments) AS enrollments

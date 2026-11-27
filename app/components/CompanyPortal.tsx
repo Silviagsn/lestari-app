@@ -62,12 +62,15 @@ function ListingBadge({ job }: { job: CompanyJob }) {
   </span>;
 }
 
-function Listings({ jobs, openEditor, openApplicants, closeJob, busy }: {
+function Listings({ jobs, openEditor, openApplicants, closeJob, deleteJob, busy }: {
   jobs: CompanyJob[]; openEditor: (job: CompanyJob) => void; openApplicants: (id: number) => void;
-  closeJob?: (id: number) => void; busy: boolean;
+  closeJob?: (id: number) => void; deleteJob?: (id: number) => void; busy: boolean;
 }) {
   const { t } = useLanguage();
+  const [deleting, setDeleting] = useState<CompanyJob>();
+  const dialog = useRef<HTMLDialogElement>(null);
   return jobs.length ? (
+    <>
     <ul className="divide-y divide-slate-100">
       {jobs.map(job => (
         <li key={job.id} className="grid gap-3 py-4 first:pt-1 last:pb-0 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-center">
@@ -86,10 +89,33 @@ function Listings({ jobs, openEditor, openApplicants, closeJob, busy }: {
             {closeJob && job.status === 'published' && (
               <button type="button" disabled={busy} onClick={() => closeJob(job.id)} className="min-h-9 rounded-lg px-2 text-sm font-semibold text-red-800 hover:bg-red-50 disabled:opacity-60">{t("Tutup", "Close")}</button>
             )}
+            {deleteJob && <button type="button" disabled={busy} aria-haspopup="dialog"
+              className="min-h-9 rounded-lg border border-rose-200 px-3 text-sm font-semibold text-rose-800 hover:bg-rose-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-rose-700 disabled:opacity-60"
+              onClick={() => { setDeleting(job); dialog.current?.showModal(); }}>{t('Hapus', 'Delete')}</button>}
           </div>
         </li>
       ))}
     </ul>
+    {deleteJob && <dialog ref={dialog} aria-labelledby="delete-listing-title" aria-describedby="delete-listing-description"
+      onClose={() => setDeleting(undefined)}
+      className="m-auto max-h-[85dvh] w-[calc(100%-2rem)] max-w-md overflow-y-auto rounded-3xl border border-rose-100 bg-white p-5 shadow-2xl backdrop:bg-slate-950/50 sm:p-6">
+      <h2 id="delete-listing-title" className="text-xl font-extrabold text-slate-950">{t('Hapus lowongan?', 'Delete this job?')}</h2>
+      <p className="mt-2 break-words font-semibold text-slate-900">{deleting?.title}</p>
+      <p id="delete-listing-description" className="mt-2 text-sm leading-relaxed text-slate-700">
+        {t('Lowongan akan hilang dari daftar perusahaan dan katalog pencari kerja. Lamaran yang sudah masuk tetap tersedia di menu Pelamar.', 'The job will be removed from your listings and the jobseeker catalog. Existing applications remain available in Applicants.')}
+      </p>
+      <div className="mt-5 flex flex-wrap justify-end gap-2">
+        <button type="button" onClick={() => dialog.current?.close()} className={companySecondary}>{t('Batal', 'Cancel')}</button>
+        <button type="button" disabled={!deleting || busy} onClick={() => {
+          if (!deleting) return;
+          dialog.current?.close();
+          deleteJob(deleting.id);
+        }} className="min-h-11 rounded-xl bg-rose-700 px-4 text-sm font-bold text-white hover:bg-rose-800 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-rose-700 disabled:opacity-60">
+          {t('Hapus lowongan', 'Delete job')}
+        </button>
+      </div>
+    </dialog>}
+    </>
   ) : <p className="py-5 text-sm text-slate-600">{t("Belum ada lowongan di tampilan ini.", "There are no jobs in this view yet.")}</p>;
 }
 
@@ -240,6 +266,12 @@ export default function CompanyPortal({ logout, authError }: { logout: () => voi
   const jobs = data?.jobs.filter(job => listingFilter === 'all' || listingState(job) === listingFilter) ?? [];
   const applicants = data?.applicants.filter(item => (applicantFilter === 'all' || String(item.jobId) === applicantFilter) &&
     (applicantStatus === 'all' || item.status === applicantStatus)) ?? [];
+  const applicantJobs = new Map(data?.jobs.map(job => [job.id, job.title]));
+  for (const applicant of data?.applicants ?? []) {
+    if (!applicantJobs.has(applicant.jobId) && applicant.jobTitle) {
+      applicantJobs.set(applicant.jobId, t(`${applicant.jobTitle} (dihapus)`, `${applicant.jobTitle} (deleted)`));
+    }
+  }
 
   function showJobs(status: ListingStatus | 'all' = 'all') {
     setListingFilter(status);
@@ -393,7 +425,8 @@ export default function CompanyPortal({ logout, authError }: { logout: () => voi
                 ))}
               </div>
               <Listings jobs={jobs} openEditor={openEditor} openApplicants={openApplicants} busy={busy}
-                closeJob={id => void mutate({ action: 'close-job', id }, 'Lowongan ditutup. Lamaran yang masuk tetap bisa ditinjau.')} />
+                closeJob={id => void mutate({ action: 'close-job', id }, 'Lowongan ditutup. Lamaran yang masuk tetap bisa ditinjau.')}
+                deleteJob={id => void mutate({ action: 'delete-job', id }, t('Lowongan dihapus.', 'Job deleted.'))} />
             </section>}
 
             {data && view === 'editor' && <CompanyJobForm key={editing?.id ?? 'new'} job={editing} companyName={data.companyName} busy={busy}
@@ -407,7 +440,7 @@ export default function CompanyPortal({ logout, authError }: { logout: () => voi
                 <label className="grid gap-1.5 text-sm font-bold">{t('Filter lowongan', 'Filter by job')}
                   <select value={applicantFilter} onChange={event => setApplicantFilter(event.target.value)} className={companyInput}>
                     <option value="all">{t("Semua lowongan", "All jobs")}</option>
-                    {data.jobs.map(job => <option key={job.id} value={job.id}>{job.title}</option>)}
+                    {[...applicantJobs].map(([id, jobTitle]) => <option key={id} value={id}>{jobTitle}</option>)}
                   </select>
                 </label>
                 <label className="grid gap-1.5 text-sm font-bold">{t('Filter tahap seleksi', 'Filter by hiring stage')}
@@ -418,7 +451,7 @@ export default function CompanyPortal({ logout, authError }: { logout: () => voi
                 </label>
                 </div>
                 {applicants.length ? applicants.map(applicant => <ApplicantCard key={`${applicant.jobId}-${applicant.applicantId}`}
-                  applicant={applicant} jobTitle={data.jobs.find(job => job.id === applicant.jobId)?.title ?? ''}
+                  applicant={applicant} jobTitle={applicantJobs.get(applicant.jobId) ?? ''}
                   highlighted={focusedApplicant?.jobId === applicant.jobId && focusedApplicant?.applicantId === applicant.applicantId ? focusedApplicant : undefined}
                   busy={busy} update={status => void mutate({ action: 'applicant-status', jobId: applicant.jobId, applicantId: applicant.applicantId, status }, t("Status lamaran diperbarui.", "Application status updated."))} />
                 ) : <p className={`${companyCard} text-sm text-slate-600`}>{t("Belum ada lamaran untuk lowongan yang dipilih.", "There are no applications for the selected job.")}</p>}

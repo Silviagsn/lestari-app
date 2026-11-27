@@ -35,7 +35,7 @@ export const emptyJob: JobDraft = {
 
 export type CompanyJob = JobDraft & { id: number; status: ListingStatus; applicants: number; createdAt: string; expired: boolean };
 export type CompanyApplicant = {
-  jobId: number; applicantId: number; name: string; email: string; phone: string;
+  jobId: number; jobTitle?: string; applicantId: number; name: string; email: string; phone: string;
   coverLetter: string; communicationPreference: string; availabilityDate: string | null;
   salaryExpectation: string; status: ApplicantStatus; appliedAt: string;
 };

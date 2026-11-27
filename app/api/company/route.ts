@@ -22,10 +22,10 @@ export async function GET(request: NextRequest) {
       SELECT j.id, j.details, j.status, j.created_at AS "createdAt",
              coalesce(j.deadline < (now() AT TIME ZONE 'Asia/Jakarta')::date, false) AS expired,
              (SELECT count(*)::integer FROM applications a WHERE a.job_id = j.id) AS applicants
-      FROM jobs j WHERE j.company_user_id = $1 ORDER BY j.created_at DESC, j.id DESC
+      FROM jobs j WHERE j.company_user_id = $1 AND j.deleted_at IS NULL ORDER BY j.created_at DESC, j.id DESC
     `, [user.id]),
     db.query(`
-      SELECT a.job_id AS "jobId", a.user_id AS "applicantId", a.name, a.email, a.phone,
+      SELECT a.job_id AS "jobId", j.details->>'title' AS "jobTitle", a.user_id AS "applicantId", a.name, a.email, a.phone,
              a.cover_letter AS "coverLetter", a.communication_preference AS "communicationPreference",
              a.availability_date::text AS "availabilityDate", a.salary_expectation AS "salaryExpectation",
              a.status, a.applied_at AS "appliedAt"
@@ -56,8 +56,16 @@ export async function POST(request: NextRequest) {
     return result.rowCount ? NextResponse.json({ ok: true }, { headers }) : error('Lamaran tidak ditemukan.', 404);
   }
 
+  if (data?.action === 'delete-job' && validId(data.id)) {
+    const result = await db.query(`
+      UPDATE jobs SET status = 'closed', deleted_at = coalesce(deleted_at, now())
+      WHERE id = $1 AND company_user_id = $2
+    `, [data.id, user.id]);
+    return result.rowCount ? NextResponse.json({ ok: true }, { headers }) : error('Lowongan tidak ditemukan.', 404);
+  }
+
   if (data?.action === 'close-job' && validId(data.id)) {
-    const result = await db.query("UPDATE jobs SET status = 'closed' WHERE id = $1 AND company_user_id = $2 AND status <> 'draft'", [data.id, user.id]);
+    const result = await db.query("UPDATE jobs SET status = 'closed' WHERE id = $1 AND company_user_id = $2 AND deleted_at IS NULL AND status <> 'draft'", [data.id, user.id]);
     return result.rowCount ? NextResponse.json({ ok: true }, { headers }) : error('Lowongan tidak ditemukan.', 404);
   }
 
@@ -111,7 +119,7 @@ export async function POST(request: NextRequest) {
         UPDATE jobs SET status = $3, deadline = $4,
           published_at = CASE WHEN $3 = 'published' THEN coalesce(published_at, now()) ELSE published_at END,
           details = $5::jsonb || jsonb_build_object('id', id)
-        WHERE id = $1 AND company_user_id = $2 AND ($3 = 'published' OR status = $3) RETURNING id
+        WHERE id = $1 AND company_user_id = $2 AND deleted_at IS NULL AND ($3 = 'published' OR status = $3) RETURNING id
       `, [data.id, user.id, data.status, draft.deadline || null, details]);
   return result.rowCount ? NextResponse.json({ id: result.rows[0].id }, { headers }) : error('Lowongan tidak ditemukan.', 404);
 }
