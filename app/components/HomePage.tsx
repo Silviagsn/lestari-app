@@ -6,7 +6,6 @@ import Link from 'next/link';
 import React, { useState, useEffect } from 'react';
 import { 
   ChevronRight, 
-  Star, 
   Play, 
   Eye,
   Hand,
@@ -24,6 +23,7 @@ import { features } from './Features'; // Disesuaikan dengan F besar
 import type { PublicCatalog } from './PublicHeader';
 import WebsiteGuide from './WebsiteGuide';
 import CommunityStats from './CommunityStats';
+import CommunityStories from './CommunityStories';
 
 const homeAction = 'inline-flex min-h-12 items-center justify-center gap-2 rounded-2xl px-6 py-3 font-semibold shadow-sm focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-700';
 const featureAction = 'inline-flex min-h-10 items-center gap-1.5 rounded-lg text-left font-semibold text-indigo-700 after:absolute after:inset-0 hover:underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-700';
@@ -35,22 +35,13 @@ export default function HomePage({ setCurrentPage, onBrowse }: {
   const { t } = useLanguage();
   const [currentFeature, setCurrentFeature] = useState<number>(0);
   const [isVisible, setIsVisible] = useState<boolean>(false);
-  const [currentTestimonial, setCurrentTestimonial] = useState<number>(0);
 
   useEffect(() => {
     setIsVisible(true);
     const interval = setInterval(() => {
       setCurrentFeature((prev) => (prev + 1) % features.length);
     }, 5000);
-    
-    const testimonialInterval = setInterval(() => {
-      setCurrentTestimonial((prev) => (prev + 1) % testimonials.length);
-    }, 4000);
-    
-    return () => {
-      clearInterval(interval);
-      clearInterval(testimonialInterval);
-    };
+    return () => clearInterval(interval);
   }, []);
 
   const accessibilityFeatures = [
@@ -81,30 +72,6 @@ export default function HomePage({ setCurrentPage, onBrowse }: {
       description: "Visual notifications and vibration alerts for important updates",
       color: "bg-orange-100 text-orange-600",
       shadow: "shadow-orange-200"
-    }
-  ];
-
-  const testimonials = [
-    {
-      name: "Sarah Chen",
-      role: "Software Developer",
-      company: "TechCorp",
-      quote: "Lestari helped me find my dream job in tech. The accessibility features made job searching so much easier!",
-      rating: 5
-    },
-    {
-      name: "Marcus Johnson",
-      role: "UX Designer",
-      company: "DesignStudio",
-      quote: "The workshops are amazing! I learned new skills with full ASL support and visual tutorials.",
-      rating: 5
-    },
-    {
-      name: "Emily Rodriguez",
-      role: "Data Analyst",
-      company: "Analytics Pro",
-      quote: "The mental health support and community aspect of Lestari has been life-changing for me.",
-      rating: 5
     }
   ];
 
@@ -340,68 +307,7 @@ export default function HomePage({ setCurrentPage, onBrowse }: {
         </div>
       </section>
 
-      {/* Testimonials Section */}
-      <section className="py-16 px-4 sm:px-6 lg:px-8 bg-gradient-to-br from-indigo-50 to-purple-50 relative overflow-hidden">
-        <div className="absolute inset-0 opacity-30">
-          <div className="absolute top-0 left-0 w-96 h-96 bg-gradient-to-br from-indigo-300 to-purple-300 rounded-full blur-3xl"></div>
-          <div className="absolute bottom-0 right-0 w-96 h-96 bg-gradient-to-br from-purple-300 to-pink-300 rounded-full blur-3xl"></div>
-        </div>
-        
-        <div className="max-w-4xl mx-auto relative">
-          <div className="text-center mb-12">
-            <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
-              {t("Cerita sukses", "Success Stories")}
-            </h2>
-            <p className="text-xl text-gray-600">
-              {t("Dengarkan cerita dari komunitas", "Hear from our community members")}
-            </p>
-          </div>
-          
-          <div className="relative">
-            <div className="bg-white rounded-3xl p-8 shadow-2xl border border-gray-100 transform hover:scale-[1.02] transition-all duration-300 relative overflow-hidden">
-              <div className="absolute inset-0 bg-gradient-to-br from-transparent via-transparent to-indigo-50 opacity-50"></div>
-              
-              <div className="relative z-10">
-                <div className="flex items-center space-x-4 mb-6">
-                  <div className="w-16 h-16 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-full flex items-center justify-center text-white font-bold text-xl shadow-lg">
-                    {testimonials[currentTestimonial].name.charAt(0)}
-                  </div>
-                  <div>
-                    <h4 className="text-lg font-semibold text-gray-900">
-                      {testimonials[currentTestimonial].name}
-                    </h4>
-                    <p className="text-gray-600">
-                      {testimonials[currentTestimonial].role} at {testimonials[currentTestimonial].company}
-                    </p>
-                  </div>
-                  <div className="ml-auto flex space-x-1">
-                    {[...Array(testimonials[currentTestimonial].rating)].map((_, i) => (
-                      <Star key={i} className="w-5 h-5 text-yellow-400 fill-current drop-shadow-sm" />
-                    ))}
-                  </div>
-                </div>
-                <blockquote className="text-xl text-gray-700 italic leading-relaxed">
-                  "{testimonials[currentTestimonial].quote}"
-                </blockquote>
-              </div>
-            </div>
-            
-            <div className="flex justify-center space-x-3 mt-8">
-              {testimonials.map((_, index) => (
-                <button
-                  key={index}
-                  onClick={() => setCurrentTestimonial(index)}
-                  className={`h-3 rounded-full transition-all duration-300 shadow-md hover:shadow-lg transform hover:scale-110 cursor-pointer ${
-                    currentTestimonial === index 
-                      ? 'bg-gradient-to-r from-indigo-600 to-purple-600 w-8' 
-                      : 'bg-gray-300 w-3 hover:bg-gray-400'
-                  }`}
-                />
-              ))}
-            </div>
-          </div>
-        </div>
-      </section>
+      <CommunityStories canReview={Boolean(setCurrentPage)} />
 
       <CommunityStats onBrowse={setCurrentPage ?? onBrowse} />
 
