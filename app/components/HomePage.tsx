@@ -6,7 +6,6 @@ import Link from 'next/link';
 import React, { useState, useEffect } from 'react';
 import { 
   ChevronRight, 
-  Users, 
   Star, 
   Play, 
   Eye,
@@ -14,7 +13,6 @@ import {
   MessageSquare,
   Volume2,
   BookOpen,
-  Briefcase,
   Heart,
   Zap,
   Shield,
@@ -25,6 +23,7 @@ import {
 import { features } from './Features'; // Disesuaikan dengan F besar
 import type { PublicCatalog } from './PublicHeader';
 import WebsiteGuide from './WebsiteGuide';
+import CommunityStats from './CommunityStats';
 
 const homeAction = 'inline-flex min-h-12 items-center justify-center gap-2 rounded-2xl px-6 py-3 font-semibold shadow-sm focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-700';
 const featureAction = 'inline-flex min-h-10 items-center gap-1.5 rounded-lg text-left font-semibold text-indigo-700 after:absolute after:inset-0 hover:underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-700';
@@ -53,13 +52,6 @@ export default function HomePage({ setCurrentPage, onBrowse }: {
       clearInterval(testimonialInterval);
     };
   }, []);
-
-  const stats = [
-    { number: "2,500+", label: "Jobs Posted", color: "text-indigo-600", icon: <Briefcase className="w-6 h-6" /> },
-    { number: "1,200+", label: "Active Users", color: "text-purple-600", icon: <Users className="w-6 h-6" /> },
-    { number: "98%", label: "Satisfaction Rate", color: "text-green-600", icon: <Star className="w-6 h-6" /> },
-    { number: "150+", label: "Workshops", color: "text-blue-600", icon: <BookOpen className="w-6 h-6" /> }
-  ];
 
   const accessibilityFeatures = [
     {
@@ -411,34 +403,7 @@ export default function HomePage({ setCurrentPage, onBrowse }: {
         </div>
       </section>
 
-      {/* Stats Section */}
-      <section className="py-16 px-4 sm:px-6 lg:px-8 bg-white relative">
-        <div className="max-w-7xl mx-auto text-center">
-          <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
-            {t("Dipercaya komunitas", "Trusted by the Community")}
-          </h2>
-          <p className="text-xl text-gray-600 mb-12">
-            See how we're making a difference every day
-          </p>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
-            {stats.map((stat, index) => (
-              <div key={index} className="bg-gradient-to-br from-white to-gray-50 rounded-3xl p-6 shadow-xl hover:shadow-2xl transition-all duration-500 transform hover:-translate-y-3 hover:scale-105 border border-gray-100 group relative overflow-hidden">
-                <div className="absolute inset-0 bg-gradient-to-br from-transparent to-indigo-50 opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
-                
-                <div className="relative z-10">
-                  <div className={`${stat.color} mb-4 flex justify-center transform group-hover:scale-110 transition-transform duration-300`}>
-                    {stat.icon}
-                  </div>
-                  <div className={`text-3xl md:text-4xl font-bold ${stat.color} mb-2 group-hover:scale-110 transition-transform duration-300`}>
-                    {stat.number}
-                  </div>
-                  <div className="text-gray-600 font-medium">{stat.label}</div>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
+      <CommunityStats onBrowse={setCurrentPage ?? onBrowse} />
 
       {/* CTA Section */}
       <section className="py-16 px-4 sm:px-6 lg:px-8 bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600 relative overflow-hidden">

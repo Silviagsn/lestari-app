@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getDatabase, getSessionUser, sessionCookie } from '../../../../database/store.mjs';
 import { isOptionalDate } from '../../../utils/recruitment';
+import { openListings } from '../openListings';
 
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
@@ -23,8 +24,6 @@ const applicationColumns = `job_id AS "jobId", status,
   (SELECT details->>'title' FROM jobs WHERE jobs.id = applications.job_id) AS title`;
 const enrollmentColumns = `workshop_id AS "workshopId", status, progress,
   enrolled_at AS "enrolledDate", last_activity AS "lastActivity"`;
-
-const openListings = "deleted_at IS NULL AND status = 'published' AND (deadline IS NULL OR deadline >= (now() AT TIME ZONE 'Asia/Jakarta')::date)";
 
 export async function GET(request: NextRequest, { params: { catalog } }: Context) {
   if (!isCatalog(catalog)) return error('Katalog tidak ditemukan.', 404);
