@@ -57,6 +57,7 @@ export async function GET(request: NextRequest) {
     }
     if (account.role !== flow.role) return failure('wrongRole');
     const token = await createSession(account.id, request.cookies.get(sessionCookie)?.value);
+    if (!token) return failure('failed');
     const response = redirect('/');
     setSessionCookie(response, token, config.secure);
     return response;

@@ -29,11 +29,11 @@ export async function POST(request: NextRequest) {
     SELECT id, role, password_hash FROM users
     WHERE role = $1 AND (email = $2 OR ($1 = 'company' AND phone = $3))
   `, [data.role, identifier, identifier.replace(/[\s()-]/g, '')]);
-  if (!(await verifyPassword(data.password, user?.password_hash)) || !user) {
-    return NextResponse.json({ error: 'Email, nomor telepon, kata sandi, atau peran tidak cocok.' }, { status: 401 });
-  }
+  const invalidLogin = () => NextResponse.json({ error: 'Email, nomor telepon, kata sandi, atau peran tidak cocok.' }, { status: 401 });
+  if (!(await verifyPassword(data.password, user?.password_hash)) || !user) return invalidLogin();
 
-  const token = await createSession(user.id, request.cookies.get(sessionCookie)?.value);
+  const token = await createSession(user.id, request.cookies.get(sessionCookie)?.value, user.password_hash);
+  if (!token) return invalidLogin();
   const response = NextResponse.json({ role: user.role });
   setSessionCookie(response, token, request.nextUrl.protocol === 'https:' ||
     request.headers.get('x-forwarded-proto') === 'https');

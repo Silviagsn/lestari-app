@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation';
 import PublicHome, { PublicHeader } from './PublicHome';
 import { useLanguage } from './Language';
 import Header from './Header';
+import ChangePasswordPage from './ChangePasswordPage';
 import HomePage from './HomePage';
 import JobPortalPage from './JobPortal';
 import WorkshopPage from './Workshop';
@@ -23,6 +24,7 @@ export default function LestariApp({ initialLogin = false }: { initialLogin?: bo
   const router = useRouter();
   const [showLogin, setShowLogin] = useState(initialLogin);
   const [currentPage, setCurrentPage] = useState('home');
+  const [theme, setTheme] = useState<'light' | 'dark'>('light');
   const [activeTool, setActiveTool] = useState<FloatingTool | null>(null);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
 
@@ -39,6 +41,18 @@ export default function LestariApp({ initialLogin = false }: { initialLogin?: bo
   const [registered, setRegistered] = useState(false);
   const [googleAvailable, setGoogleAvailable] = useState(false);
   const loginError = authError ? t(authError, 'Could not sign in. Check your details and try again.') : googleErrorMessage(oauthError, locale);
+
+  useEffect(() => {
+    try {
+      if (localStorage.getItem('lestari.theme') === 'dark') setTheme('dark');
+    } catch {}
+  }, []);
+
+  function toggleTheme() {
+    const next = theme === 'dark' ? 'light' : 'dark';
+    setTheme(next);
+    try { localStorage.setItem('lestari.theme', next); } catch {}
+  }
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -389,6 +403,8 @@ export default function LestariApp({ initialLogin = false }: { initialLogin?: bo
     switch (currentPage) {
       case 'profile':
         return <ProfilePage onNavigate={setCurrentPage} />;
+      case 'password':
+        return <ChangePasswordPage onBack={() => setCurrentPage('profile')} />;
       case 'job-portal':
         return <JobPortalPage />;
       case 'workshop':
@@ -403,12 +419,14 @@ export default function LestariApp({ initialLogin = false }: { initialLogin?: bo
 
   // Tampilan Utama Setelah Login
   return (
-    <div className="min-h-screen bg-[#EEF2FF] pb-16">
+    <div className="lestari-portal min-h-screen bg-[#EEF2FF] pb-16" data-theme={theme}>
       <Header
         currentPage={currentPage}
         setCurrentPage={setCurrentPage}
         features={features.filter(feature => feature.page !== 'mental-health' && feature.page !== 'speech-to-text')}
         onLogout={handleLogout}
+        theme={theme}
+        onThemeChange={toggleTheme}
       />
       {authError && <p role="alert" className="p-4 text-center text-sm text-red-700">{authError}</p>}
       {renderPage()}

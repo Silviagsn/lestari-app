@@ -54,16 +54,44 @@ export async function createUser(email, role, password, phone = null) {
 const hashToken = (token) => createHash('sha256').update(token).digest('hex');
 const validToken = (token) => typeof token === 'string' && /^[a-f0-9]{64}$/.test(token);
 
-export async function createSession(userId, previousToken) {
+export async function createSession(userId, previousToken, expectedPasswordHash = null) {
   const token = randomBytes(32).toString('hex');
-  await getDatabase().query(`
-    WITH revoked AS (
-      DELETE FROM sessions WHERE expires_at <= now() OR token_hash = $4
+  const result = await getDatabase().query(`
+    WITH account AS (
+      SELECT id FROM users WHERE id = $2 AND ($5::text IS NULL OR password_hash = $5) FOR SHARE
+    ), revoked AS (
+      DELETE FROM sessions WHERE expires_at <= now() OR (token_hash = $4 AND EXISTS (SELECT 1 FROM account))
     )
     INSERT INTO sessions (token_hash, user_id, expires_at)
-    VALUES ($1, $2, now() + $3 * interval '1 second')
-  `, [hashToken(token), userId, sessionLifetime, validToken(previousToken) ? hashToken(previousToken) : null]);
-  return token;
+    SELECT $1, id, now() + $3 * interval '1 second' FROM account
+  `, [hashToken(token), userId, sessionLifetime, validToken(previousToken) ? hashToken(previousToken) : null, expectedPasswordHash]);
+  return result.rowCount ? token : null;
+}
+
+export async function replacePassword(userId, token, previousHash, nextHash) {
+  if (!validToken(token)) return false;
+  const client = await getDatabase().connect();
+  const currentSession = hashToken(token);
+  try {
+    await client.query('BEGIN');
+    const updated = await client.query(`
+      UPDATE users SET password_hash = $3 WHERE id = $1 AND password_hash = $2 AND EXISTS (
+        SELECT 1 FROM sessions WHERE user_id = $1 AND token_hash = $4 AND expires_at > now()
+      )
+    `, [userId, previousHash, nextHash, currentSession]);
+    if (!updated.rowCount) {
+      await client.query('ROLLBACK');
+      return false;
+    }
+    await client.query('DELETE FROM sessions WHERE user_id = $1 AND token_hash <> $2', [userId, currentSession]);
+    await client.query('COMMIT');
+    return true;
+  } catch (error) {
+    await client.query('ROLLBACK');
+    throw error;
+  } finally {
+    client.release();
+  }
 }
 
 export async function getSessionUser(token) {
