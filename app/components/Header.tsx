@@ -63,10 +63,10 @@ export default function Header({ currentPage, setCurrentPage, features, onLogout
     <div className="mx-auto max-w-7xl px-1.5 sm:px-6 lg:px-8">
       <div className="flex min-h-16 flex-wrap items-center justify-between gap-x-1.5 gap-y-1 py-1.5 sm:gap-4">
         <button type="button" onClick={() => navigate('home')} className={`flex min-h-11 shrink-0 items-center gap-1.5 rounded-xl sm:gap-2.5 ${focus}`}>
-          <span className="grid h-8 w-8 shrink-0 place-items-center rounded-xl bg-gradient-to-br from-indigo-600 to-purple-700 text-white shadow-sm sm:h-10 sm:w-10">
+          <span className="grid h-7 w-7 shrink-0 place-items-center rounded-xl bg-gradient-to-br from-indigo-600 to-purple-700 text-white shadow-sm sm:h-10 sm:w-10">
             <EarOff aria-hidden="true" className="h-4 w-4 sm:h-5 sm:w-5" />
           </span>
-          <span className="text-base font-extrabold tracking-tight text-indigo-800 sm:text-xl">Lestari</span>
+          <span className="text-sm font-extrabold tracking-tight text-indigo-800 sm:text-xl">Lestari</span>
         </button>
         <nav aria-label={t('Navigasi utama', 'Main navigation')} className="ml-auto hidden items-center gap-1 lg:flex">{links()}</nav>
         <div className="ml-auto flex shrink-0 items-center gap-0.5 sm:gap-2 lg:ml-0">
