@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import PublicHome, { PublicHeader } from './PublicHome';
+import { PublicHeader } from './PublicHeader';
 import { useLanguage } from './Language';
 import Header from './Header';
 import ChangePasswordPage from './ChangePasswordPage';
@@ -143,7 +143,10 @@ export default function LestariApp({ initialLogin = false }: { initialLogin?: bo
     if (isAuthenticated && showLogin) router.replace('/');
   }, [isAuthenticated, showLogin, router]);
 
-  if (!isAuthenticated && !showLogin) return <PublicHome />;
+  if (!isAuthenticated && !showLogin) return <>
+    <PublicHeader />
+    <main><HomePage /></main>
+  </>;
 
   // Tampilan Login
   if (!isAuthenticated) {

@@ -1,6 +1,7 @@
 'use client';
 
 import { useLanguage } from './Language';
+import Link from 'next/link';
 
 import React, { useState, useEffect } from 'react';
 import { 
@@ -24,7 +25,10 @@ import {
 import { features } from './Features'; // Disesuaikan dengan F besar
 import WebsiteGuide from './WebsiteGuide';
 
-export default function HomePage({ setCurrentPage }: { setCurrentPage: (page: string) => void }) {
+const homeAction = 'inline-flex min-h-12 items-center justify-center gap-2 rounded-2xl px-6 py-3 font-semibold shadow-sm focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-700';
+const featureAction = 'inline-flex min-h-10 items-center gap-1.5 rounded-lg text-left font-semibold text-indigo-700 after:absolute after:inset-0 hover:underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-700';
+
+export default function HomePage({ setCurrentPage }: { setCurrentPage?: (page: string) => void }) {
   const { t } = useLanguage();
   const [currentFeature, setCurrentFeature] = useState<number>(0);
   const [isVisible, setIsVisible] = useState<boolean>(false);
@@ -195,7 +199,12 @@ export default function HomePage({ setCurrentPage }: { setCurrentPage: (page: st
             </div>
             
             <div className="flex flex-wrap justify-center gap-3">
-              <WebsiteGuide navigate={setCurrentPage} />
+              {setCurrentPage ? <WebsiteGuide navigate={setCurrentPage} /> : <>
+                <Link href="/daftar" className={`${homeAction} bg-gradient-to-r from-indigo-700 to-violet-700 text-white hover:from-indigo-800 hover:to-violet-800`}>
+                  {t('Daftar', 'Sign up')}<ChevronRight aria-hidden="true" className="h-5 w-5" />
+                </Link>
+                <Link href="/masuk" className={`${homeAction} border border-indigo-300 bg-white text-indigo-900 hover:bg-indigo-50`}>{t('Masuk', 'Sign in')}</Link>
+              </>}
               <button 
                 onClick={() => document.getElementById('features')?.scrollIntoView({ behavior: 'smooth' })}
                 className="group border-2 border-indigo-600 text-indigo-600 px-8 py-4 rounded-2xl font-semibold hover:bg-indigo-600 hover:text-white transition-all duration-300 shadow-lg hover:shadow-xl transform hover:scale-105 hover:-translate-y-1 flex items-center justify-center space-x-2 bg-white cursor-pointer"
@@ -239,7 +248,7 @@ export default function HomePage({ setCurrentPage }: { setCurrentPage: (page: st
       </section>
 
       {/* Features Section */}
-      <section id="features" className="py-16 px-4 sm:px-6 lg:px-8 bg-gradient-to-br from-gray-50 to-indigo-50 relative overflow-hidden">
+      <section id="features" className="scroll-mt-24 py-16 px-4 sm:px-6 lg:px-8 bg-gradient-to-br from-gray-50 to-indigo-50 relative overflow-hidden">
         <div className="absolute inset-0 opacity-40">
           <div className="absolute top-10 right-10 w-32 h-32 bg-gradient-to-br from-indigo-200 to-purple-200 rounded-full blur-xl"></div>
           <div className="absolute bottom-10 left-10 w-24 h-24 bg-gradient-to-br from-purple-200 to-pink-200 rounded-full blur-xl"></div>
@@ -261,29 +270,35 @@ export default function HomePage({ setCurrentPage }: { setCurrentPage: (page: st
               return (
                 <div
                   key={index}
-                  className={`bg-white rounded-3xl p-8 shadow-xl hover:shadow-2xl transition-all duration-500 border border-gray-100 group cursor-pointer transform hover:-translate-y-3 hover:scale-[1.02] relative overflow-hidden ${
-                    currentFeature === index ? 'ring-4 ring-indigo-300 scale-105 shadow-2xl' : ''
+                  className={`relative isolate overflow-hidden rounded-3xl border border-gray-100 bg-white p-5 shadow-xl transition-all duration-500 hover:-translate-y-3 hover:shadow-2xl sm:p-8 sm:hover:scale-[1.02] group ${
+                    currentFeature === index ? 'ring-4 ring-indigo-300 shadow-2xl sm:scale-105' : ''
                   }`}
                   onMouseEnter={() => setCurrentFeature(index)}
-                  onClick={() => setCurrentPage(feature.page)}
                 >
-                  <div className="absolute inset-0 bg-gradient-to-br from-transparent to-gray-50 opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
+                  <div className="pointer-events-none absolute inset-0 -z-10 bg-gradient-to-br from-transparent to-gray-50 opacity-0 transition-opacity duration-500 group-hover:opacity-100"></div>
                   
-                  <div className="flex items-start space-x-6 relative z-10">
-                    <div className={`w-20 h-20 rounded-3xl bg-gradient-to-br ${feature.color} flex items-center justify-center text-white group-hover:scale-110 transition-transform duration-300 flex-shrink-0 shadow-lg`}>
+                  <div className="flex items-start gap-3 sm:gap-6">
+                    <div className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br ${feature.color} text-white shadow-lg transition-transform duration-300 group-hover:scale-110 sm:h-20 sm:w-20 sm:rounded-3xl`}>
                       <IconComponent className="w-8 h-8" />
                     </div>
-                    <div className="flex-1">
+                    <div className="min-w-0 flex-1 break-words">
                       <h3 className="text-2xl font-semibold text-gray-900 mb-3">
                         {feature.title}
                       </h3>
                       <p className="text-gray-600 mb-4 leading-relaxed">
                         {feature.description}
                       </p>
-                      <div className="flex items-center text-indigo-600 font-medium group-hover:text-indigo-700 transition-colors">
-                        <span>{t("Jelajahi fitur", "Explore Feature")}</span>
-                        <ChevronRight className="w-5 h-5 ml-2 group-hover:translate-x-2 transition-transform" />
-                      </div>
+                      {setCurrentPage ? (
+                        <button type="button" onClick={() => setCurrentPage(feature.page)} className={featureAction}
+                          aria-label={t(`Jelajahi fitur ${feature.title}`, `Explore feature ${feature.title}`)}>
+                          {t('Jelajahi fitur', 'Explore feature')}<ChevronRight aria-hidden="true" className="h-5 w-5 shrink-0" />
+                        </button>
+                      ) : (
+                        <Link href="/masuk" className={featureAction}
+                          aria-label={t(`Masuk untuk mengakses ${feature.title}`, `Sign in to access ${feature.title}`)}>
+                          {t('Masuk untuk mengakses', 'Sign in to access')}<ChevronRight aria-hidden="true" className="h-5 w-5 shrink-0" />
+                        </Link>
+                      )}
                     </div>
                   </div>
                 </div>
@@ -433,13 +448,15 @@ export default function HomePage({ setCurrentPage }: { setCurrentPage: (page: st
             {t("Siap merencanakan langkah berikutnya?", "Ready to Transform Your Future?")}
           </h2>
           <div className="flex justify-center">
-            <button 
+            {setCurrentPage ? <button type="button"
               onClick={() => setCurrentPage('workshop')}
               className="border-2 border-white text-white px-8 py-4 rounded-2xl font-semibold hover:bg-white hover:text-indigo-600 transition-all duration-300 shadow-lg hover:shadow-xl transform hover:scale-105 hover:-translate-y-1 flex items-center justify-center space-x-2 bg-white bg-opacity-10 backdrop-blur-sm cursor-pointer"
             >
               <BookOpen className="w-5 h-5" />
               <span>{t("Lihat workshop", "Browse Workshops")}</span>
-            </button>
+            </button> : <Link href="/masuk" className={`${homeAction} border border-white bg-white/10 text-white hover:bg-white/20`}>
+              <BookOpen aria-hidden="true" className="h-5 w-5" />{t('Masuk untuk lihat workshop', 'Sign in to browse workshops')}
+            </Link>}
           </div>
           
           <div className="mt-12 flex flex-wrap justify-center items-center gap-6 opacity-90">

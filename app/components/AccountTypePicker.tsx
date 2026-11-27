@@ -4,7 +4,7 @@ import Link from 'next/link';
 import { ArrowRight, Briefcase, Building2 } from 'lucide-react';
 import { signupPath } from '../utils/signup';
 import { useLanguage } from './Language';
-import { PublicHeader } from './PublicHome';
+import { PublicHeader } from './PublicHeader';
 
 export default function AccountTypePicker() {
   const { t } = useLanguage();

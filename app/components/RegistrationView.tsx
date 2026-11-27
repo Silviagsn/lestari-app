@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { ArrowRight, Briefcase, Building2, GraduationCap, Hand, Users } from 'lucide-react';
-import { PublicHeader } from './PublicHome';
+import { PublicHeader } from './PublicHeader';
 import { useLanguage } from './Language';
 import { googleErrorMessage, signupPath, type SignupRole } from '../utils/signup';
 import SignupForm from './SignupForm';
