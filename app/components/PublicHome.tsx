@@ -1,14 +1,13 @@
 'use client';
 
 import Link from 'next/link';
-import { Accessibility, ArrowRight, Briefcase, Building2, EarOff, GraduationCap, MessageCircle, Mic, MoveUpRight } from 'lucide-react';
-import { signupPath } from '../utils/signup';
+import { Accessibility, ArrowRight, Briefcase, EarOff, GraduationCap, MessageCircle, Mic, MoveUpRight } from 'lucide-react';
 import { LanguageSwitch, useLanguage } from './Language';
 
 const action = 'inline-flex min-h-11 items-center justify-center gap-2 rounded-xl px-4 py-2 text-sm font-bold focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-700';
 const primary = 'bg-gradient-to-r from-indigo-700 to-purple-700 text-white shadow-md shadow-purple-500/20 hover:from-indigo-800 hover:to-purple-800';
 
-export function PublicHeader({ login = false }: { login?: boolean }) {
+export function PublicHeader({ login = false, signup = false }: { login?: boolean; signup?: boolean }) {
   const { t } = useLanguage();
   return (
     <header className="sticky top-0 z-40 border-b border-indigo-100 bg-slate-50/95 backdrop-blur">
@@ -24,7 +23,7 @@ export function PublicHeader({ login = false }: { login?: boolean }) {
         <div className="flex items-center gap-1 sm:gap-2">
           <LanguageSwitch />
           {!login && <Link href="/masuk" className="rounded-lg px-1.5 py-2 text-xs font-bold text-indigo-900 hover:bg-indigo-50 sm:px-3 sm:text-sm">{t('Masuk', 'Sign in')}</Link>}
-          <Link href="/#daftar" className={`${primary} rounded-full px-2.5 py-2 text-xs font-bold sm:px-4 sm:text-sm`}>{t('Daftar', 'Sign up')}</Link>
+          <Link href="/daftar" aria-current={signup ? 'page' : undefined} className={`${primary} rounded-full px-2.5 py-2 text-xs font-bold sm:px-4 sm:text-sm`}>{t('Daftar', 'Sign up')}</Link>
         </div>
       </nav>
     </header>
@@ -57,7 +56,7 @@ export default function PublicHome() {
             <h1 className="max-w-xl text-4xl font-extrabold leading-[1.08] tracking-tight sm:text-6xl">{t('Peluang kerja dan belajar', 'Work and learning opportunities')} <span className="bg-gradient-to-r from-indigo-700 via-purple-700 to-pink-700 bg-clip-text text-transparent">{t('yang lebih aksesibel', 'with accessibility in mind')}</span></h1>
             <p className="mt-5 max-w-lg text-base leading-relaxed text-slate-700 sm:text-lg">{t('Temukan lowongan, ikuti workshop, dan gunakan alat bantu komunikasi di satu tempat. Perusahaan juga bisa membuka lowongan yang lebih inklusif.', 'Find jobs, join workshops, and use communication tools in one place. Employers can also publish more inclusive job listings.')}</p>
             <div className="mt-7 flex flex-wrap gap-3">
-              <Link href="#daftar" className={`${action} ${primary}`}>{t('Buat akun', 'Create an account')} <ArrowRight aria-hidden="true" className="h-4 w-4" /></Link>
+              <Link href="/daftar" className={`${action} ${primary}`}>{t('Buat akun', 'Create an account')} <ArrowRight aria-hidden="true" className="h-4 w-4" /></Link>
               <Link href="#fitur" className={`${action} border border-indigo-500 bg-white text-indigo-800 shadow-sm hover:bg-indigo-50`}>{t('Jelajahi Lestari', 'Explore Lestari')}</Link>
             </div>
           </div>
@@ -79,18 +78,6 @@ export default function PublicHome() {
             <Icon aria-hidden="true" className="mb-4 h-6 w-6 text-indigo-700" />
             <h3 className="font-bold">{title}</h3><p className="mt-2 text-sm leading-relaxed text-slate-600">{description}</p>
           </article>)}
-        </div>
-      </section>
-      <section id="daftar" className="mx-auto max-w-6xl scroll-mt-24 px-4 pb-14 sm:px-6">
-        <h2 className="text-3xl font-extrabold tracking-tight">{t('Pilih jenis akun', 'Choose your account type')}</h2>
-        <div className="mt-5 grid gap-4 sm:grid-cols-2">
-          {[
-            { icon: Briefcase, url: signupPath.jobseeker, title: t('Pencari Kerja', 'Job Seeker'), description: t('Simpan lowongan, kirim lamaran, dan ikuti workshop.', 'Save jobs, send applications, and join workshops.') },
-            { icon: Building2, url: signupPath.company, title: t('Perusahaan', 'Employer'), description: t('Terbitkan lowongan dan tinjau lamaran dalam dasbor rekrutmen.', 'Publish jobs and review applications in the recruitment dashboard.') },
-          ].map(({ icon: Icon, url, title, description }) => <Link href={url} key={url} className="flex items-start gap-3 rounded-2xl border border-indigo-200 bg-gradient-to-br from-white to-indigo-50 p-5 hover:border-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-indigo-700">
-            <Icon aria-hidden="true" className="mt-0.5 h-6 w-6 shrink-0 text-indigo-700" />
-            <span className="flex-1"><span className="block font-bold">{title}</span><span className="mt-1 block text-sm text-slate-700">{description}</span></span><ArrowRight aria-hidden="true" className="mt-1 h-4 w-4 shrink-0 text-indigo-700" />
-          </Link>)}
         </div>
       </section>
     </main>
