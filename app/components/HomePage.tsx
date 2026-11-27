@@ -23,12 +23,16 @@ import {
   Accessibility
 } from 'lucide-react';
 import { features } from './Features'; // Disesuaikan dengan F besar
+import type { PublicCatalog } from './PublicHeader';
 import WebsiteGuide from './WebsiteGuide';
 
 const homeAction = 'inline-flex min-h-12 items-center justify-center gap-2 rounded-2xl px-6 py-3 font-semibold shadow-sm focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-700';
 const featureAction = 'inline-flex min-h-10 items-center gap-1.5 rounded-lg text-left font-semibold text-indigo-700 after:absolute after:inset-0 hover:underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-700';
 
-export default function HomePage({ setCurrentPage }: { setCurrentPage?: (page: string) => void }) {
+export default function HomePage({ setCurrentPage, onBrowse }: {
+  setCurrentPage?: (page: string) => void;
+  onBrowse?: (page: PublicCatalog) => void;
+}) {
   const { t } = useLanguage();
   const [currentFeature, setCurrentFeature] = useState<number>(0);
   const [isVisible, setIsVisible] = useState<boolean>(false);
@@ -267,6 +271,10 @@ export default function HomePage({ setCurrentPage }: { setCurrentPage?: (page: s
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
             {features.map((feature, index) => {
               const IconComponent = feature.icon;
+              const catalog = feature.page === 'job-portal' || feature.page === 'workshop' ? feature.page : undefined;
+              const browse = setCurrentPage ? () => setCurrentPage(feature.page) :
+                catalog && onBrowse ? () => onBrowse(catalog) : undefined;
+              const title = feature.page === 'job-portal' ? t('Lowongan Kerja', 'Job Portal') : feature.title;
               return (
                 <div
                   key={index}
@@ -283,14 +291,14 @@ export default function HomePage({ setCurrentPage }: { setCurrentPage?: (page: s
                     </div>
                     <div className="min-w-0 flex-1 break-words">
                       <h3 className="text-2xl font-semibold text-gray-900 mb-3">
-                        {feature.title}
+                        {title}
                       </h3>
                       <p className="text-gray-600 mb-4 leading-relaxed">
                         {feature.description}
                       </p>
-                      {setCurrentPage ? (
-                        <button type="button" onClick={() => setCurrentPage(feature.page)} className={featureAction}
-                          aria-label={t(`Jelajahi fitur ${feature.title}`, `Explore feature ${feature.title}`)}>
+                      {browse ? (
+                        <button type="button" onClick={browse} className={featureAction}
+                          aria-label={t(`Jelajahi fitur ${title}`, `Explore feature ${title}`)}>
                           {t('Jelajahi fitur', 'Explore feature')}<ChevronRight aria-hidden="true" className="h-5 w-5 shrink-0" />
                         </button>
                       ) : (
@@ -448,15 +456,13 @@ export default function HomePage({ setCurrentPage }: { setCurrentPage?: (page: s
             {t("Siap merencanakan langkah berikutnya?", "Ready to Transform Your Future?")}
           </h2>
           <div className="flex justify-center">
-            {setCurrentPage ? <button type="button"
-              onClick={() => setCurrentPage('workshop')}
+            {(setCurrentPage || onBrowse) && <button type="button"
+              onClick={() => (setCurrentPage ?? onBrowse)?.('workshop')}
               className="border-2 border-white text-white px-8 py-4 rounded-2xl font-semibold hover:bg-white hover:text-indigo-600 transition-all duration-300 shadow-lg hover:shadow-xl transform hover:scale-105 hover:-translate-y-1 flex items-center justify-center space-x-2 bg-white bg-opacity-10 backdrop-blur-sm cursor-pointer"
             >
               <BookOpen className="w-5 h-5" />
               <span>{t("Lihat workshop", "Browse Workshops")}</span>
-            </button> : <Link href="/masuk" className={`${homeAction} border border-white bg-white/10 text-white hover:bg-white/20`}>
-              <BookOpen aria-hidden="true" className="h-5 w-5" />{t('Masuk untuk lihat workshop', 'Sign in to browse workshops')}
-            </Link>}
+            </button>}
           </div>
           
           <div className="mt-12 flex flex-wrap justify-center items-center gap-6 opacity-90">

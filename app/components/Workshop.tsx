@@ -1,5 +1,6 @@
 import { useLanguage } from './Language';
 import React, { useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { useCatalog } from '../utils/useCatalog';
 import { 
   Clock, 
@@ -113,6 +114,7 @@ const getCategories = (workshops: Workshop[]) => [
 const levels = ['All', 'Beginner', 'Intermediate', 'Advanced'];
 
 interface WorkshopPageProps {
+  guest?: boolean;
   userAssessment?: {
     primaryGoal: string;
     experienceLevel: string;
@@ -121,8 +123,9 @@ interface WorkshopPageProps {
   };
 }
 
-export default function WorkshopPage({ userAssessment }: WorkshopPageProps) {
+export default function WorkshopPage({ userAssessment, guest = false }: WorkshopPageProps) {
   const { t } = useLanguage();
+  const router = useRouter();
   const [selectedWorkshop, setSelectedWorkshop] = useState<Workshop | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('all');
@@ -234,6 +237,10 @@ export default function WorkshopPage({ userAssessment }: WorkshopPageProps) {
   });
 
   const handleEnroll = (workshop: Workshop) => {
+    if (guest) {
+      router.push('/masuk');
+      return;
+    }
     setCurrentEnrollmentWorkshop(workshop);
     setShowEnrollmentModal(true);
   };
@@ -284,7 +291,7 @@ export default function WorkshopPage({ userAssessment }: WorkshopPageProps) {
             </div>
             
             {/* Stats */}
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+            <div className={`mb-8 grid grid-cols-2 gap-4 ${guest ? '' : 'md:grid-cols-4'}`}>
               <div className="bg-white/80 backdrop-blur-lg rounded-2xl p-4 text-center shadow-xl border border-white/20 hover:shadow-2xl transition-all duration-300 transform hover:scale-105">
                 <div className="text-2xl font-bold text-indigo-600">{filteredWorkshops.length}</div>
                 <div className="text-sm text-gray-600">{t("Workshop tersedia", "Available Workshops")}</div>
@@ -293,14 +300,14 @@ export default function WorkshopPage({ userAssessment }: WorkshopPageProps) {
                 <div className="text-2xl font-bold text-green-600">100%</div>
                 <div className="text-sm text-gray-600">{t("Dukungan ASL", "ASL Supported")}</div>
               </div>
-              <div className="bg-white/80 backdrop-blur-lg rounded-2xl p-4 text-center shadow-xl border border-white/20 hover:shadow-2xl transition-all duration-300 transform hover:scale-105">
+              {!guest && <><div className="bg-white/80 backdrop-blur-lg rounded-2xl p-4 text-center shadow-xl border border-white/20 hover:shadow-2xl transition-all duration-300 transform hover:scale-105">
                 <div className="text-2xl font-bold text-purple-600">{savedWorkshops.length}</div>
                 <div className="text-sm text-gray-600">{t("Workshop tersimpan", "Saved Workshops")}</div>
               </div>
               <div className="bg-white/80 backdrop-blur-lg rounded-2xl p-4 text-center shadow-xl border border-white/20 hover:shadow-2xl transition-all duration-300 transform hover:scale-105">
                 <div className="text-2xl font-bold text-blue-600">{enrollmentStatuses.length}</div>
                 <div className="text-sm text-gray-600">{t("Terdaftar", "Enrolled")}</div>
-              </div>
+              </div></>}
             </div>
           </div>
 
@@ -418,12 +425,12 @@ export default function WorkshopPage({ userAssessment }: WorkshopPageProps) {
                           </span>
                         )}
                       </div>
-                      <button type="button" onClick={() => toggleSaveWorkshop(workshop.id)} disabled={pending}
+                      {!guest && <button type="button" onClick={() => toggleSaveWorkshop(workshop.id)} disabled={pending}
                         aria-pressed={isSaved} aria-label={t('Simpan workshop: ' + workshop.title, 'Save workshop: ' + workshop.title)}
                         className={'grid h-11 w-11 shrink-0 place-items-center rounded-full transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white disabled:opacity-60 ' +
                           (isSaved ? 'bg-rose-50 text-rose-700 hover:bg-rose-100' : 'bg-white/20 text-white hover:bg-white/30')}>
                         <Heart aria-hidden="true" className={'h-4 w-4 ' + (isSaved ? 'fill-current' : '')} />
-                      </button>
+                      </button>}
                     </div>
                   </div>
 
@@ -457,7 +464,7 @@ export default function WorkshopPage({ userAssessment }: WorkshopPageProps) {
                         {!enrollmentStatus && (
                           <button type="button" onClick={() => handleEnroll(workshop)}
                             className="min-h-11 rounded-xl bg-indigo-700 px-2 py-2 text-sm font-bold text-white hover:bg-indigo-800 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-700">
-                            {t('Daftar', 'Enroll')}
+                            {guest ? t('Masuk untuk daftar', 'Sign in to enroll') : t('Daftar', 'Enroll')}
                           </button>
                         )}
                       </div>
@@ -490,6 +497,7 @@ export default function WorkshopPage({ userAssessment }: WorkshopPageProps) {
           {selectedWorkshop && (
             <WorkshopDetailModal
               workshop={selectedWorkshop}
+              guest={guest}
               isEnrolled={Boolean(getEnrollmentStatus(selectedWorkshop.id))}
               enrollmentStatus={getEnrollmentStatus(selectedWorkshop.id)}
               onClose={() => setSelectedWorkshop(null)}
@@ -556,6 +564,7 @@ export default function WorkshopPage({ userAssessment }: WorkshopPageProps) {
 // Workshop Detail Modal Component
 function WorkshopDetailModal({ 
   workshop, 
+  guest,
   isEnrolled, 
   enrollmentStatus, 
   onClose, 
@@ -564,6 +573,7 @@ function WorkshopDetailModal({
   isSaved 
 }: { 
   workshop: Workshop; 
+  guest: boolean;
   isEnrolled: boolean; 
   enrollmentStatus?: EnrollmentStatus; 
   onClose: () => void; 
@@ -842,11 +852,11 @@ function WorkshopDetailModal({
                       onClick={onEnroll}
                       className="w-full bg-gradient-to-r from-green-600 to-blue-600 text-white py-3 rounded-xl font-semibold hover:from-green-700 hover:to-blue-700 transition-all duration-200 shadow-lg hover:shadow-xl flex items-center justify-center space-x-2"
                     >
-                      <span>{t("Daftar workshop", "Enroll in Workshop")}</span>
+                      <span>{guest ? t('Masuk untuk daftar', 'Sign in to enroll') : t("Daftar workshop", "Enroll in Workshop")}</span>
                       <ArrowRight className="w-5 h-5" />
                     </button>
                     
-                    <div className="grid grid-cols-2 gap-2">
+                    {!guest && <div className="grid grid-cols-2 gap-2">
                       <button
                         onClick={onSave}
                         className={`border border-gray-300 py-2 rounded-lg font-medium hover:bg-gray-50 transition-colors text-sm flex items-center justify-center space-x-1 ${
@@ -860,7 +870,7 @@ function WorkshopDetailModal({
                         <ExternalLink className="w-4 h-4" />
                         <span>Preview</span>
                       </button>
-                    </div>
+                    </div>}
                   </div>
                 )}
 

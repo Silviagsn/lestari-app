@@ -1,5 +1,7 @@
 import { useLanguage } from './Language';
 import React, { useEffect, useRef, useState } from 'react';
+import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { useCatalog } from '../utils/useCatalog';
 import { applicantStatuses, jobDetailLabels, type ApplicantStatus } from '../utils/recruitment';
 import { 
@@ -74,20 +76,25 @@ interface Job {
   isRemote: boolean;
   arrangement?: string;
   urgency: 'low' | 'medium' | 'high';
-  companyEmail: string;
+  companyEmail?: string;
   applicationDeadline: string;
   tags: string[];
   isAccessibilityVerified: boolean;
   deafFriendlyScore: number;
   recommendationScore?: number;
   companyListing?: boolean;
+  externalListing?: boolean;
   externalUrl?: string;
 }
 
-function JobStreetLink({ url }: { url: string }) {
+function JobStreetLink({ url }: { url?: string }) {
   const { t } = useLanguage();
+  const className = 'inline-flex min-h-11 items-center justify-center gap-2 rounded-xl bg-indigo-700 px-4 py-2 text-sm font-semibold text-white hover:bg-indigo-800 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-700';
+  if (!url) return <Link href="/masuk" onClick={event => event.stopPropagation()} className={className}>
+    {t('Masuk untuk melamar', 'Sign in to apply')}
+  </Link>;
   return <a href={url} target="_blank" rel="noopener noreferrer" onClick={event => event.stopPropagation()}
-    className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl bg-indigo-700 px-4 py-2 text-sm font-semibold text-white hover:bg-indigo-800 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-700">
+    className={className}>
     {t('Lihat & lamar di JobStreet', 'View & apply on JobStreet')}<ExternalLink aria-hidden="true" className="h-4 w-4 shrink-0" />
   </a>;
 }
@@ -115,6 +122,7 @@ const getCategories = (jobs: Job[]) => [
 ];
 
 interface JobPortalProps {
+  guest?: boolean;
   userAssessment?: {
     primaryGoal: string;
     experienceLevel: string;
@@ -123,9 +131,11 @@ interface JobPortalProps {
   };
 }
 
-export default function JobPortalPage({ userAssessment }: JobPortalProps) {
+export default function JobPortalPage({ userAssessment, guest = false }: JobPortalProps) {
   const { t } = useLanguage();
-  const externalNotice = t('Baca detail dan kirim lamaran di JobStreet.', 'Read the details and submit your application on JobStreet.');
+  const router = useRouter();
+  const externalNotice = t('Lowongan ini berasal dari JobStreet.', 'This listing is from JobStreet.');
+  const applyLabel = t('Masuk untuk melamar', 'Sign in to apply');
   const [selectedJob, setSelectedJob] = useState<Job | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('all');
@@ -259,6 +269,10 @@ export default function JobPortalPage({ userAssessment }: JobPortalProps) {
   };
 
   const handleApplyNow = (job: Job) => {
+    if (guest) {
+      router.push('/masuk');
+      return;
+    }
     setCurrentApplicationJob(job);
     setShowApplicationModal(true);
   };
@@ -344,7 +358,7 @@ Application Date: ${new Date().toLocaleDateString()}`;
             </div>
             
             {/* Stats */}
-            <div className="grid grid-cols-2 gap-2 sm:gap-4 md:grid-cols-4">
+            <div className={`grid grid-cols-2 gap-2 sm:gap-4 ${guest ? '' : 'md:grid-cols-4'}`}>
               <div className="rounded-2xl border border-white/60 bg-white/80 p-2.5 text-center shadow-sm sm:p-4">
                 <div className="text-2xl font-bold text-indigo-600">{filteredJobs.length}</div>
                 <div className="text-sm text-gray-600">{t("Lowongan tersedia", "Available Jobs")}</div>
@@ -353,14 +367,14 @@ Application Date: ${new Date().toLocaleDateString()}`;
                 <div className="text-2xl font-bold text-green-600">{jobs.filter(job => job.isAccessibilityVerified).length}</div>
                 <div className="text-sm text-gray-600">{t("Aksesibilitas terverifikasi", "Accessibility Verified")}</div>
               </div>
-              <div className="rounded-2xl border border-white/60 bg-white/80 p-2.5 text-center shadow-sm sm:p-4">
+              {!guest && <><div className="rounded-2xl border border-white/60 bg-white/80 p-2.5 text-center shadow-sm sm:p-4">
                 <div className="text-2xl font-bold text-purple-600">{savedJobs.length}</div>
                 <div className="text-sm text-gray-600">{t("Lowongan tersimpan", "Saved Jobs")}</div>
               </div>
               <div className="rounded-2xl border border-white/60 bg-white/80 p-2.5 text-center shadow-sm sm:p-4">
                 <div className="text-2xl font-bold text-blue-600">{applications.length}</div>
                 <div className="text-sm text-gray-600">{t("Lamaran", "Applications")}</div>
-              </div>
+              </div></>}
             </div>
           </div>
 
@@ -478,7 +492,7 @@ Application Date: ${new Date().toLocaleDateString()}`;
                         <div className="flex items-start justify-between gap-3 bg-black/20 p-5 sm:p-6">
                           <div className="min-w-0">
                             <div className="mb-2 flex flex-wrap items-center gap-2">
-                              <span className="rounded-full bg-white/15 px-2.5 py-1 text-xs font-semibold text-white">{job.externalUrl ? 'JobStreet' : job.category}</span>
+                              <span className="rounded-full bg-white/15 px-2.5 py-1 text-xs font-semibold text-white">{job.externalListing ? 'JobStreet' : job.category}</span>
                               {job.urgency === 'high' && (
                                 <span className="rounded-full bg-red-100 px-2.5 py-1 text-xs font-semibold text-red-800">
                                   {t("🔥 Mendesak", "🔥 Urgent")}
@@ -510,7 +524,7 @@ Application Date: ${new Date().toLocaleDateString()}`;
                               
                               <div className="flex min-w-0 items-start gap-1.5">
                                 <Clock className="mt-0.5 h-4 w-4 shrink-0" />
-                                <span>{job.externalUrl ? t(`Ditambahkan ${job.posted}`, `Added ${job.posted}`) : job.posted}</span>
+                                <span>{job.externalListing ? t(`Ditambahkan ${job.posted}`, `Added ${job.posted}`) : job.posted}</span>
                               </div>
                               
                               {job.rating && (
@@ -522,7 +536,7 @@ Application Date: ${new Date().toLocaleDateString()}`;
                             </div>
                           </div>
                           
-                            <button
+                            {!guest && <button
                               onClick={(e) => {
                                 e.stopPropagation();
                                 toggleSaveJob(job.id);
@@ -535,13 +549,18 @@ Application Date: ${new Date().toLocaleDateString()}`;
                               }`}
                             >
                               <Heart className={`w-5 h-5 ${savedJobs.includes(job.id) ? 'fill-current' : ''}`} />
-                            </button>
+                            </button>}
                         </div>
                     </div>
 
-                    {job.externalUrl ? <div className="flex flex-1 flex-col gap-4 p-5 sm:p-6">
+                    {job.externalListing ? <div className="flex flex-1 flex-col gap-4 p-5 sm:p-6">
                       <p className="text-sm text-slate-700">{externalNotice}</p>
-                      <div className="mt-auto"><JobStreetLink url={job.externalUrl} /></div>
+                      <div className="mt-auto flex flex-wrap gap-2">
+                        {guest && <button type="button" aria-haspopup="dialog" className="min-h-11 rounded-xl border border-indigo-200 px-3 text-sm font-semibold text-indigo-800 hover:bg-indigo-50">
+                          {t('Lihat detail', 'View details')}
+                        </button>}
+                        <JobStreetLink url={guest ? undefined : job.externalUrl} />
+                      </div>
                     </div> : <div className="flex flex-1 flex-col p-5 sm:p-6">
                     {/* Job Type and Salary */}
                     <div className="mb-3 flex flex-wrap items-center gap-x-3 gap-y-2">
@@ -633,10 +652,13 @@ Application Date: ${new Date().toLocaleDateString()}`;
                             className="flex min-h-11 flex-1 items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-indigo-700 to-violet-700 px-3 py-2 text-sm font-semibold text-white hover:from-indigo-800 hover:to-violet-800"
                           >
                             <Send className="w-4 h-4" />
-                            <span>{t("Lamar sekarang", "Apply Now")}</span>
+                            <span>{guest ? applyLabel : t("Lamar sekarang", "Apply Now")}</span>
                           </button>
                           
-                          <button
+                          {guest ? <button type="button" aria-haspopup="dialog"
+                            className="min-h-11 flex-1 rounded-xl border border-indigo-200 px-3 py-2 text-sm font-semibold text-indigo-800 hover:bg-indigo-50">
+                            {t('Lihat detail', 'View details')}
+                          </button> : <button
                             onClick={(e) => {
                               e.stopPropagation();
                               handleContactEmployer(job);
@@ -645,7 +667,7 @@ Application Date: ${new Date().toLocaleDateString()}`;
                           >
                             <Mail className="w-4 h-4" />
                             <span>{t("Kontak", "Contact")}</span>
-                          </button>
+                          </button>}
                         </>
                       )}
                     </div>
@@ -690,7 +712,7 @@ Application Date: ${new Date().toLocaleDateString()}`;
                         {selectedJob.title}
                       </h2>
                       <div className="flex shrink-0 gap-1">
-                      <button
+                      {!guest && <button
                         onClick={() => toggleSaveJob(selectedJob.id)}
                         disabled={pending}
                         aria-label={`Save ${selectedJob.title}`}
@@ -702,7 +724,7 @@ Application Date: ${new Date().toLocaleDateString()}`;
                         }`}
                       >
                         <Heart className={`h-5 w-5 ${savedJobs.includes(selectedJob.id) ? 'fill-current' : ''}`} />
-                      </button>
+                      </button>}
                       <button type="button" aria-label={t("Tutup detail lowongan", "Close job details")} onClick={() => setSelectedJob(null)}
                         className="grid h-10 w-10 place-items-center rounded-full bg-white text-slate-700 hover:bg-indigo-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-indigo-700">
                         <X aria-hidden="true" className="h-5 w-5" />
@@ -722,10 +744,10 @@ Application Date: ${new Date().toLocaleDateString()}`;
                     </div>
                   </div>
 
-                  {selectedJob.externalUrl ? <div className="space-y-4 p-5 sm:p-6">
+                  {selectedJob.externalListing ? <div className="space-y-4 p-5 sm:p-6">
                     <p className="flex items-center gap-2 text-sm text-slate-700"><MapPin aria-hidden="true" className="h-4 w-4 shrink-0 text-indigo-700" />{selectedJob.location}</p>
                     <p className="rounded-xl bg-indigo-50 p-3 text-sm text-indigo-950">{externalNotice}</p>
-                    <JobStreetLink url={selectedJob.externalUrl} />
+                    <JobStreetLink url={guest ? undefined : selectedJob.externalUrl} />
                   </div> : <div className="p-5 sm:p-6">
                   {/* Quick Info */}
                   <div className="mb-6 grid gap-2 sm:grid-cols-2">
@@ -838,10 +860,10 @@ Application Date: ${new Date().toLocaleDateString()}`;
                         className="w-full bg-gradient-to-r from-indigo-600 to-purple-600 text-white py-4 rounded-2xl font-semibold hover:from-indigo-700 hover:to-purple-700 transition-all duration-300 shadow-xl hover:shadow-2xl flex items-center justify-center space-x-2 transform hover:scale-105"
                       >
                         <Send className="w-5 h-5" />
-                        <span>{t("Lamar pekerjaan ini", "Apply for this Job")}</span>
+                        <span>{guest ? applyLabel : t("Lamar pekerjaan ini", "Apply for this Job")}</span>
                       </button>
                       
-                      <div>
+                      {!guest && <div>
                         <button
                           onClick={() => handleContactEmployer(selectedJob)}
                           className="flex w-full items-center justify-center gap-2 rounded-xl border border-indigo-200 py-3 text-sm font-semibold text-indigo-800 hover:bg-indigo-50"
@@ -849,7 +871,7 @@ Application Date: ${new Date().toLocaleDateString()}`;
                           <Mail className="w-4 h-4" />
                           <span>{t("Kontak", "Contact")}</span>
                         </button>
-                      </div>
+                      </div>}
                     </div>
                   )}
                   </div>}

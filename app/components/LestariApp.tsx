@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { PublicHeader } from './PublicHeader';
+import { PublicHeader, type PublicCatalog } from './PublicHeader';
 import { useLanguage } from './Language';
 import Header from './Header';
 import ChangePasswordPage from './ChangePasswordPage';
@@ -143,9 +143,19 @@ export default function LestariApp({ initialLogin = false }: { initialLogin?: bo
     if (isAuthenticated && showLogin) router.replace('/');
   }, [isAuthenticated, showLogin, router]);
 
+  function browsePublicPage(page: PublicCatalog | 'home') {
+    setCurrentPage(page);
+    window.scrollTo(0, 0);
+  }
+
+  const publicCatalog = currentPage === 'job-portal' || currentPage === 'workshop' ? currentPage : undefined;
   if (!isAuthenticated && !showLogin) return <>
-    <PublicHeader />
-    <main><HomePage /></main>
+    <PublicHeader catalog={publicCatalog} onBrowse={browsePublicPage} />
+    <main>
+      {publicCatalog === 'job-portal' ? <JobPortalPage guest /> :
+        publicCatalog === 'workshop' ? <WorkshopPage guest /> :
+        <HomePage onBrowse={browsePublicPage} />}
+    </main>
   </>;
 
   // Tampilan Login

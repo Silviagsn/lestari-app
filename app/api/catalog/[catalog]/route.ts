@@ -29,31 +29,34 @@ const openListings = "deleted_at IS NULL AND status = 'published' AND (deadline 
 export async function GET(request: NextRequest, { params: { catalog } }: Context) {
   if (!isCatalog(catalog)) return error('Katalog tidak ditemukan.', 404);
   const user = await getSessionUser(request.cookies.get(sessionCookie)?.value);
-  if (!user) return error('Silakan masuk kembali.', 401);
 
   const db = getDatabase();
   const { saved, id } = catalogs[catalog];
-  const [items, savedItems, activity] = await Promise.all([
+  const [items, account] = await Promise.all([
     catalog === 'jobs'
       ? db.query(`
-          SELECT details || CASE
-            WHEN external_url IS NOT NULL THEN jsonb_build_object('externalUrl', external_url, 'posted', to_char(published_at, 'DD Mon YYYY'))
+          SELECT (CASE WHEN $1::boolean THEN details
+            ELSE details - ARRAY['companyEmail', 'contactEmail', 'externalUrl'] END) || CASE
+            WHEN external_url IS NOT NULL THEN jsonb_build_object('externalListing', true, 'posted', to_char(published_at, 'DD Mon YYYY'))
+              || CASE WHEN $1::boolean THEN jsonb_build_object('externalUrl', external_url) ELSE '{}'::jsonb END
             WHEN company_user_id IS NOT NULL THEN jsonb_build_object('posted', to_char(published_at, 'DD Mon YYYY'))
             ELSE '{}'::jsonb END AS details
           FROM jobs WHERE ${openListings} ORDER BY published_at DESC NULLS LAST, id
-        `)
+        `, [Boolean(user)])
       : db.query('SELECT details FROM workshops ORDER BY id'),
-    catalog === 'jobs'
-      ? db.query('SELECT s.job_id AS id FROM saved_jobs s JOIN jobs j ON j.id = s.job_id WHERE s.user_id = $1 AND j.deleted_at IS NULL ORDER BY s.job_id', [user.id])
-      : db.query(`SELECT ${id} AS id FROM ${saved} WHERE user_id = $1 ORDER BY ${id}`, [user.id]),
-    catalog === 'jobs'
-      ? db.query(`SELECT ${applicationColumns} FROM applications WHERE user_id = $1 ORDER BY applied_at DESC`, [user.id])
-      : db.query(`SELECT ${enrollmentColumns} FROM enrollments WHERE user_id = $1 ORDER BY enrolled_at DESC`, [user.id]),
+    user ? Promise.all([
+      catalog === 'jobs'
+        ? db.query('SELECT s.job_id AS id FROM saved_jobs s JOIN jobs j ON j.id = s.job_id WHERE s.user_id = $1 AND j.deleted_at IS NULL ORDER BY s.job_id', [user.id])
+        : db.query(`SELECT ${id} AS id FROM ${saved} WHERE user_id = $1 ORDER BY ${id}`, [user.id]),
+      catalog === 'jobs'
+        ? db.query(`SELECT ${applicationColumns} FROM applications WHERE user_id = $1 ORDER BY applied_at DESC`, [user.id])
+        : db.query(`SELECT ${enrollmentColumns} FROM enrollments WHERE user_id = $1 ORDER BY enrolled_at DESC`, [user.id]),
+    ]) : null,
   ]);
   return NextResponse.json({
     items: items.rows.map((row: { details: unknown }) => row.details),
-    savedIds: savedItems.rows.map((row: { id: number }) => row.id),
-    activity: activity.rows,
+    savedIds: account?.[0].rows.map((row: { id: number }) => row.id) ?? [],
+    activity: account?.[1].rows ?? [],
   }, { headers: { 'Cache-Control': 'private, no-store' } });
 }
 
